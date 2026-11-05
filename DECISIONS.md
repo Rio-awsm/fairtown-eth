@@ -4,9 +4,9 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 
 | ID | Question | Needed by | Default | Chosen | By | When |
 | --- | --- | --- | --- | --- | --- | --- |
-| D-02 | Demo chain | S1 0.1 | Base Sepolia |  |  |  |
+| D-02 | Demo chain | S1 0.1 | Base Sepolia | Base Sepolia (84532) | maxspxtr | 2026-11-06 |
 | D-03 | Settlement assets | S1 1.1 | `tUSD`, `tEUR`, one Circle USDC proof lot |  |  |  |
-| D-04 | CCA deployment | S1 1.2 | Own factory v2.1.0, zero fee controller |  |  |  |
+| D-04 | CCA deployment | S1 1.2 | Own factory v2.1.0, zero fee controller | Own `ContinuousClearingAuctionFactory` v2.1.0, `_protocolFeeController = address(0)` | maxspxtr | 2026-11-06 |
 | D-05 | Seller wallets | S2 3.1 | Server-held demo keys, disclosed |  |  |  |
 | D-06 | Live scenes | S2 5.2 | Bergen, Dallas, GPU, Diwali |  |  |  |
 | D-07 | AI per role | S2 1.1 | Local bidding; 0G vision if verified, else cloud |  |  |  |
@@ -38,3 +38,5 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-33 | Who commits | C 0.1 | | Only people commit, tag and push; Claude never does | Rio-awsm | 2026-11-06 |
 | D-34 | `.env` loading in the doctor | C 0.1 | Plan: dotenv + dotenv-expand | Node's built-in `util.parseEnv` plus a tested `${VAR}` expander. dotenv-expand jumped from 13.0.0 to 1000.0.0 on 2026-07-29, and the doctor reads private keys | Claude during C 0.1, needs review | 2026-11-06 |
 | D-35 | How to run the doctor | C 0.1 | Contract 14: `pnpm doctor` | `pnpm run doctor`, because `pnpm doctor` is a pnpm built-in that shadows the script and exits 0 silently | Claude during C 0.1, needs team ack (possible ICR) | 2026-11-06 |
+| D-36 | Optimizer runs (S1) | S1 0.1 | Guide: 200 | 200 for our contracts; CCA's `via_ir` profile at 11111 runs kept for `ContinuousClearingAuctionFactory.sol`, as in CCA's own `foundry.toml` | maxspxtr | 2026-11-06 |
+| D-37 | Permit2, OZ, forge-std source (S1) | S1 0.1 | Guide: separate submodules | Remap to CCA v2.1.0's pinned copies (OZ 5.3.0 `e4f7021`, Permit2 `cc56ad0`, forge-std v1.9.7). One copy each, no extra submodules | maxspxtr | 2026-11-06 |

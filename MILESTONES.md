@@ -14,7 +14,7 @@ One row per step. Status: todo, in progress, green, cut. Updated through MILESTO
 | C 3.1 | Demo hardening, fallbacks, rehearsals |  | todo |  |  |  |  |
 | C 3.2 | Sponsor deliverables and docs |  | todo |  |  |  |  |
 | C 3.3 | Video, submission, finalist prep |  | todo |  |  |  |  |
-| S1 0.1 | Toolchain and dependencies |  | todo |  |  |  |  |
+| S1 0.1 | Toolchain and dependencies | maxspxtr | green | 2026-11-06 | 2026-11-06 | uncommitted | forge 10/10 (incl. 4 Base Sepolia fork); TS 115 pass; doctor exit 0; CCA v2.1.0. Full second review and line-by-line key review waived by maxspxtr; quick checks by Claude instead (prompt log). Stream cmd: `cre/` and keeper parts arrive in 4.2 and 2.1 |
 | S1 1.1 | Base contracts |  | todo |  |  |  |  |
 | S1 1.2 | LotFactory on CCA |  | todo |  |  |  |  |
 | S1 1.3 | MarketSettlement and ChainTrigger |  | todo |  |  |  |  |
