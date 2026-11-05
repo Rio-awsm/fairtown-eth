@@ -1,0 +1,2 @@
+# Production build used only by the e2e prod project
+dist-e2e
