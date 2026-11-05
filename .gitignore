@@ -11,3 +11,6 @@ coverage
 playwright-report
 test-results
 .DS_Store
+# Deploy script test output (contracts/test/fork/Deploy.t.sol)
+deployments/.test-*
+contracts/broadcast/

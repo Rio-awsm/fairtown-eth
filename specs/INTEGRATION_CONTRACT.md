@@ -120,14 +120,14 @@ ADVANCE_NEW_BPS=5000
 ADVANCE_PROVEN_BPS=9000
 ADVANCE_TRUCK_BPS=1000
 PROVEN_AFTER_CLEAN_LOTS=3
-CONTEST_WINDOW_BLOCKS=60
-REPORT_WINDOW_BLOCKS=300
-PICKUP_WINDOW_FISH=300
-PICKUP_WINDOW_FLOWERS=300
-PICKUP_WINDOW_PRODUCE=450
-PICKUP_WINDOW_TRUCK=300
-PICKUP_WINDOW_STORAGE=150
-PICKUP_WINDOW_COMPUTE=60
+CONTEST_WINDOW_BLOCKS=600
+REPORT_WINDOW_BLOCKS=3000
+PICKUP_WINDOW_FISH=3000
+PICKUP_WINDOW_FLOWERS=3000
+PICKUP_WINDOW_PRODUCE=4500
+PICKUP_WINDOW_TRUCK=3000
+PICKUP_WINDOW_STORAGE=1500
+PICKUP_WINDOW_COMPUTE=600
 RELIST_STEP_BPS=1500
 LAST_BLOCK_SHARE_BPS=7500
 
@@ -631,3 +631,4 @@ The agents service publishes `agent.*`, `human.joined` and `clock` phase events 
 | ICR-000 | all | v1 frozen | Baseline | all | S1, S2, S3 | Pending C 0.1 |
 | ICR-001 | S1 (maxspxtr) | Minor: add `packages/shared/fixtures/price-vectors.json` (20 vectors from Solidity `PriceMath`, written by `forge test`) and `packages/shared/test/price-vectors.test.ts`. No source or interface change | S1 1.1 requires TS and Solidity price math to match | shared | maxspxtr (S1) | Approved 2026-11-06 |
 | ICR-002 | S1 (maxspxtr) | Minor: `LAST_BLOCK_SHARE_BPS` default 5000 -> 7500 in section 4 and `.env.example`. Value only, no interface change | S1 1.2 spread test: early vs late bidder at the same max were 10.7% apart at 5000, 4.5% at 7500 (target 5%) | S1, S2 (agents reading the schedule) | maxspxtr (S1) | Approved 2026-11-06 |
+| ICR-003 | S1 (maxspxtr) | Minor: block windows x10 in section 4 and `.env.example` (contest 600, report 3000, pickup fish 3000, flowers 3000, produce 4500, truck 3000, storage 1500, compute 600). Auction durations x10 too (D-50): fish 450, flowers 600, produce 900, truck/storage/compute 300. Values only | Base Sepolia and Base mainnet measured at ~5 blocks/s (200 ms), not ~2 s; the old values ran 10x faster than SoT 14 intends (contest 12 s, pickup 60 s) | S1, S2 (agents, director timers), S3 (countdowns) | maxspxtr (S1) | Approved 2026-11-06 |

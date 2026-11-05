@@ -1,0 +1,33 @@
+{
+  "chainId": 84532,
+  "commit": "1fdaa594b205c73d8f50a50ec2c9f6f8843d5780",
+  "contracts": {
+    "AgentRegistry": "0xb93bD46df10F61EDCEA44c544c0b20FA2C86A615",
+    "AgentRegistryHook": "0xBE39c92D4ADA45412a230a0cBF68a17Ef1352d12",
+    "CCAFactory": "0x83FCB67e1942eb83D9f6996603e15Bb471CacC03",
+    "ChainTrigger": "0x35e3CfA079dC0A9ca0b3738e95CCC5FD4aFeC3f6",
+    "DisputeResolver": "0x90D160634d6033cC618f01111DCecD1D5fbAD9e7",
+    "LotFactory": "0x77e6D0181e0deab07223c3dbbb2E1f57D4c2Bc82",
+    "MarketSettlement": "0xeaba278034Fa040D3A7B706e1080663E73151C12",
+    "SignalOracle": "0x6717874a10292788ad342F5b94Ce4F233A33A017",
+    "TestEUR": "0xA2c1320D00D6cb8209d7ac0159615AA29D267740",
+    "TestUSD": "0xa1A89553BAE568791fc6dC4FA2a87704a48A97f6"
+  },
+  "deployedAtBlock": 54986677,
+  "external": {
+    "CircleTestEURC": "0x808456652fdb597867f38412077A9182bf77359F",
+    "CircleTestUSDC": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "CreForwarder": "0x82300bd7c3958625581cc2F77bC6464dcEcDF3e5",
+    "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+  },
+  "network": "anvil",
+  "params": {
+    "advanceNewBps": 5000,
+    "advanceProvenBps": 9000,
+    "advanceTruckBps": 1000,
+    "contestWindowBlocks": 600,
+    "feeBps": 100,
+    "provenAfter": 3,
+    "reportWindowBlocks": 3000
+  }
+}

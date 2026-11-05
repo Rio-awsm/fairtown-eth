@@ -106,6 +106,26 @@ The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depe
 
 **NatSpec gotcha.** `/// ... @fairtown/shared/...` in a function doc is parsed as a NatSpec tag and fails the build. Use `//`.
 
+## 2026-11-06, S1 1.4
+
+**Base now makes ~5 blocks per second, not one per ~2 s.** Measured 54 blocks in 10 s on Base Sepolia and 52 on Base mainnet; several blocks share a timestamp. The guide's Phase 0 fact ("about 2s blocks") and SoT 14 are out of date. Every block value ran 10x faster than intended (a 45-block auction was 9 s, the contest window 12 s), so all windows are scaled x10 (D-50, ICR-003). Spread results in blocks (1.2) still hold. **For the keeper (2.1):** D-15 "checkpoint every 2 blocks" is now every 0.4 s; revisit the cadence. **Feedback candidate** for Base and the guide.
+
+**Deployed v1 on Base Sepolia** at block 54998548, commit `1fdaa59`, all 10 verified on Basescan (and Sourcify): MarketSettlement `0x657C61e2a48769C9bf39Fa0A6E73985e0d1ec3ea`, LotFactory `0x5Dad44bA795D5aBcE4FCA9f460b118748A50A423`, ChainTrigger `0xf4a733D2dF2dA83C64f9490B3aDAaCEf087dEA96`, CCAFactory `0xA42F306165e73011F2636099BFdB9D52E9e18890`, AgentRegistry `0xda25852ccDE3f05ec29D5E1DC6127dA337cE6d70`, hook `0xdBD2c4c9A3301875cC70eA0AAfAC8bE60071a89f`, tUSD `0xeaba278034Fa040D3A7B706e1080663E73151C12`, tEUR `0x4791860111D492EA67Fb353c4DdFE4CB2815f7eC`. Superseded the same day: a first v1 with the old 60/300 windows (settlement `0x1d313EF07e7842D780Ae97C7430478cea316E8C9`). Don't use it.
+
+**`forge script --verify` with `--root` fails.** Verification looks for `cache/solidity-files-cache.json` relative to the working directory, then reports "Unknown compilation profile: via_ir". Run forge from inside `contracts/`. Forge only loads `.env` from the working directory, so the scripts go through `scripts/with-env.ts` (D-51). `forge verify-contract` also needs `--compilation-profile default` because the cache holds two profiles. `--resume` needs `--broadcast` and re-runs the script, so check that the deployment file is unchanged afterwards (it was). Basescan sometimes stays "pending" past forge's retries; rerun `pnpm verify:base-sepolia`.
+
+**Identical stub bytecode.** Both oracle stubs compile to the same code, so forge verified the SignalOracle stub under the name `StubDisputeResolver`. It's cosmetic; 4.1 replaces both.
+
+**Same addresses on anvil and Base Sepolia.** The anvil fork starts from the deployer's real nonce, so the first anvil deploy predicted the same addresses that Base Sepolia later got. Don't confuse fork transactions with real ones; the anvil smoke links point at Basescan but don't exist there.
+
+**CCA rounds `currencyRaised` down by up to one base unit per bid.** Two bids totalling €500.00 raised €499.999999. The unit is refunded to bidders on exit. The smoke allows `<= bids` units of dust.
+
+**Smoke timing on real blocks.** With 20-block (4 s) auctions, sequential send-then-wait made the bids land after `endBlock` (`AuctionIsOver`, first in simulation, then on-chain). Fixes: 300-block smoke lot, and the two allowances and two bids sent back to back with explicit gas and nonces (no simulation against a not-yet-mined allowance), then receipts awaited together. `scripts/rpc-timing.ts` times each RPC step: about 0.2 to 0.5 s per call, 1.5 s per broadcast, mined next block.
+
+**viem errors print the RPC URL.** The full message includes `URL: ...`, which can carry an API key. The smoke prints only `shortMessage`, details and the decoded revert reason, redacted (`safeErrorMessage`, tested). The keeper (2.1) must do the same.
+
+**Gas.** v1 deploy ≈ 54M gas, about 0.00009 ETH at Base Sepolia fees (base 0.005 gwei). `createLot` ≈ 4.9M. On the anvil fork gas is priced higher, so the smoke sets balances locally there.
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.
