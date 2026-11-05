@@ -26,7 +26,9 @@ async function boot(root: HTMLElement) {
   const speed = Number(params.get("speed")) || 1
   // ?relay=off (outside production) draws the bare map, for the screenshot baseline.
   const relayOff = env.exposeTown && params.get("relay") === "off"
-  if (!relayOff) connectTown(env, townStore, { speed }).start()
+  // ?until=<envelope id> (outside production) stops the replay there, for the effect baselines.
+  const until = (env.exposeTown && params.get("until")) || undefined
+  if (!relayOff) connectTown(env, townStore, { speed, ...(until ? { until } : {}) }).start()
   exposeTown(window, townStore, env.exposeTown)
   createRoot(root).render(
     <StrictMode>

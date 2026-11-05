@@ -5,7 +5,13 @@ export type MapStatus = { status: "loading" | "ready" | "error"; buildings: numb
 
 /** What the scene reports about its sprites, for the e2e checks (no agent on a blocked tile, no shared spot). */
 export type AgentProbe = { id: string; x: number; y: number; blocked: boolean; queue: string | null }
-export type SceneProbe = { active: number; agents: AgentProbe[]; trucks: AgentProbe[] }
+/** effectsSeen: how many times the scene played each effect (S3 1.3), by command kind or kind:variant. */
+export type SceneProbe = {
+  active: number
+  agents: AgentProbe[]
+  trucks: AgentProbe[]
+  effectsSeen: Record<string, number>
+}
 
 /** Events between React, the store and the Phaser scene. */
 export type BusEvents = {

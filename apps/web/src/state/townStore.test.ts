@@ -26,6 +26,13 @@ describe("townStore", () => {
     expect(s.commandLog).toHaveLength(2)
   })
 
+  it("advances the town clock from envelope blocks", () => {
+    const { store, emitted } = setup()
+    store.getState().applyEnvelope({ ...envelope(S["fx.updated"]), block: 1050 })
+    expect(store.getState().town.block).toBe(1050)
+    expect(emitted[0]).toEqual([{ kind: "setClock", block: 1050 }])
+  })
+
   it("keeps only the last 200 commands in the log", () => {
     const { store } = setup()
     for (let i = 0; i < 250; i++) store.getState().applyEnvelope(envelope(S["fx.updated"]))

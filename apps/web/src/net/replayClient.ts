@@ -7,12 +7,13 @@ import type { RelayClient, RelayHandlers } from "./relayClient"
 // Swap point: when S2 0.1 ships the shared fixture, import "@fairtown/shared/fixtures/day.jsonl?raw" instead.
 export const DAY_JSONL: string = dayJsonl
 
-export type ReplayClientOptions = { jsonl: string; speed: number; handlers: RelayHandlers }
+/** `until`: stop after the envelope with this id (dev-only, for deterministic screenshots). */
+export type ReplayClientOptions = { jsonl: string; speed: number; handlers: RelayHandlers; until?: string }
 
 const EMPTY_SNAPSHOT: TownSnapshot = { block: 0, lots: [], agents: [], signals: [], fx: {}, recent: [] }
 
 /** `VITE_RELAY_URL=mock` (contract 13): replays day.jsonl in the browser at the recorded pace divided by speed. */
-export function createReplayClient({ jsonl, speed, handlers }: ReplayClientOptions): RelayClient {
+export function createReplayClient({ jsonl, speed, handlers, until }: ReplayClientOptions): RelayClient {
   const pace = speed > 0 ? speed : 1
   const dedupe = new Deduper()
   let started = false
@@ -36,7 +37,7 @@ export function createReplayClient({ jsonl, speed, handlers }: ReplayClientOptio
         if (!e) return handlers.onStatus("replay_done")
         if (!dedupe.seen(e.id)) handlers.onEnvelope(e)
         const next = envelopes[i + 1]
-        if (!next) return handlers.onStatus("replay_done")
+        if (!next || e.id === until) return handlers.onStatus("replay_done")
         timer = setTimeout(() => step(i + 1), Math.max(0, next.ts - e.ts) / pace)
       }
       timer = setTimeout(() => step(0), 0)

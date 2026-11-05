@@ -126,7 +126,8 @@ export class AgentSprite extends GameObjects.Container {
       .text(0, -12, capped, { ...TEXT, fontSize: "5px", backgroundColor: "#1e293b", wordWrap: { width: 90 } })
       .setOrigin(0.5, 1)
     this.add(this.bubble)
-    this.bubbleTimer = this.scene.time.delayedCall(2500, () => this.clearBubble())
+    // Bubbles last 2.5 s at 1× and shrink with the replay speed, like every other effect.
+    this.bubbleTimer = this.scene.time.delayedCall((2500 * this.stepMs) / STEP_MS, () => this.clearBubble())
   }
 
   retire(): void {

@@ -16,9 +16,15 @@ describe("exposeTown", () => {
     const store = createTownStore(bus)
     const target: { __TOWN__?: TownDebug } = {}
     exposeTown(target, store, true)
-    const probe = { active: 1, agents: [{ id: "a", x: 8, y: 8, blocked: false, queue: "fish_dock:0" }], trucks: [] }
+    const probe = {
+      active: 1,
+      agents: [{ id: "a", x: 8, y: 8, blocked: false, queue: "fish_dock:0" }],
+      trucks: [],
+      effectsSeen: { coinArc: 2 },
+    }
     bus.emit("scene:probe", () => probe)
-    expect(target.__TOWN__?.agents).toEqual(probe)
+    expect(target.__TOWN__?.agents).toEqual({ active: 1, agents: probe.agents, trucks: [] })
+    expect(target.__TOWN__?.effectsSeen).toEqual({ coinArc: 2 })
     expect(() => {
       ;(target.__TOWN__!.agents.agents as unknown[]).push({})
     }).toThrow(TypeError)
@@ -41,6 +47,7 @@ describe("exposeTown", () => {
     expect(target.__TOWN__).toMatchObject({ mode: "replay", rejected: 0, sceneCommandsApplied: 0 })
     expect(target.__TOWN__?.map).toEqual({ status: "loading", buildings: 0, problems: [] })
     expect(target.__TOWN__?.agents).toEqual({ active: 0, agents: [], trucks: [] })
+    expect(target.__TOWN__?.effectsSeen).toEqual({})
     expect(() => {
       ;(target.__TOWN__!.map.problems as string[]).push("x")
     }).toThrow(TypeError)

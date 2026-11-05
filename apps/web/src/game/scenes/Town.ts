@@ -19,6 +19,9 @@ import type { TownCommand } from "../commands"
 import { MARKET_BUILDINGS, TILE_LAYERS, anchorFor, parseTownMap, type Point, type TownMap } from "../map/anchors"
 import { BUILDING_SIGNS } from "../map/buildings"
 import { buildStubMap } from "../map/stub-map"
+import { Sky, coinArc, floatText, magnifier, moveCrate, refundCoins, vaultDoor } from "../effects/effects"
+import { StallView } from "../market/StallView"
+import { StallSlots, placeBuilding } from "../market/slots"
 import type { TiledMap } from "../map/tiled"
 
 const MAP_KEY = "town"
@@ -29,8 +32,6 @@ const MAX_AGENTS = 80
 const VIEW = { width: 1920, height: 1080 }
 const DEPTH = { stall: 10, truck: 15, agent: 20, text: 30, toast: 40 } as const
 const TEXT = { fontFamily: "monospace", color: "#f8fafc", stroke: "#0f172a", strokeThickness: 2, resolution: 3 }
-
-type Stall = { box: GameObjects.Rectangle; label: GameObjects.Text; base: string }
 
 /** The town: a Tiled map (S3 1.1) with stalls, pathing agents (S3 1.2) and trucks, driven by reducer commands. */
 export class Town extends Scene {
@@ -44,7 +45,12 @@ export class Town extends Scene {
   private readonly pool: AgentSprite[] = []
   private readonly agents = new Map<string, AgentSprite>()
   private readonly trucks = new Map<string, GameObjects.Rectangle>()
-  private readonly stalls = new Map<string, Stall>()
+  private readonly stalls = new Map<string, StallView>()
+  private readonly slots = new StallSlots()
+  private readonly seen = new Map<string, number>()
+  private readonly sellerTier = new Map<string, "new" | "proven">()
+  private sky!: Sky
+  private block = 0
   private toast!: GameObjects.Text
   private speed = 1
   private unsubscribe: (() => void) | undefined
@@ -121,6 +127,7 @@ export class Town extends Scene {
 
   private begin(town: TownMap, raw: TiledMap, problems: string[]) {
     this.town = town
+    this.sky = new Sky(this)
     this.walkGrid = buildWalkGrid(raw)
     this.roadGrid = buildRoadGrid(raw)
     this.people = createPathfinder(this.walkGrid)
@@ -248,59 +255,144 @@ export class Town extends Scene {
       blocked: !isWalkable(this.roadGrid, t),
       queue: null,
     }))
-    return { active: agents.length, agents, trucks }
+    return { active: agents.length, agents, trucks, effectsSeen: Object.fromEntries(this.seen) }
+  }
+
+  private see(effect: string) {
+    this.seen.set(effect, (this.seen.get(effect) ?? 0) + 1)
+  }
+
+  /** The building's sky point for a place, or the map centre. */
+  private skyAt(place: string): { key: string; at: Point } {
+    const b = placeBuilding(place)
+    if (!b || b === "town_gate") return { key: place, at: { x: this.town.widthPx / 2, y: 60 } }
+    return { key: b, at: this.town.anchors.buildings[b].label }
+  }
+
+  private agentAt(agentId: string): Point | undefined {
+    const a = this.agents.get(agentId)
+    return a ? { x: a.x, y: a.y } : undefined
+  }
+
+  private placeStall(c: TownCommand & { kind: "placeStall" }) {
+    const { evicted } = this.slots.place(c.lotId, c.building, c.slot)
+    if (evicted) {
+      this.stalls.get(evicted)?.destroy()
+      this.stalls.delete(evicted)
+    }
+    this.stalls.get(c.lotId)?.destroy()
+    // Alternate labels above and below so neighbouring stalls stay readable.
+    const stall = new StallView(this, this.stallSpot(c), c, (c.slot ?? 0) % 2 === 1).setDepth(DEPTH.stall)
+    stall.setClock(this.block)
+    const tier = this.sellerTier.get(c.seller)
+    if (tier) stall.setTier(tier)
+    this.stalls.set(c.lotId, stall)
   }
 
   private applyOne(c: TownCommand) {
+    const stall = "lotId" in c ? this.stalls.get(c.lotId) : undefined
     switch (c.kind) {
       case "spawnAgent":
+        this.see(c.highlight ? "spawnAgent:human" : "spawnAgent")
         return this.spawn(c)
       case "walkTo":
+        this.see("walkTo")
         return this.walk(c.agentId, c.building)
       case "showBubble":
+        this.see("showBubble")
         return this.agents.get(c.agentId)?.say(c.text)
       case "driveTruck":
+        this.see("driveTruck")
         return this.drive(c)
-      case "placeStall": {
-        const at = this.stallSpot(c)
-        const old = this.stalls.get(c.lotId)
-        old?.box.destroy()
-        old?.label.destroy()
-        // Alternate labels above and below so neighbouring stalls stay readable.
-        const above = (c.slot ?? 0) % 2 === 1
-        const box = this.add.rectangle(at.x, at.y, 12, 10, c.slot === null ? 0x475569 : 0x0f766e).setDepth(DEPTH.stall)
-        const base = `${c.commodity} ${c.floorLabel}`
-        const label = this.add
-          .text(at.x, above ? at.y - 6 : at.y + 6, base, { ...TEXT, fontSize: "5px" })
-          .setOrigin(0.5, above ? 1 : 0)
-          .setDepth(DEPTH.text)
-        this.stalls.set(c.lotId, { box, label, base })
+      case "placeStall":
+        this.see("placeStall")
+        return this.placeStall(c)
+      case "setStatus":
+        this.see(`setStatus:${c.status}`)
+        return stall?.setStatus(c.status, c.deadlineBlock)
+      case "tickPrice":
+        this.see(c.priceLabel ? "tickPrice:pulse" : "tickPrice")
+        return stall?.setPrice(c.priceLabel, c.bids, this.speed)
+      case "coinArc": {
+        this.see("coinArc")
+        const from = this.agentAt(c.agentId)
+        if (stall && from) coinArc(this, from, stall, this.speed)
         return
       }
-      case "setStatus": {
-        const stall = this.stalls.get(c.lotId)
-        stall?.label.setText(`${stall.base} · ${c.status}`)
-        if (c.status === "paid_in_full") stall?.box.setFillStyle(0xca8a04)
-        if (c.status === "refunded" || c.status === "no_show_reported") stall?.box.setFillStyle(0xb91c1c)
-        return
-      }
-      case "tickPrice": {
-        const stall = this.stalls.get(c.lotId)
-        if (stall && c.priceLabel) stall.label.setText(`${stall.base} · now ${c.priceLabel}`)
-        return
-      }
+      case "flashClear":
+        this.see("flashClear")
+        return stall?.flash(this.speed)
       case "fadeStall":
-        this.stalls.get(c.lotId)?.box.setAlpha(0.4)
+        this.see("fadeStall")
+        return stall?.fade(c.newFloorLabel)
+      case "moveCrate": {
+        this.see("moveCrate")
+        if (!stall) return
+        const to =
+          c.to === "truck" ? anchorFor(this.town.anchors, "freight_yard") : anchorFor(this.town.anchors, c.from)
+        return moveCrate(this, stall, c.to === "truck" ? to : { x: to.x, y: to.y + 16 }, this.speed)
+      }
+      case "openVault":
+        this.see("openVault")
+        return vaultDoor(this, this.town.anchors.buildings.cold_vault.entry, this.speed)
+      case "refundCoins": {
+        this.see("refundCoins")
+        const to = this.agentAt(c.buyer)
+        if (stall && to) refundCoins(this, stall, to, c.amountLabel, this.speed)
+        return
+      }
+      case "signNoShow":
+        this.see("signNoShow")
+        return stall?.markNoShow()
+      case "markSeller":
+        this.see(`markSeller:${c.tier}`)
+        this.sellerTier.set(c.seller, c.tier)
+        for (const s of this.stalls.values()) if (s.seller === c.seller) s.setTier(c.tier)
+        return
+      case "inspect":
+        this.see("inspect")
+        if (stall) magnifier(this, stall, this.speed)
+        return
+      case "refundBadge":
+        this.see("refundBadge")
+        if (stall) floatText(this, stall, c.label, "#fdba74", this.speed)
+        return stall?.setRefundBadge(c.label)
+      case "plaque":
+        this.see("plaque")
+        if (c.building === "town_gate") return
+        return this.sky.plaque(c.building, this.town.anchors.buildings[c.building].label, c.text)
+      case "setWeather": {
+        this.see(`setWeather:${c.weather}`)
+        const { key, at } = this.skyAt(c.place)
+        if (c.weather === "storm") return this.sky.storm(key, at, c.label)
+        if (c.weather === "quiet") return this.sky.quiet(key, at, c.label)
+        return
+      }
+      case "setLights": {
+        if (c.place) {
+          this.see("setLights:festival")
+          const { key, at } = this.skyAt(c.place)
+          return this.sky.festival(key, at, c.label ?? "")
+        }
+        this.see(c.on ? "setLights:night" : "setLights:day")
+        return this.sky.setNight(c.on, { w: this.town.widthPx, h: this.town.heightPx })
+      }
+      case "setClock":
+        this.block = c.block
+        for (const s of this.stalls.values()) s.setClock(c.block)
         return
       case "toast":
+        this.see(`toast:${c.tone}`)
         this.toast.setText(c.text).setColor(c.tone === "warn" ? "#fca5a5" : c.tone === "money" ? "#86efac" : "#f8fafc")
         return
       case "setPhase":
+        this.see("setPhase")
         this.cameras.main.setBackgroundColor(c.phase === "night" || c.phase === "evening" ? "#050914" : "#0b1220")
         return
-      default:
-        // flashClear, moveCrate, setWeather, setLights, markSeller, refundCoins: drawn in S3 1.3.
-        return
+      default: {
+        const unreachable: never = c
+        return unreachable
+      }
     }
   }
 }

@@ -462,6 +462,24 @@ export function buildDay(): TownEnvelope[] {
     action: "pass",
     reason: "Skipping Coastal Catch, public record shows a no-show",
   })
+  chain({
+    type: "signal",
+    id: "sig-quiet-bergen",
+    kind: "demand_dip",
+    place: "bergen",
+    severity: 1,
+    label: "Quiet dock: demand down after the storm",
+    expiresAtBlock: block + 300,
+  })
+  chain({
+    type: "signal",
+    id: "sig-ref-marigold",
+    kind: "reference",
+    place: "mumbai",
+    severity: 1,
+    label: "New reference price for marigold",
+    expiresAtBlock: block + 300,
+  })
   agents({ type: "clock", block, phase: "night" })
   return out
 }

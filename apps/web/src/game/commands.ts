@@ -25,6 +25,7 @@ export type TownCommand =
       unit: string
       floorLabel: string
       endBlock: number
+      seller: string
     }
   | { kind: "tickPrice"; lotId: string; priceLabel?: string; bids: number }
   | { kind: "flashClear"; lotId: string }
@@ -38,6 +39,13 @@ export type TownCommand =
   | { kind: "markSeller"; seller: string; tier: "new" | "proven"; cleanLots: number; noShows: number }
   | { kind: "refundCoins"; lotId: string; buyer: string; amountLabel: string }
   | { kind: "setPhase"; phase: Phase }
+  | { kind: "coinArc"; lotId: string; agentId: string }
+  | { kind: "openVault"; lotId: string }
+  | { kind: "signNoShow"; lotId: string; seller: string }
+  | { kind: "inspect"; lotId: string }
+  | { kind: "refundBadge"; lotId: string; label: string }
+  | { kind: "plaque"; building: Building; text: string }
+  | { kind: "setClock"; block: number }
 
 export const COMMAND_KINDS = [
   "spawnAgent",
@@ -56,6 +64,13 @@ export const COMMAND_KINDS = [
   "markSeller",
   "refundCoins",
   "setPhase",
+  "coinArc",
+  "openVault",
+  "signNoShow",
+  "inspect",
+  "refundBadge",
+  "plaque",
+  "setClock",
 ] as const satisfies readonly TownCommand["kind"][]
 
 /** Speech bubbles hold at most 80 characters (S3 1.2). */

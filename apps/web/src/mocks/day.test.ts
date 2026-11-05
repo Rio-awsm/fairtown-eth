@@ -22,6 +22,11 @@ describe("temporary day.jsonl (until S2 0.1 ships packages/shared/fixtures/day.j
     expect(new Set(envelopes.map((e) => e.id)).size).toBe(envelopes.length - 1)
   })
 
+  it("has every signal kind, so storm, festival and quiet dock all show", () => {
+    const kinds = new Set(envelopes.flatMap((e) => (e.event.type === "signal" ? [e.event.kind] : [])))
+    expect(kinds).toEqual(new Set(["weather", "festival", "demand_dip", "reference"]))
+  })
+
   it("never goes back in time", () => {
     for (let i = 1; i < envelopes.length; i++) expect(envelopes[i]!.ts).toBeGreaterThanOrEqual(envelopes[i - 1]!.ts)
   })

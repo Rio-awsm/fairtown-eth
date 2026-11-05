@@ -75,6 +75,20 @@
 **Persona sprites.**
 - Placeholders until sheets land: a role-coloured disc with a facing notch. To add one, put `<sprite>.png` (16 px frames, rows down, left, right, up, 4 frames each) in `public/assets/sprites/`, list its name in `sprites.json`, and credit it in `CREDITS.md`. The `sprite` value comes from `agent.spawned`.
 
+## 2026-11-06, S3 1.3
+
+**Effects.**
+- Every row of the S3 1.3 table is a reducer command. New local commands (no ICR, web-only): `coinArc`, `openVault`, `signNoShow`, `inspect`, `refundBadge`, `plaque`, `setClock`; `placeStall` carries `seller`.
+- `reduceEnvelope` advances the town block from each envelope's `block` (never backwards) and emits `setClock`. Countdowns are block-based (2 s per block), so screenshots are deterministic.
+- `__TOWN__.effectsSeen` counts what the scene actually played, by command kind or `kind:variant` (for example `setWeather:storm`, `setStatus:paid_in_full`).
+- Weather, festival lights, night tint and plaques are static on purpose; moving effects (coins, crates, vault door, magnifier, bubbles) scale with the replay speed.
+
+**Slot manager.** `market/slots.ts` keeps finished stalls (gold, refunded, no-show) on screen until a new lot needs the slot, then removes the old one. No overlapping stalls.
+
+**Baselines.** `e2e/effects.spec.ts-snapshots/` holds storm, Diwali and no-show, each replayed with `?speed=50&until=<id>` (dev only) and settled for 1.5 s. Refresh with `--update-snapshots` when the Tiled map or art lands.
+
+**Readability.** Stall text is 4 px in map units (about 8 px on screen at 1920 × 1080). Fine on a laptop, small on a projector; enlarge in `?demo=1` (S3 5.1).
+
 ## Open questions
 
 - Should S2 add `AgentList` and `LotMeta` schemas to `@fairtown/shared/api` (minor ICR)?

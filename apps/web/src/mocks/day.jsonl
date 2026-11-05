@@ -76,4 +76,6 @@
 {"v":1,"id":"d-0076","ts":1793937676000,"block":1150,"source":"chain","event":{"type":"noshow.refunded","lotId":"60","seller":"0x000000000000000000000000000000000000010d","buyer":"0x0000000000000000000000000000000000000102","refund":"816750000"}}
 {"v":1,"id":"d-0077","ts":1793937677000,"block":1152,"source":"chain","event":{"type":"seller.record","seller":"0x000000000000000000000000000000000000010d","cleanLots":0,"noShows":1,"proven":false}}
 {"v":1,"id":"d-0078","ts":1793937678000,"source":"agents","event":{"type":"agent.intent","agentId":"0x0000000000000000000000000000000000000103","action":"pass","reason":"Skipping Coastal Catch, public record shows a no-show"}}
-{"v":1,"id":"d-0079","ts":1793937679000,"source":"agents","event":{"type":"clock","block":1154,"phase":"night"}}
+{"v":1,"id":"d-0079","ts":1793937679000,"block":1156,"source":"chain","event":{"type":"signal","id":"sig-quiet-bergen","kind":"demand_dip","place":"bergen","severity":1,"label":"Quiet dock: demand down after the storm","expiresAtBlock":1454}}
+{"v":1,"id":"d-0080","ts":1793937680000,"block":1158,"source":"chain","event":{"type":"signal","id":"sig-ref-marigold","kind":"reference","place":"mumbai","severity":1,"label":"New reference price for marigold","expiresAtBlock":1456}}
+{"v":1,"id":"d-0081","ts":1793937681000,"source":"agents","event":{"type":"clock","block":1158,"phase":"night"}}

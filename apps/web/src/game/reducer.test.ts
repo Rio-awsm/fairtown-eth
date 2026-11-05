@@ -1,8 +1,8 @@
 import { TOWN_EVENT_TYPES, type TownEvent, type TownSnapshot } from "@fairtown/shared/protocol"
 import { describe, expect, it } from "vitest"
-import { BUYER, SAMPLE_EVENTS as S, SELLER, TRUCK, emptySnapshot } from "../test/samples"
+import { BUYER, SAMPLE_EVENTS as S, SELLER, TRUCK, emptySnapshot, envelope } from "../test/samples"
 import { COMMAND_KINDS, type TownCommand } from "./commands"
-import { commandsForState, hydrate, initialTownState, reduce, type TownState } from "./reducer"
+import { commandsForState, hydrate, initialTownState, reduce, reduceEnvelope, type TownState } from "./reducer"
 
 const run = (events: TownEvent[], from: TownState = initialTownState) =>
   events.reduce((s, e) => reduce(s, e).state, from)
@@ -35,6 +35,7 @@ const CASES: { [K in TownEvent["type"]]: Case } = {
         unit: "kg",
         floorLabel: "€7.50/kg",
         endBlock: 1045,
+        seller: SELLER,
       },
       { kind: "setStatus", lotId: "12", status: "open" },
     ],
@@ -64,7 +65,10 @@ const CASES: { [K in TownEvent["type"]]: Case } = {
   },
   "bid.placed": {
     from: seeded,
-    commands: [{ kind: "tickPrice", lotId: "12", bids: 1 }],
+    commands: [
+      { kind: "coinArc", lotId: "12", agentId: BUYER },
+      { kind: "tickPrice", lotId: "12", bids: 1 },
+    ],
     state: (s) => expect(lot12(s).bids).toBe(1),
   },
   "price.tick": {
@@ -101,7 +105,11 @@ const CASES: { [K in TownEvent["type"]]: Case } = {
   },
   "storage.needed": {
     from: seeded,
-    commands: [{ kind: "toast", text: "Cold storage needed: 3000 kg for 2 days", tone: "info" }],
+    commands: [
+      { kind: "openVault", lotId: "12" },
+      { kind: "walkTo", agentId: BUYER, building: "cold_vault" },
+      { kind: "toast", text: "Cold storage needed: 3000 kg for 2 days", tone: "info" },
+    ],
   },
   "carrier.assigned": {
     from: seeded,
@@ -153,6 +161,7 @@ const CASES: { [K in TownEvent["type"]]: Case } = {
     commands: [
       { kind: "refundCoins", lotId: "12", buyer: BUYER, amountLabel: "€2,702.70" },
       { kind: "setStatus", lotId: "12", status: "refunded" },
+      { kind: "signNoShow", lotId: "12", seller: SELLER },
       { kind: "toast", text: "€2,702.70 returned to the buyer on Lot 12", tone: "warn" },
     ],
     state: (s) => expect(lot12(s)).toMatchObject({ status: "refunded", slot: null }),
@@ -165,6 +174,7 @@ const CASES: { [K in TownEvent["type"]]: Case } = {
   "dispute.opened": {
     from: seeded,
     commands: [
+      { kind: "inspect", lotId: "12" },
       { kind: "setStatus", lotId: "12", status: "disputed" },
       { kind: "toast", text: "Dispute opened on Lot 12", tone: "warn" },
     ],
@@ -173,6 +183,7 @@ const CASES: { [K in TownEvent["type"]]: Case } = {
     from: seeded,
     commands: [
       { kind: "toast", text: "Dispute on Lot 12 resolved: 25% refund", tone: "info" },
+      { kind: "refundBadge", lotId: "12", label: "25% refund" },
       { kind: "setStatus", lotId: "12", status: "refunded" },
     ],
   },
@@ -183,7 +194,10 @@ const CASES: { [K in TownEvent["type"]]: Case } = {
   },
   "reference.updated": {
     from: seeded,
-    commands: [{ kind: "toast", text: "Reference price for cod: €8.30", tone: "info" }],
+    commands: [
+      { kind: "plaque", building: "fish_dock", text: "Reference €8.30" },
+      { kind: "toast", text: "Reference price for cod: €8.30", tone: "info" },
+    ],
     state: (s) =>
       expect(s.references["cod@fish_dock"]).toEqual({
         perUnit: "8300000",
@@ -236,7 +250,7 @@ describe("reduce: every relay event", () => {
   it("only emits known command kinds", () => {
     const seen = TOWN_EVENT_TYPES.flatMap((t) => reduce(CASES[t].from(), S[t]).commands.map((c) => c.kind))
     for (const k of seen) expect(COMMAND_KINDS).toContain(k)
-    expect(COMMAND_KINDS).toHaveLength(16)
+    expect(COMMAND_KINDS).toHaveLength(23)
   })
 })
 
@@ -322,7 +336,10 @@ describe("reduce: edge cases", () => {
 
   it("closes a dispute with no refund without changing status", () => {
     const { commands } = reduce(seeded(), { ...S["dispute.resolved"], refundBps: 0 })
-    expect(commands).toEqual([{ kind: "toast", text: "Dispute on Lot 12 resolved: no refund", tone: "info" }])
+    expect(commands).toEqual([
+      { kind: "toast", text: "Dispute on Lot 12 resolved: no refund", tone: "info" },
+      { kind: "refundBadge", lotId: "12", label: "No refund" },
+    ])
   })
 
   it.each([
@@ -373,5 +390,37 @@ describe("hydrate and commandsForState", () => {
     const s = run([S["lot.listed"], S["agent.spawned"], S["price.tick"], S.clock])
     const kinds = commandsForState(s).map((c) => c.kind)
     expect(kinds).toEqual(["setPhase", "setLights", "placeStall", "setStatus", "tickPrice", "spawnAgent"])
+  })
+})
+
+describe("reduceEnvelope", () => {
+  it("advances the clock from the envelope block before the event's commands", () => {
+    const { state, commands } = reduceEnvelope(initialTownState, { ...envelope(S["lot.listed"]), block: 1050 })
+    expect(state.block).toBe(1050)
+    expect(commands.map((c) => c.kind)).toEqual(["setClock", "placeStall", "setStatus"])
+    expect(commands[0]).toEqual({ kind: "setClock", block: 1050 })
+  })
+
+  it("never moves the clock backwards", () => {
+    const at = reduceEnvelope(initialTownState, { ...envelope(S["fx.updated"]), block: 1050 }).state
+    const { state, commands } = reduceEnvelope(at, { ...envelope(S["fx.updated"]), block: 1040 })
+    expect(state.block).toBe(1050)
+    expect(commands).toEqual([])
+  })
+
+  it("advances the clock from a clock event", () => {
+    const { commands } = reduceEnvelope(initialTownState, envelope({ type: "clock", block: 1100 }))
+    expect(commands).toEqual([{ kind: "setClock", block: 1100 }])
+  })
+
+  it("draws a seller's tier badge again on redraw", () => {
+    const s = run([S["lot.listed"], S["seller.record"]])
+    expect(commandsForState(s).at(-1)).toEqual({
+      kind: "markSeller",
+      seller: SELLER,
+      tier: "proven",
+      cleanLots: 3,
+      noShows: 0,
+    })
   })
 })

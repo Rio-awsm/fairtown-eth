@@ -7,7 +7,7 @@ import { createReplayClient } from "./replayClient"
 const at = (id: string, ts: number): TownEnvelope => ({ v: 1, id, ts, source: "chain", event: SAMPLE_EVENTS.clock })
 const jsonl = (...lines: unknown[]) => lines.map((l) => (typeof l === "string" ? l : JSON.stringify(l))).join("\n")
 
-function setup(text: string, speed: number) {
+function setup(text: string, speed: number, until?: string) {
   const delivered: string[] = []
   const statuses: RelayStatus[] = []
   const rejects: string[] = []
@@ -15,6 +15,7 @@ function setup(text: string, speed: number) {
   const client = createReplayClient({
     jsonl: text,
     speed,
+    ...(until ? { until } : {}),
     handlers: {
       onSnapshot: () => snapshots++,
       onEnvelope: (e) => delivered.push(e.id),
@@ -46,6 +47,14 @@ describe("createReplayClient", () => {
     expect(t.delivered).toEqual(["a", "b"])
     await vi.advanceTimersByTimeAsync(50)
     expect(t.delivered).toEqual(["a", "b", "c"])
+    expect(t.statuses).toEqual(["replay", "replay_done"])
+  })
+
+  it("stops after the envelope named by until", async () => {
+    const t = setup(jsonl(at("a", 0), at("b", 10), at("c", 20)), 1, "b")
+    t.client.start()
+    await vi.advanceTimersByTimeAsync(100)
+    expect(t.delivered).toEqual(["a", "b"])
     expect(t.statuses).toEqual(["replay", "replay_done"])
   })
 

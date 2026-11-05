@@ -3,7 +3,7 @@ import { useStore } from "zustand"
 import { createStore, type StoreApi } from "zustand/vanilla"
 import { EventBus, type EventBusApi, type MapStatus, type SceneProbe } from "../game/EventBus"
 import type { TownCommand } from "../game/commands"
-import { commandsForState, hydrate, initialTownState, reduce, type TownState } from "../game/reducer"
+import { commandsForState, hydrate, initialTownState, reduceEnvelope, type TownState } from "../game/reducer"
 import type { RelayStatus } from "../net/relayClient"
 
 export const COMMAND_LOG_MAX = 200
@@ -43,7 +43,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
     commandLog: [],
     sceneCommandsApplied: 0,
     map: { status: "loading", buildings: 0, problems: [] },
-    probe: () => ({ active: 0, agents: [], trucks: [] }),
+    probe: () => ({ active: 0, agents: [], trucks: [], effectsSeen: {} }),
     setMode: (mode) => set({ mode }),
     setStatus: (status) => set({ status }),
     applySnapshot(snapshot) {
@@ -52,7 +52,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
       bus.emit("town:commands", commands)
     },
     applyEnvelope(envelope) {
-      const { state, commands } = reduce(get().town, envelope.event)
+      const { state, commands } = reduceEnvelope(get().town, envelope)
       set((s) => ({
         town: state,
         eventsApplied: s.eventsApplied + 1,

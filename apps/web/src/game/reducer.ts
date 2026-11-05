@@ -1,5 +1,5 @@
-import { CURRENCIES, type Building, type Currency, type LotStatus, type Role } from "@fairtown/shared/keys"
-import type { LotListedEvent, SignalEvent, TownEvent, TownSnapshot } from "@fairtown/shared/protocol"
+import { BUILDINGS, CURRENCIES, type Building, type Currency, type LotStatus, type Role } from "@fairtown/shared/keys"
+import type { LotListedEvent, SignalEvent, TownEnvelope, TownEvent, TownSnapshot } from "@fairtown/shared/protocol"
 import { formatBps, formatMoney, formatPerUnit } from "../money/format"
 import { BUBBLE_MAX, type Phase, type TownCommand } from "./commands"
 
@@ -53,6 +53,8 @@ export const initialTownState: TownState = {
 
 const asCurrency = (c: string): Currency | undefined =>
   (CURRENCIES as readonly string[]).find((x) => x === c) as Currency | undefined
+const asBuilding = (b: string): Building | undefined =>
+  (BUILDINGS as readonly string[]).find((x) => x === b) as Building | undefined
 const money = (base: string, currency: string) => {
   const c = asCurrency(currency)
   return c ? formatMoney(BigInt(base), c) : undefined
@@ -99,6 +101,7 @@ function placeStall(lot: LotState): TownCommand {
     unit: lot.unit,
     floorLabel: perUnit(lot.floorPerUnit, lot.currency, lot.unit) ?? "",
     endBlock: lot.endBlock,
+    seller: lot.seller,
   }
 }
 
@@ -177,7 +180,10 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
     case "bid.placed": {
       if (!lot) return { state, commands: [] }
       const next = patchLot(state, event.lotId, { bids: lot.bids + 1 })
-      return { state: next, commands: [tickPrice(next.lots[event.lotId]!)] }
+      return {
+        state: next,
+        commands: [{ kind: "coinArc", lotId: event.lotId, agentId: event.agentId }, tickPrice(next.lots[event.lotId]!)],
+      }
     }
     case "price.tick": {
       if (!lot) return { state, commands: [] }
@@ -225,10 +231,11 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
     case "storage.needed": {
       const unit = lot ? ` ${lot.unit}` : ""
       const days = event.days === 1 ? "1 day" : `${event.days} days`
-      return {
-        state,
-        commands: [{ kind: "toast", text: `Cold storage needed: ${event.qty}${unit} for ${days}`, tone: "info" }],
-      }
+      const commands: TownCommand[] = [{ kind: "openVault", lotId: event.lotId }]
+      if (state.agents[event.requester])
+        commands.push({ kind: "walkTo", agentId: event.requester, building: "cold_vault" })
+      commands.push({ kind: "toast", text: `Cold storage needed: ${event.qty}${unit} for ${days}`, tone: "info" })
+      return { state, commands }
     }
     case "carrier.assigned": {
       const commands: TownCommand[] = lot
@@ -290,6 +297,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
         commands: [
           { kind: "refundCoins", lotId: event.lotId, buyer: event.buyer, amountLabel: amount ?? "" },
           setStatus(event.lotId, "refunded"),
+          { kind: "signNoShow", lotId: event.lotId, seller: event.seller },
           { kind: "toast", text, tone: "warn" },
         ],
       }
@@ -313,26 +321,23 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       return {
         state: patchLot(state, event.lotId, { status: "disputed" }),
         commands: [
+          { kind: "inspect", lotId: event.lotId },
           setStatus(event.lotId, "disputed"),
           { kind: "toast", text: `Dispute opened on Lot ${event.lotId}`, tone: "warn" },
         ],
       }
     case "dispute.resolved": {
-      if (event.refundBps <= 0)
-        return {
-          state,
-          commands: [{ kind: "toast", text: `Dispute on Lot ${event.lotId} resolved: no refund`, tone: "info" }],
-        }
+      const label = event.refundBps > 0 ? `${formatBps(event.refundBps)} refund` : "No refund"
+      const toast: TownCommand = {
+        kind: "toast",
+        text: `Dispute on Lot ${event.lotId} resolved: ${event.refundBps > 0 ? label : "no refund"}`,
+        tone: "info",
+      }
+      const badge: TownCommand = { kind: "refundBadge", lotId: event.lotId, label }
+      if (event.refundBps <= 0) return { state, commands: [toast, badge] }
       return {
         state: patchLot(state, event.lotId, { status: "refunded" }),
-        commands: [
-          {
-            kind: "toast",
-            text: `Dispute on Lot ${event.lotId} resolved: ${formatBps(event.refundBps)} refund`,
-            tone: "info",
-          },
-          setStatus(event.lotId, "refunded"),
-        ],
+        commands: [toast, badge, setStatus(event.lotId, "refunded")],
       }
     }
     case "signal":
@@ -343,9 +348,13 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       const text = price
         ? `Reference price for ${event.commodity}: ${price}`
         : `Reference price for ${event.commodity} updated`
+      const building = asBuilding(event.market)
+      const commands: TownCommand[] =
+        building && price ? [{ kind: "plaque", building, text: `Reference ${price}` }] : []
+      commands.push({ kind: "toast", text, tone: "info" })
       return {
         state: { ...state, references: { ...state.references, [`${event.commodity}@${event.market}`]: ref } },
-        commands: [{ kind: "toast", text, tone: "info" }],
+        commands,
       }
     }
     case "fx.updated":
@@ -383,7 +392,25 @@ export function commandsForState(state: TownState): TownCommand[] {
   }
   for (const agent of Object.values(state.agents)) commands.push(spawnAgent(agent))
   for (const signal of Object.values(state.signals)) commands.push(...signalCommands(signal))
+  for (const [seller, r] of Object.entries(state.sellers))
+    commands.push({
+      kind: "markSeller",
+      seller,
+      tier: r.proven ? "proven" : "new",
+      cleanLots: r.cleanLots,
+      noShows: r.noShows,
+    })
   return commands
+}
+
+/** Reduces one relay envelope: advances the town clock from its block (never backwards), then the event. */
+export function reduceEnvelope(state: TownState, envelope: TownEnvelope): ReduceResult {
+  const eventBlock = envelope.event.type === "clock" ? envelope.event.block : 0
+  const block = Math.max(state.block, envelope.block ?? 0, eventBlock)
+  const reduced = reduce({ ...state, block: Math.max(state.block, envelope.block ?? 0) }, envelope.event)
+  const next = { ...reduced.state, block: Math.max(reduced.state.block, block) }
+  if (block <= state.block) return { state: next, commands: reduced.commands }
+  return { state: next, commands: [{ kind: "setClock", block }, ...reduced.commands] }
 }
 
 /** State from a relay snapshot (contract 12.3), plus the commands to draw it. */

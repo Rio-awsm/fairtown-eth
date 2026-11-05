@@ -4,7 +4,12 @@ import { createRelayClient, type RelayClient, type RelayHandlers } from "../net/
 import { createReplayClient, DAY_JSONL } from "../net/replayClient"
 import type { TownStoreState } from "./townStore"
 
-export type ConnectOptions = { speed?: number; WebSocketImpl?: typeof WebSocket; fetchImpl?: typeof fetch }
+export type ConnectOptions = {
+  speed?: number
+  until?: string
+  WebSocketImpl?: typeof WebSocket
+  fetchImpl?: typeof fetch
+}
 
 /** Wires the live relay or the in-browser replay into the store. Call once, outside React. */
 export function connectTown(
@@ -21,7 +26,12 @@ export function connectTown(
   }
   if (env.relay.mode === "mock") {
     s().setMode("replay")
-    return createReplayClient({ jsonl: DAY_JSONL, speed: opts.speed ?? 1, handlers })
+    return createReplayClient({
+      jsonl: DAY_JSONL,
+      speed: opts.speed ?? 1,
+      handlers,
+      ...(opts.until ? { until: opts.until } : {}),
+    })
   }
   s().setMode("live")
   return createRelayClient({
