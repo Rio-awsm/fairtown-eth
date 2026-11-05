@@ -8,6 +8,7 @@ import { addressOf, makeS1Checks, parseVersion, rpcUrlFor, type Exec, type Rpc, 
 const KEY_0 = generatePrivateKey()
 const ADDR_0 = privateKeyToAccount(KEY_0).address
 const KEY_1 = generatePrivateKey()
+const KEY_2 = generatePrivateKey()
 
 const tools: Record<string, string> = {
   forge: "forge Version: 1.9.0-stable\nCommit SHA: 6056c58",
@@ -23,8 +24,14 @@ function fakeExec(over: Partial<Record<string, string | null>> = {}, ccaTag: str
   }
 }
 
-function fakeRpc(opts: { chainId?: number; balances?: Record<string, bigint>; fail?: Error } = {}): S1Deps["rpc"] {
+function fakeRpc(
+  opts: { chainId?: number; balances?: Record<string, bigint>; fail?: Error; noCode?: string[] } = {},
+): S1Deps["rpc"] {
   return (): Rpc => ({
+    code: async (a: Address) => {
+      if (opts.fail) throw opts.fail
+      return opts.noCode?.includes(a.toLowerCase()) ? "0x" : "0x6080"
+    },
     chainId: async () => {
       if (opts.fail) throw opts.fail
       return opts.chainId ?? 84532
@@ -36,12 +43,53 @@ function fakeRpc(opts: { chainId?: number; balances?: Record<string, bigint>; fa
   })
 }
 
-const deps = (o: Partial<S1Deps> = {}): S1Deps => ({ root: "/repo/", exec: fakeExec(), rpc: fakeRpc(), ...o })
+const addr = (n: number) => `0x${n.toString(16).padStart(40, "0")}`
+const NAMES = [
+  "TestUSD",
+  "TestEUR",
+  "AgentRegistry",
+  "AgentRegistryHook",
+  "LotFactory",
+  "MarketSettlement",
+  "ChainTrigger",
+  "SignalOracle",
+  "DisputeResolver",
+  "CCAFactory",
+]
+const deployment = (over: Record<string, unknown> = {}) =>
+  JSON.stringify({
+    network: "base-sepolia",
+    chainId: 84532,
+    deployedAtBlock: 123,
+    commit: "abcdef0123456789",
+    contracts: Object.fromEntries(NAMES.map((n, i) => [n, addr(i + 1)])),
+    external: { Permit2: addr(100), CreForwarder: addr(101), CircleTestUSDC: addr(102), CircleTestEURC: addr(103) },
+    params: {
+      feeBps: 100,
+      advanceNewBps: 5000,
+      advanceProvenBps: 9000,
+      advanceTruckBps: 1000,
+      provenAfter: 3,
+      contestWindowBlocks: 60,
+      reportWindowBlocks: 300,
+    },
+    ...over,
+  })
+const files = (content: string | null) => (path: string) =>
+  path.endsWith("deployments/base-sepolia.json") ? content : null
+const deps = (o: Partial<S1Deps> = {}): S1Deps => ({
+  root: "/repo/",
+  exec: fakeExec(),
+  rpc: fakeRpc(),
+  readFile: files(deployment()),
+  ...o,
+})
 const liveEnv: Env = {
   CHAIN_MODE: "base-sepolia",
   RPC_URL: "https://base-sepolia.example/v2/SECRET_RPC_KEY",
   DEPLOYER_PRIVATE_KEY: KEY_0,
   KEEPER_PRIVATE_KEY: KEY_1,
+  OPERATOR_PRIVATE_KEY: KEY_2,
 }
 const ctx = (env: Env): Ctx => ({ env, envFileFound: true, versions: { node: "22.18.0", pnpm: "9.15.9" } })
 const row = async (d: S1Deps, env: Env, id: string) =>
@@ -57,7 +105,43 @@ describe("S1 doctor checks", () => {
       ["cca-pin", "ok"],
       ["rpc-chain", "ok"],
       ["wallet-balances", "ok"],
+      ["deployment", "ok"],
     ])
+  })
+
+  it("deployment: warns before the first deploy, fails on a bad file, wrong chain or missing code", async () => {
+    expect((await row(deps({ readFile: files(null) }), liveEnv, "deployment")).status).toBe("warn")
+    expect((await row(deps({ readFile: files("{not json") }), liveEnv, "deployment")).status).toBe("fail")
+    expect((await row(deps({ readFile: files(deployment({ contracts: {} })) }), liveEnv, "deployment")).status).toBe(
+      "fail",
+    )
+    expect((await row(deps({ readFile: files(deployment({ chainId: 1 })) }), liveEnv, "deployment")).status).toBe(
+      "fail",
+    )
+    expect((await row(deps({ readFile: files(deployment({ network: "anvil" })) }), liveEnv, "deployment")).status).toBe(
+      "fail",
+    )
+    const r = await row(deps({ rpc: fakeRpc({ noCode: [addr(5)] }) }), liveEnv, "deployment")
+    expect(r.status).toBe("fail")
+    expect(r.detail).toContain("LotFactory")
+  })
+
+  it("deployment: anvil mode reads the local fork, not the upstream URL", async () => {
+    const seen: string[] = []
+    const rpc: S1Deps["rpc"] = (url) => {
+      seen.push(url)
+      return fakeRpc()(url)
+    }
+    const env = { ...liveEnv, CHAIN_MODE: "anvil", FORK_RPC_URL: "https://upstream/SECRET" }
+    const readFile = (p: string) => (p.endsWith("deployments/anvil.json") ? deployment({ network: "anvil" }) : null)
+    expect((await row(deps({ rpc, readFile }), env, "deployment")).status).toBe("ok")
+    expect(seen.at(-1)).toBe("http://127.0.0.1:8545")
+  })
+
+  it("operator balance is checked too", async () => {
+    const r = await row(deps(), { ...liveEnv, OPERATOR_PRIVATE_KEY: "" }, "wallet-balances")
+    expect(r.status).toBe("fail")
+    expect(r.detail).toContain("OPERATOR_PRIVATE_KEY unset")
   })
 
   it("parses tool versions from banners", () => {

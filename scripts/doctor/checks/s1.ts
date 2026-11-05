@@ -1,18 +1,34 @@
 import { spawnSync } from "node:child_process"
+import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { createPublicClient, formatEther, http, parseEther, type Address, type Hex } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
+import { parseDeployment } from "@fairtown/shared/addresses"
 import { atLeast, type Check, type Env, type Result } from "../core"
 
 export const CCA_TAG = "v2.1.0"
 export const BASE_SEPOLIA_CHAIN_ID = 84532
 export const MIN_DEPLOYER_WEI = parseEther("0.1")
 export const MIN_KEEPER_WEI = parseEther("0.05")
+export const MIN_OPERATOR_WEI = parseEther("0.01")
+export const ANVIL_RPC = "http://127.0.0.1:8545"
 const RPC_TIMEOUT_MS = 8_000
 
 export type Exec = (cmd: string, args: string[], cwd: string) => { ok: boolean; stdout: string }
-export type Rpc = { chainId: () => Promise<number>; balance: (a: Address) => Promise<bigint> }
-export type S1Deps = { root: string; exec: Exec; rpc: (url: string) => Rpc }
+export type Rpc = {
+  chainId: () => Promise<number>
+  balance: (a: Address) => Promise<bigint>
+  code: (a: Address) => Promise<Hex | undefined>
+}
+export type S1Deps = { root: string; exec: Exec; rpc: (url: string) => Rpc; readFile: (path: string) => string | null }
+
+const defaultReadFile = (path: string): string | null => {
+  try {
+    return readFileSync(path, "utf8")
+  } catch {
+    return null
+  }
+}
 
 const defaultExec: Exec = (cmd, args, cwd) => {
   const r = spawnSync(cmd, args, { cwd, encoding: "utf8", timeout: 10_000 })
@@ -21,7 +37,11 @@ const defaultExec: Exec = (cmd, args, cwd) => {
 
 const defaultRpc = (url: string): Rpc => {
   const client = createPublicClient({ transport: http(url, { timeout: RPC_TIMEOUT_MS, retryCount: 0 }) })
-  return { chainId: () => client.getChainId(), balance: (address) => client.getBalance({ address }) }
+  return {
+    chainId: () => client.getChainId(),
+    balance: (address) => client.getBalance({ address }),
+    code: (address) => client.getCode({ address }),
+  }
 }
 
 /** Which RPC the S1 rows talk to for the active CHAIN_MODE, or null when chain rows are skipped. */
@@ -121,6 +141,7 @@ export function makeS1Checks(deps: S1Deps): Check[] {
         const wallets = [
           { name: "deployer", varName: "DEPLOYER_PRIVATE_KEY", min: MIN_DEPLOYER_WEI },
           { name: "keeper", varName: "KEEPER_PRIVATE_KEY", min: MIN_KEEPER_WEI },
+          { name: "operator", varName: "OPERATOR_PRIVATE_KEY", min: MIN_OPERATOR_WEI },
         ]
         const rpc = deps.rpc(url)
         const parts: string[] = []
@@ -152,8 +173,52 @@ export function makeS1Checks(deps: S1Deps): Check[] {
         return { status, detail: parts.join("; ") }
       },
     },
+    {
+      id: "deployment",
+      owner: "S1",
+      title: "Deployment file and code",
+      run: async ({ env }) => {
+        if (!live(env)) return skipped(env)
+        const network = env.CHAIN_MODE as "anvil" | "base-sepolia"
+        const raw = deps.readFile(`${deps.root}deployments/${network}.json`)
+        if (raw === null)
+          return { status: "warn", detail: `No deployments/${network}.json yet. Run pnpm deploy:${network}` }
+        let dep: ReturnType<typeof parseDeployment>
+        try {
+          dep = parseDeployment(JSON.parse(raw))
+        } catch {
+          return { status: "fail", detail: `deployments/${network}.json does not match the contract 8 schema` }
+        }
+        if (dep.network !== network) return { status: "fail", detail: `File is for ${dep.network}, not ${network}` }
+        if (dep.chainId !== BASE_SEPOLIA_CHAIN_ID)
+          return { status: "fail", detail: `chainId ${dep.chainId}, need 84532` }
+        // anvil mode reads the local fork, not the upstream FORK_RPC_URL.
+        const url = network === "anvil" ? env.ANVIL_RPC_URL || ANVIL_RPC : rpcUrlFor(env)
+        if (!url) return { status: "fail", detail: `No RPC for CHAIN_MODE=${network}` }
+        const rpc = deps.rpc(url)
+        const missing: string[] = []
+        try {
+          for (const [name, address] of Object.entries(dep.contracts)) {
+            const code = await rpc.code(address as Address)
+            if (!code || code === "0x") missing.push(name)
+          }
+        } catch (e) {
+          return rpcFailure(e)
+        }
+        if (missing.length) return { status: "fail", detail: `No code at ${missing.join(", ")}` }
+        return {
+          status: "ok",
+          detail: `${network} block ${dep.deployedAtBlock}, ${Object.keys(dep.contracts).length} contracts, commit ${dep.commit.slice(0, 7)}`,
+        }
+      },
+    },
   ]
 }
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url))
-export const s1Checks: Check[] = makeS1Checks({ root: repoRoot, exec: defaultExec, rpc: defaultRpc })
+export const s1Checks: Check[] = makeS1Checks({
+  root: repoRoot,
+  exec: defaultExec,
+  rpc: defaultRpc,
+  readFile: defaultReadFile,
+})

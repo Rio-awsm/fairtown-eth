@@ -21,7 +21,12 @@ The HTTPS rewrite is needed because a nested CCA dependency uses an SSH URL (see
 | `pnpm test:contracts` | `forge test --root contracts`. Loads the repo `.env`, so fork tests run |
 | `forge build --root contracts --sizes` | Build and show contract sizes |
 | `pnpm chain:fork` | Anvil fork of Base Sepolia on :8545, chain ID 84532, RPC URL redacted from output |
-| `pnpm run doctor` | Toolchain, CCA pin, RPC, chain ID and wallet balance rows |
+| `pnpm run doctor` | Toolchain, CCA pin, RPC, chain ID, wallet balances (deployer, keeper, operator), deployment file and contract code |
+| `pnpm deploy:anvil` | Deploy v1 to the running fork, write `deployments/anvil.json`, regenerate ABIs |
+| `pnpm deploy:base-sepolia` | Deploy v1 to Base Sepolia, verify on Basescan, write `deployments/base-sepolia.json`, regenerate ABIs |
+| `pnpm verify:base-sepolia` | Resume verification only (Basescan sometimes stays pending) |
+| `pnpm gen:abi` | wagmi: ABIs for our contracts, CCA and Permit2 to `packages/shared/src/abi/generated.ts` |
+| `pnpm smoke:anvil`, `pnpm smoke:base-sepolia` | One real lot from listing to `paid_in_full`, with explorer links |
 
 ## Dependencies
 
@@ -38,3 +43,11 @@ All pinned through CCA v2.1.0 (`lib/continuous-clearing-auction`). Nothing else 
 ## Compiler
 
 Solidity 0.8.26, optimizer 200 runs. The CCA factory alone compiles via IR at 11111 runs, mirroring CCA's own `foundry.toml`.
+
+## Deployments
+
+`deployments/<network>.json` (contract section 8) is the only source of addresses; services never hard-code them. Base Sepolia v1: see `contracts/NOTES.md` (S1 1.4). Oracles are reverting stubs until S1 4.1 (D-48).
+
+**Block time:** Base makes about 5 blocks per second. Every window is in blocks (D-50): contest 600 (~2 min), report 3000 (~10 min).
+
+Deploys run forge from `contracts/` through `scripts/with-env.ts`, which loads the repo `.env` and redacts secrets from output (D-51).
