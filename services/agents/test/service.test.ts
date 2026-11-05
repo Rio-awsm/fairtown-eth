@@ -43,8 +43,9 @@ describe("agents server", () => {
   afterEach(async () => {
     await Promise.all(apps.splice(0).map((a) => a.close()))
   })
-  const make = (env: Record<string, string> = {}, chain: ChainAdapter = new FakeChain({ params })) => {
-    const app = buildApp({ config: parseConfig(env), chain, arkiv: new MemoryArkivStore(), logger: false })
+  const okAi = { health: async () => ({ ok: true, detail: "mock" }) }
+  const make = (env: Record<string, string> = {}, chain: ChainAdapter = new FakeChain({ params }), ai = okAi) => {
+    const app = buildApp({ config: parseConfig(env), chain, arkiv: new MemoryArkivStore(), ai, logger: false })
     apps.push(app)
     return app
   }
@@ -64,8 +65,9 @@ describe("agents server", () => {
     expect(body.ok).toBe(false)
     expect(body.chain).toEqual({ ok: false, detail: "rpc down" })
   })
-  it("reports AI as not ready without MOCK_AI", async () => {
-    const body = (await make({ MOCK_AI: "0" }).inject({ method: "GET", url: "/api/health" })).json()
+  it("reports the AI gateway's health", async () => {
+    const down = { health: async () => ({ ok: false, detail: "gateway unreachable" }) }
+    const body = (await make({}, new FakeChain({ params }), down).inject({ method: "GET", url: "/api/health" })).json()
     expect(body.ok).toBe(false)
     expect(body.ai.ok).toBe(false)
   })

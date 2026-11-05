@@ -1,10 +1,11 @@
 import { HealthResponse } from "@fairtown/shared/api"
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify"
+import type { AiGateway } from "./ai/gateway"
 import type { ArkivStore } from "./arkiv/ArkivStore"
 import type { ChainAdapter } from "./chain/types"
 import type { AgentsConfig } from "./config"
 
-export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; logger?: boolean }
+export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; logger?: boolean }
 
 export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
 
@@ -30,7 +31,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       chain = { ok: false, detail: e instanceof Error ? e.message : "unreachable" }
     }
     const arkiv = { ok: true, detail: deps.arkiv.mode }
-    const ai = deps.config.MOCK_AI ? { ok: true, detail: "mock" } : { ok: false, detail: "AI gateway lands in S2 1.1" }
+    const ai = await deps.ai.health()
     return HealthResponse.parse({ ok: chain.ok && arkiv.ok && ai.ok, chain, arkiv, ai, addons: {} })
   })
 

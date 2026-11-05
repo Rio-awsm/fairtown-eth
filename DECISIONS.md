@@ -21,7 +21,7 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-16 | W1 pairs | S1 4.2 | cod@bergen, tomato@lagos, marigold@mumbai, gpu_hour@any_dc, truck_capacity@dallas |  |  |  |
 | D-17 | Refund bands, of held share | S1 4.4 | Same grade 0%, one lower 25%, two lower 50%, unfit or no-show upheld 100% |  |  |  |
 | D-18 | Agent counts | S2 0.1 | 6 sellers, 12 buyers, 4 trucks, 2 cold stores, 2 societies, 1 compute provider | Guide default, 27 personas in `fixtures/agents.json` | Rio-awsm | 2026-11-06 |
-| D-19 | LLM budget | S2 1.1 | Concurrency 4, events only, rule fallback after 4s |  |  |  |
+| D-19 | LLM budget | S2 1.1 | Concurrency 4, events only, rule fallback after 4s | Guide default (gateway defaults: concurrency 4, timeout 4000 ms) | Rio-awsm | 2026-11-06 |
 | D-20 | Photo storage | S2 1.2 | Local disk, hash on Arkiv |  |  |  |
 | D-21 | Styling | S3 0.1 | Tailwind |  |  |  |
 | D-22 | Charts | S3 0.1 | uPlot |  |  |  |
@@ -42,3 +42,4 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-37 | `ArkivStore` expiry unit | S2 0.1 | Undefined | Seconds (`expiresInSeconds`), mapped to the SDK's `ExpirationTime` in S2 2.1 | Proposed by Claude in the S2 0.1 plan, approved by Rio-awsm | 2026-11-06 |
 | D-38 | Agents config when a mode var is unset | S2 0.1 | Undefined | Defaults to `CHAIN_MODE=fake`, `ARKIV_MODE=memory`, `MOCK_AI=1` (guide rule 7) | Proposed by Claude in the S2 0.1 plan, approved by Rio-awsm | 2026-11-06 |
 | D-39 | FakeChain clearing and auto-keeper | S2 0.1 | Undefined | Uniform clearing at the lowest price where demand fits qty; marginal tier rationed by time. FakeChain settles, assigns carriers, finalizes no-shows and releases expired held money on `mine()` | Rio-awsm (design approval) | 2026-11-06 |
+| D-40 | AI provider for S2 | S2 1.1 | Local model (D-07) | Team LiteLLM gateway (OpenAI-compatible): bidder `gemini-2.5-flash-lite`, listing and vision `gemini-3.5-flash-lite`. All three pass native JSON-schema output, about 1.1 s per call | Rio-awsm | 2026-11-06 |
