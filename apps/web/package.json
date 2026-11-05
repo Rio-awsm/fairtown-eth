@@ -19,6 +19,7 @@
     ]
   },
   "dependencies": {
+    "@arkiv-network/sdk": "1.0.1",
     "@fairtown/shared": "workspace:*",
     "@tanstack/react-query": "^5.106.1",
     "@yudiel/react-qr-scanner": "2.6.0",

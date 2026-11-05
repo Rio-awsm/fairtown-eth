@@ -128,6 +128,18 @@ export class Sky {
     this.night.setAlpha(on ? 0.35 : 0)
   }
 
+  private tint: GameObjects.Graphics | undefined
+
+  /** Price weather: a translucent wash over each building in its band colour; null clears it. */
+  priceWeather(areas: { colour: number; x: number; y: number; w: number; h: number }[] | null): void {
+    this.tint?.destroy()
+    this.tint = undefined
+    if (!areas) return
+    const g = this.scene.add.graphics().setDepth(DEPTH.overlay + 1)
+    for (const a of areas) g.fillStyle(a.colour, 0.45).fillRect(a.x, a.y, a.w, a.h)
+    this.tint = g
+  }
+
   plaque(key: string, at: Point, text: string): void {
     this.plaques.get(key)?.destroy()
     const t = this.scene.add

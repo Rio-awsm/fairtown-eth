@@ -26,6 +26,8 @@ export type BusEvents = {
   "map:status": MapStatus
   "scene:probe": () => SceneProbe
   select: Selection
+  /** Price weather tint per market building (S3 4.1); null turns it off. */
+  priceWeather: Record<string, "much_lower" | "lower" | "normal" | "higher" | "much_higher"> | null
   "scene:ready": undefined
   "scene:applied": number
 }

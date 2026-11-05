@@ -51,6 +51,19 @@ describe("readEnv", () => {
     expect(readEnv({}).publicWebUrl).toBeUndefined()
   })
 
+  it("reads the Arkiv ledger mode and read key", () => {
+    expect(readEnv({}).arkiv).toEqual({ mode: "mock" })
+    expect(readEnv({ VITE_ARKIV: "live", VITE_ARKIV_ACCESS_KEY: "k1" }).arkiv).toEqual({
+      mode: "live",
+      accessKey: "k1",
+    })
+    expect(readEnv({ VITE_ARKIV: "live" }).arkiv).toEqual({ mode: "live", accessKey: "" })
+  })
+
+  it("rejects an unknown Arkiv mode", () => {
+    expect(() => readEnv({ VITE_ARKIV: "memory" })).toThrow(EnvError)
+  })
+
   it("rejects a relay URL that is not ws, wss or mock", () => {
     expect(() => readEnv({ VITE_RELAY_URL: "http://nope" })).toThrow(EnvError)
   })

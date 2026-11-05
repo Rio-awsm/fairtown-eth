@@ -55,6 +55,15 @@ describe("townStore", () => {
     expect(store.getState().selection).toBeNull()
   })
 
+  it("builds the mock ledger from the relay as envelopes arrive", () => {
+    const { store } = setup()
+    store.getState().applyEnvelope(envelope(S["lot.listed"]))
+    store.getState().applyEnvelope(envelope(S["lot.settled"]))
+    store.getState().applyEnvelope(envelope(S["seller.record"]))
+    expect(store.getState().ledger.price.map((r) => r.lotId)).toEqual([12n])
+    expect(store.getState().ledger.reputation).toHaveLength(1)
+  })
+
   it("keeps only the last 200 commands in the log", () => {
     const { store } = setup()
     for (let i = 0; i < 250; i++) store.getState().applyEnvelope(envelope(S["fx.updated"]))

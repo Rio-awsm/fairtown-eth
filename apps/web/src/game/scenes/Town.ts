@@ -22,6 +22,7 @@ import { buildStubMap } from "../map/stub-map"
 import { Sky, coinArc, floatText, magnifier, moveCrate, refundCoins, vaultDoor } from "../effects/effects"
 import { StallView } from "../market/StallView"
 import { StallSlots, placeBuilding } from "../market/slots"
+import { BAND_COLOUR } from "../../arkiv/weather"
 import type { TiledMap } from "../map/tiled"
 
 const MAP_KEY = "town"
@@ -155,7 +156,22 @@ export class Town extends Scene {
       .setDepth(DEPTH.toast)
 
     this.unsubscribe = EventBus.on("town:commands", (commands) => this.apply(commands))
-    const stop = () => this.unsubscribe?.()
+    const offWeather = EventBus.on("priceWeather", (bands) => {
+      if (bands) this.see("priceWeather")
+      this.sky.priceWeather(
+        bands &&
+          MARKET_BUILDINGS.flatMap((b) => {
+            const band = bands[b]
+            if (!band) return []
+            const { label, entry } = this.town.anchors.buildings[b]
+            return [{ colour: BAND_COLOUR[band], x: label.x - 64, y: label.y + 4, w: 128, h: entry.y - label.y - 8 }]
+          }),
+      )
+    })
+    const stop = () => {
+      this.unsubscribe?.()
+      offWeather()
+    }
     this.events.once("shutdown", stop)
     this.events.once("destroy", stop)
     EventBus.emit("scene:probe", () => this.probe())

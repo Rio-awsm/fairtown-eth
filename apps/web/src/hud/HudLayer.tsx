@@ -6,6 +6,7 @@ import { BuildingPanel } from "./BuildingPanel"
 import { LotPanel } from "./LotPanel"
 import { Ticker } from "./Ticker"
 import { TopBar } from "./TopBar"
+import { PriceWeatherToggle } from "./PriceWeatherToggle"
 import { WalkinQr } from "./WalkinQr"
 import { WorldClock } from "./WorldClock"
 
@@ -58,6 +59,7 @@ export function HudLayer() {
       <div className="pointer-events-auto absolute top-2 left-2 space-y-2">
         <TopBar />
         <WorldClock />
+        <PriceWeatherToggle />
       </div>
       <div className="pointer-events-auto absolute bottom-12 left-2">
         <WalkinQr />

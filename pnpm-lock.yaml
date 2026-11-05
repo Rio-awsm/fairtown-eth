@@ -47,6 +47,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@arkiv-network/sdk':
+        specifier: 1.0.1
+        version: 1.0.1(typescript@5.9.3)(viem@2.57.16(typescript@5.9.3)(zod@4.6.7))
       '@fairtown/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -190,6 +193,16 @@ packages:
 
   '@adraffy/ens-normalize@1.11.1':
     resolution: {integrity: sha512-nhCBV3quEgesuf7c7KYfperqSS14T8bYuvJ8PcLJp6znkZpFc0AuW4qBtr8eKVyPPe/8RSr7sglCWPU5eaxwKQ==}
+
+  '@arkiv-network/sdk@1.0.1':
+    resolution: {integrity: sha512-DCOFdGunn4I5nYrvIV/YIkMCkLZM7EQNSyNPtqpmQkP2JzTEfRLBJleBSB2rokWMa833/9P8DMiwsEXACr3CUQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      typescript: '>=5.0.0'
+      viem: ^2.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
@@ -2500,6 +2513,12 @@ snapshots:
   '@adobe/css-tools@4.5.0': {}
 
   '@adraffy/ens-normalize@1.11.1': {}
+
+  '@arkiv-network/sdk@1.0.1(typescript@5.9.3)(viem@2.57.16(typescript@5.9.3)(zod@4.6.7))':
+    dependencies:
+      viem: 2.57.16(typescript@5.9.3)(zod@4.6.7)
+    optionalDependencies:
+      typescript: 5.9.3
 
   '@asamuzakjp/css-color@3.2.0':
     dependencies:

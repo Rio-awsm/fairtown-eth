@@ -5,6 +5,7 @@ import { EventBus, type EventBusApi, type MapStatus, type SceneProbe, type Selec
 import type { TownCommand } from "../game/commands"
 import { commandsForState, hydrate, initialTownState, reduceEnvelope, type TownState } from "../game/reducer"
 import { tickerLine } from "../hud/model"
+import { appendLedger, emptyLedger, type Ledger } from "../arkiv/mockLedger"
 import type { RelayStatus } from "../net/relayClient"
 
 export const COMMAND_LOG_MAX = 200
@@ -29,6 +30,8 @@ export type TownStoreState = {
   /** Time of the latest envelope (replay or live), for the world clock. */
   ts: number | undefined
   ticker: TickerLine[]
+  /** Mock Arkiv ledger built from relay events (contract 10 rules), for VITE_ARKIV=mock. */
+  ledger: Ledger
   selection: Selection
   select(selection: Selection): void
   setMode(mode: TownMode): void
@@ -55,6 +58,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
     probe: () => ({ active: 0, agents: [], trucks: [], effectsSeen: {}, stalls: [] }),
     ts: undefined,
     ticker: [],
+    ledger: emptyLedger(),
     selection: null,
     select: (selection) => set({ selection }),
     setMode: (mode) => set({ mode }),
@@ -70,6 +74,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
       const line = tickerLine(before, envelope.event)
       set((s) => ({
         ts: envelope.ts,
+        ledger: appendLedger(s.ledger, before, envelope),
         ticker: line ? [{ id: envelope.id, text: line }, ...s.ticker].slice(0, TICKER_MAX) : s.ticker,
         town: state,
         eventsApplied: s.eventsApplied + 1,

@@ -8,11 +8,14 @@ export class EnvError extends Error {
 }
 
 export type RelayEnv = { mode: "mock" } | { mode: "live"; wsUrl: string; snapshotUrl: string }
+export type ArkivEnv = { mode: "mock" } | { mode: "live"; accessKey: string }
 export type ApiEnv = { mode: "mock"; baseUrl: "" } | { mode: "live"; baseUrl: string }
 
 export type WebEnv = {
   relay: RelayEnv
   api: ApiEnv
+  /** Arkiv ledger reads: live Rabdi, or the mock ledger built from the replay. */
+  arkiv: ArkivEnv
   /** Block explorer for tx and address links. Defaults to Base Sepolia, the demo chain (D-02). */
   explorerUrl: string
   /** HTTPS address phones use (PUBLIC_WEB_URL), for the walk-in QR. Undefined when unset or a placeholder. */
@@ -44,6 +47,12 @@ function readApi(raw: string | undefined): ApiEnv {
   return { mode: "live", baseUrl: raw.replace(/\/$/, "") }
 }
 
+function readArkiv(mode: string | undefined, accessKey: string | undefined): ArkivEnv {
+  if (mode === undefined || mode === "mock") return { mode: "mock" }
+  if (mode !== "live") throw new EnvError(`VITE_ARKIV must be "live" or "mock", got "${mode}"`)
+  return { mode: "live", accessKey: accessKey ?? "" }
+}
+
 function readPublicUrl(raw: string | undefined): string | undefined {
   if (!raw || !/^https?:\/\/[^<>\s]+$/.test(raw)) return undefined
   try {
@@ -60,6 +69,7 @@ export function readEnv(raw: Record<string, unknown>): WebEnv {
   return {
     ...(publicWebUrl ? { publicWebUrl } : {}),
     relay: readRelay(str(raw.VITE_RELAY_URL)),
+    arkiv: readArkiv(str(raw.VITE_ARKIV), str(raw.VITE_ARKIV_ACCESS_KEY)),
     api: readApi(str(raw.VITE_API_URL)),
     explorerUrl,
     exposeTown: raw.PROD !== true,

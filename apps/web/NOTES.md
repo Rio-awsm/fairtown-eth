@@ -161,10 +161,28 @@
 
 **Late scenes missed plaques.** Under load the map loads after the first reference price, and the redraw on `scene:ready` had no plaques. `commandsForState` now redraws them (test added); found by a flaky 20× effects run.
 
+## 2026-11-06, S3 4.1
+
+**Arkiv SDK 1.0.1 (checked in its source).** Query values are `{ type, value }`; expressions are plain trees (`kind: "comparison" | "and" | …`); `builder.toString()` is the exact wire text and needs no network; `select()` with no arguments selects every column; fetched rows hold typed values (`row.x.value`), so the live client unwraps them. Nested `and()` renders flat, without parentheses. Context7 has no Arkiv docs; docs.arkiv.network was read directly.
+
+**One query, two modes.** Board queries are SDK expressions. Live (`VITE_ARKIV=live`) sends them to Rabdi; mock (default) evaluates the same expression on a MOCK LEDGER built from relay events by contract 10's rules (a `price` per `lot.settled`, a new `reputation` per `seller.record`). The query box always shows the SDK's own `toString()`.
+
+**Browser key (D-39).** The read key ships to the browser. Limit its Origins on hub.arkiv.network to `http://localhost:8080` and the tunnel. Quick-tunnel addresses change on every restart, so update the Origins or use a named tunnel for the demo. With no key the SDK falls back to the public endpoint, which is heavily rate limited.
+
+**Temporary schemas (D-40).** `src/arkiv/schemas.ts` mirrors contract 10. Types to reconcile with S2: `seller` is `str` (lowercase address) here; S2 may choose `addr`. Reputation `refundedBps` (source of truth 9.2) is not read yet.
+
+**Price weather** groups by market, commodity and currency (haddock is never judged against cod's average). Bands ±5% / ±15% in basis points; exactly +5% is "higher", exactly −5% "lower". A building's tint follows its most recent commodity. Newest record = latest day, then highest lot id.
+
+**New env vars (contract 4, minor ICR for combine):** `VITE_ARKIV` (`mock` | `live`, default `mock`) and `VITE_ARKIV_ACCESS_KEY` should be added to `.env.example`.
+
+**Bundle.** `/board` loads lazily, so the Arkiv SDK never reaches the phone pages (main chunk 590 kB, not 920 kB).
+
 ## Open questions
 
 - S2: confirm the `LotView.gradeReport` and `AgentView` fields above, or add them to `@fairtown/shared/api`.
 - S2: add `winners: [{ buyer, tokenAmount }]` to `LotView` (D-38), so lots with several buyers get handover codes.
 - S2: add `budget` to `WalkinResponse`, or confirm the 100.00 demo default.
+- S2: publish `@fairtown/shared/arkiv` and `arkiv/queries.md`; confirm `seller` type (`str` or `addr`) in `fairtown.v1.reputation`.
+- Combine: add `VITE_ARKIV` and `VITE_ARKIV_ACCESS_KEY` to `.env.example` (contract 4).
 
 - Should S2 add `AgentList` and `LotMeta` schemas to `@fairtown/shared/api` (minor ICR)?

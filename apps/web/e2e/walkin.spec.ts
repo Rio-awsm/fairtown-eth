@@ -12,7 +12,10 @@ const UNTIL = day.find((e) => e.event.type === "price.tick" && e.event.lotId ===
 const CRYPTO = /\b(wallet|gas|token|crypto|blockchain)\b/i
 
 async function check(page: Page, state: string) {
-  expect((await page.locator("body").innerText()).replace(/[\u00a0\u202f]/g, " "), `crypto word (${state})`).not.toMatch(CRYPTO)
+  expect(
+    (await page.locator("body").innerText()).replace(/[\u00a0\u202f]/g, " "),
+    `crypto word (${state})`,
+  ).not.toMatch(CRYPTO)
   const r = await new AxeBuilder({ page }).analyze()
   expect(
     r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
