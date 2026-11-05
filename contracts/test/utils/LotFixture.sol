@@ -14,7 +14,7 @@ import {LotFactory} from "../../src/LotFactory.sol";
 import {Keys} from "../../src/libraries/Keys.sol";
 import {PriceMath} from "../../src/libraries/PriceMath.sol";
 
-/// Shared setup for LotFactory tests. Settlement is a plain address until S1 1.3.
+/// Shared setup for LotFactory tests. Settlement is a plain address here; see SettlementFixture for the real one.
 abstract contract LotFixture is Test {
     address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     uint256 internal constant DEFAULT_SHARE_BPS = 7500; // LAST_BLOCK_SHARE_BPS in .env.example (D-40)
@@ -48,7 +48,12 @@ abstract contract LotFixture is Test {
         vm.etch(PERMIT2, vm.parseBytes(vm.trim(hexCode)));
     }
 
-    function _deploy(uint256 shareBps) internal {
+    /// Settlement as seen by LotFactory. A plain address here; SettlementFixture predicts the real one (D-41).
+    function _settlementAddress() internal view virtual returns (address) {
+        return settlement;
+    }
+
+    function _deploy(uint256 shareBps) internal virtual {
         ccaFactory = IDistributorFactory(
             vm.deployCode(
                 "ContinuousClearingAuctionFactory.sol:ContinuousClearingAuctionFactory", abi.encode(address(0))
@@ -58,6 +63,7 @@ abstract contract LotFixture is Test {
         hook = new AgentRegistryHook(IAgentRegistry(address(reg)));
         teur = new MockStable("Test EUR", "tEUR", op);
         tusd = new MockStable("Test USD", "tUSD", op);
+        settlement = _settlementAddress();
         factory = new LotFactory(
             op, ccaFactory, IAgentRegistry(address(reg)), address(hook), settlement, address(0), shareBps
         );
