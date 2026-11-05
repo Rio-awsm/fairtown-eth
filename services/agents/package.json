@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "fast-check": "^4.10.2",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

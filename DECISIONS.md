@@ -7,7 +7,7 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-02 | Demo chain | S1 0.1 | Base Sepolia |  |  |  |
 | D-03 | Settlement assets | S1 1.1 | `tUSD`, `tEUR`, one Circle USDC proof lot |  |  |  |
 | D-04 | CCA deployment | S1 1.2 | Own factory v2.1.0, zero fee controller |  |  |  |
-| D-05 | Seller wallets | S2 3.1 | Server-held demo keys, disclosed |  |  |  |
+| D-05 | Seller wallets | S2 3.1 | Server-held demo keys, disclosed | Guide default: HD wallets from `AGENT_MNEMONIC` (testnet only, generated into `.env` by Claude, never printed), index = persona order, then custom buyers | Rio-awsm | 2026-11-06 |
 | D-06 | Live scenes | S2 5.2 | Bergen, Dallas, GPU, Diwali |  |  |  |
 | D-07 | AI per role | S2 1.1 | Local bidding; 0G vision if verified, else cloud | Guide default | Rio-awsm | 2026-11-06 |
 | D-08 | Speech | S3 2.1 | Text first, English browser speech |  |  |  |
@@ -20,7 +20,7 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-15 | Checkpoint cadence | S1 2.1 | Every 2 blocks while an auction has bids |  |  |  |
 | D-16 | W1 pairs | S1 4.2 | cod@bergen, tomato@lagos, marigold@mumbai, gpu_hour@any_dc, truck_capacity@dallas |  |  |  |
 | D-17 | Refund bands, of held share | S1 4.4 | Same grade 0%, one lower 25%, two lower 50%, unfit or no-show upheld 100% |  |  |  |
-| D-18 | Agent counts | S2 0.1 | 6 sellers, 12 buyers, 4 trucks, 2 cold stores, 2 societies, 1 compute provider | Guide default, 27 personas in `fixtures/agents.json` | Rio-awsm | 2026-11-06 |
+| D-18 | Agent counts | S2 0.1 | 6 sellers, 12 buyers, 4 trucks, 2 cold stores, 2 societies, 1 compute provider | Guide default, 27 personas in `fixtures/agents.json`, all run in S2 3.1 | Rio-awsm | 2026-11-06 |
 | D-19 | LLM budget | S2 1.1 | Concurrency 4, events only, rule fallback after 4s | Guide default (gateway defaults: concurrency 4, timeout 4000 ms) | Rio-awsm | 2026-11-06 |
 | D-20 | Photo storage | S2 1.2 | Local disk, hash on Arkiv | Guide default: `STORAGE_DIR/photos/<sha256>`, served at `/api/photos/:hash` | Rio-awsm | 2026-11-06 |
 | D-21 | Styling | S3 0.1 | Tailwind |  |  |  |
@@ -45,3 +45,4 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-40 | AI provider for S2 | S2 1.1 | Local model (D-07) | Team LiteLLM gateway (OpenAI-compatible): bidder `gemini-2.5-flash-lite`, listing and vision `gemini-3.5-flash-lite`. All three pass native JSON-schema output, about 1.1 s per call | Rio-awsm | 2026-11-06 |
 | D-41 | Listing parse and floor | S2 1.2 | Undefined | LLM returns words as written; code maps synonyms and converts units; deterministic rule parser as fallback; place defaults to the seller's home place. Floor = reference (or blend with median of last 10 clears) x grade factor, 10% below (15% if under 6 h), rounded down to 0.01 | Proposed by Claude, approved by Rio-awsm ("start 1.2") | 2026-11-06 |
 | D-42 | Arkiv write ownership before agent wallets | S2 2.1 | Contract 10: seller, buyer and truck agents own their entities | Writer key owns every entity until S2 3.1 funds agent wallets (`pnpm -F agents fund:arkiv`). Walk-in bids always written by the writer. Writes are idempotent (dedupe query by owner and natural key before create and before a retry) | Claude, needs Rio-awsm ack | 2026-11-06 |
+| D-43 | Rule strategy and guardrail limits | S2 3.1 | Undefined | Step up 3 ticks above clearing, never past mandate max; pass while still winning. One auction may hold at most 60% of an agent budget; at most 6 bids per agent per minute; no bids on sellers with any finalized no-show unless `avoidNoShowSellers: false` | Proposed by Claude, approved by Rio-awsm ("start 3.1") | 2026-11-06 |

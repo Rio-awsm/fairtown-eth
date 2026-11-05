@@ -5,8 +5,10 @@ import type { ArkivStore } from "./arkiv/ArkivStore"
 import type { ChainAdapter } from "./chain/types"
 import type { AgentsConfig } from "./config"
 import { registerListingRoutes, type ListingDeps } from "./listing/routes"
+import { registerAgentRoutes } from "./runtime/routes"
+import type { AgentRuntime } from "./runtime/runtime"
 
-export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; logger?: boolean }
+export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; logger?: boolean }
 
 export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
 
@@ -45,6 +47,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     return HealthResponse.parse({ ok: chain.ok && arkiv.ok && ai.ok, chain, arkiv, ai, addons: {} })
   })
 
+  if (deps.runtime) registerAgentRoutes(app, deps.runtime)
   if (deps.listing) registerListingRoutes(app, { ...deps.listing, config: deps.config, chain: deps.chain })
 
   return app

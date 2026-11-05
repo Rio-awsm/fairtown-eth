@@ -53,3 +53,13 @@
 **Bid price on Arkiv is the on-chain price.** `bid.maxPerUnit` comes from `BidSubmitted.priceQ96`, which is the bid rounded up to the auction tick, so a 9.10 bid shows about 9.15.
 
 **Live end-to-end check.** Agents service with `ARKIV_MODE=live`: listing lot 1 wrote a `fairtown.v1.lot` entity (`0xd78bd814404cf7c0c0dd39c37ebdf3f676b02a753748c2ecd53a313f7c251c6f`) and patched it to `unsold` when the 5-block auction closed with no bids.
+
+## 2026-11-06, S2 3.1
+
+**FakeChain only for now.** The guide's green light needs anvil integration tests, which need S1's deployed contracts (`deployments/anvil.json`, S1 1.4). `ViemChain` and the anvil suite come in when S1 publishes, during C 1.1. Until then S2 3.1 stays open on that item.
+
+**No-shows count per buyer.** If two buyers report the same seller, FakeChain records two no-shows (one per finalized report). Matches contract 7.5 ("a finalized no-show increments noShows").
+
+**Live smoke.** Relay and agents running together: Ingrid listed 600 kg cod by REST; Hanse, Fjord and Oslo bid by rules (Oslo passed at its 8.00 max); the lot sold at 8.40 with 5 bids; the relay got 19 `agent.intent` envelopes and 27 agents.
+
+**Arkiv owner fallback.** Agent wallets are not funded on Rabdi yet, so in `ARKIV_MODE=live` the writer still writes their entities. Run `pnpm -F agents fund:arkiv` to fund them, then pass the wallets as Arkiv signers (S2 3.1 follow-up).

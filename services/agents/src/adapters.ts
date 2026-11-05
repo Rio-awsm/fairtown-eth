@@ -19,7 +19,7 @@ export function createArkiv(config: AgentsConfig, onFriction?: (n: string) => vo
   return { arkiv: new LiveArkivStore({ accessKey: config.ARKIV_ACCESS_KEY, writer, onFriction }), writer: writer.address }
 }
 
-export function createAdapters(config: AgentsConfig): { chain: ChainAdapter; arkiv: ArkivStore; writer: Address; stop: () => void; fake?: FakeChain } {
+export function createAdapters(config: AgentsConfig, accountFor?: (a: Address) => LocalAccount | undefined): { chain: ChainAdapter; arkiv: ArkivStore; writer: Address; stop: () => void; fake?: FakeChain } {
   if (config.CHAIN_MODE !== "fake")
     throw new Error(`CHAIN_MODE=${config.CHAIN_MODE} needs ViemChain, which lands in S2 3.1. Use CHAIN_MODE=fake for now.`)
   const { arkiv, writer } = createArkiv(config)
@@ -27,6 +27,7 @@ export function createAdapters(config: AgentsConfig): { chain: ChainAdapter; ark
     params: protocolParams(config),
     chainId: config.CHAIN_ID,
     treasury: config.TREASURY_ADDRESS as Address | undefined,
+    ...(accountFor ? { accountFor } : {}),
   })
   return { chain, arkiv, writer, stop: () => {}, fake: chain }
 }
