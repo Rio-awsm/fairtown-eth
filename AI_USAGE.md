@@ -18,6 +18,8 @@ Fairtown is built with Claude Code. Each row says what AI produced and what peop
 
 | Path | How AI was used | What people did | Prompt log |
 | --- | --- | --- | --- |
+| `contracts/` (foundry.toml, remappings, Smoke and ForkSmoke tests, CcaArtifacts, NOTES, README, CLAUDE.md), CCA v2.1.0 submodule | Written by Claude; CCA config and pins read from the v2.1.0 source; found the SSH submodule URL, the forge rollback and the factory's 362 B size margin | Installed Foundry, Bun and pnpm; filled and funded `.env`; chose D-02, D-04, D-36, D-37 | [S1 0.1](prompts/stream-1/S1-0.1.md) |
+| `scripts/doctor/checks/s1.ts`, `scripts/chain-fork.ts` and tests, `scripts/doctor.ts`, `package.json` scripts | Written by Claude, with failure-path and no-secret-leak tests | Chose the doctor rows for 0.1; waived the line-by-line key review | [S1 0.1](prompts/stream-1/S1-0.1.md) |
 
 ## Stream 2 (Brains)
 

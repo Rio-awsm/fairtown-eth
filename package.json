@@ -17,7 +17,7 @@
     "doctor": "pnpm -F scripts run doctor",
     "tunnel": "cloudflared tunnel --url http://localhost:8080",
     "gen:abi": "node scripts/pending.mjs gen:abi \"S1 1.4\"",
-    "chain:fork": "node scripts/pending.mjs chain:fork \"S1 0.1\"",
+    "chain:fork": "pnpm -F scripts run chain:fork",
     "deploy:anvil": "node scripts/pending.mjs deploy:anvil \"S1 1.4\"",
     "deploy:base-sepolia": "node scripts/pending.mjs deploy:base-sepolia \"S1 1.4\"",
     "dev:all": "node scripts/pending.mjs dev:all \"C 1.2\"",
