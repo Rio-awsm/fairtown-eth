@@ -4,7 +4,7 @@ One row per step. Status: todo, in progress, green, cut. Updated through MILESTO
 
 | ID | Title | Owner | Status | Started | Green at | Commit | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| C 0.1 | Monorepo, shared package and doctor | Rio-awsm | tests green, open | 2026-11-05 |  | uncommitted | 97 tests pass; manual checks done; money code reviewed by Rio-awsm. Open: `pnpm test:all` needs Foundry and Bun (S1 0.1); use `pnpm run doctor` (scripts/NOTES.md) |
+| C 0.1 | Monorepo, shared package and doctor | Rio-awsm | green | 2026-11-05 | 2026-11-06 | 352ea43, tag c-step-0.1-green | 97 tests pass; manual checks done; money code reviewed by Rio-awsm. Open: `pnpm test:all` needs Foundry and Bun (S1 0.1); use `pnpm run doctor` (scripts/NOTES.md) |
 | C 1.1 | Chain and Brains |  | todo |  |  |  |  |
 | C 1.2 | Brains and Town |  | todo |  |  |  |  |
 | C 1.3 | First full lot, QR to paid in full (0 to 1) |  | todo |  |  |  |  |
@@ -27,7 +27,7 @@ One row per step. Status: todo, in progress, green, cut. Updated through MILESTO
 | S1 4.4 | W3, rulings |  | todo |  |  |  |  |
 | S1 4.5 | CRE bridge |  | todo |  |  |  |  |
 | S1 5.1 | Hardening and sponsor deliverables |  | todo |  |  |  |  |
-| S2 0.1 | Service skeletons, adapters, fixtures and doctor |  | todo |  |  |  |  |
+| S2 0.1 | Service skeletons, adapters, fixtures and doctor | Rio-awsm | green | 2026-11-06 | 2026-11-06 | uncommitted | agents 36, relay 10 tests pass. ICR-001 awaits S3 ack. Human read of FakeChain.ts and clearing.ts: NEEDS HUMAN INPUT |
 | S2 1.1 | AI gateway |  | todo |  |  |  |  |
 | S2 1.2 | Listing, grading, metadata, evidence |  | todo |  |  |  |  |
 | S2 2.1 | Arkiv data layer and ledger writer |  | todo |  |  |  |  |
