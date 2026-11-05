@@ -1,7 +1,9 @@
 import { expect, test, type Page } from "@playwright/test"
 
-// The HUD is DOM over the canvas and its clock reads real time when the relay is off: mask it.
-const SHOT_OPTS = (page: Page) => ({ maxDiffPixelRatio: 0.01, mask: [page.locator("[data-hud]")] })
+// Baselines judge the town canvas only. The HUD is DOM over it (its clock reads real time with the relay
+// off), and a mask on the zero-size [data-hud] wrapper hides nothing, so hide the HUD before each shot.
+const SHOT_OPTS = { maxDiffPixelRatio: 0.01 }
+const hideHud = (page: Page) => page.addStyleTag({ content: "[data-hud] { visibility: hidden !important; }" })
 
 const mapStatus = (page: Page) => page.evaluate(() => window.__TOWN__?.map)
 const waitForMap = (page: Page) =>
@@ -26,7 +28,8 @@ test("town map screenshot baseline", async ({ page }) => {
   await page.goto("/town?relay=off")
   await waitForMap(page)
   await nextFrames(page)
-  await expect(page.locator("#game-container canvas")).toHaveScreenshot("town-map.png", SHOT_OPTS(page))
+  await hideHud(page)
+  await expect(page.locator("#game-container canvas")).toHaveScreenshot("town-map.png", SHOT_OPTS)
 })
 
 // MSW's service worker makes the request, so route at the context, which also sees service worker traffic.

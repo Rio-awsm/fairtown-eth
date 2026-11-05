@@ -15,6 +15,8 @@ export type WebEnv = {
   api: ApiEnv
   /** Block explorer for tx and address links. Defaults to Base Sepolia, the demo chain (D-02). */
   explorerUrl: string
+  /** HTTPS address phones use (PUBLIC_WEB_URL), for the walk-in QR. Undefined when unset or a placeholder. */
+  publicWebUrl?: string
   /** window.__TOWN__ is a test hook and must never ship to production. */
   exposeTown: boolean
 }
@@ -42,10 +44,21 @@ function readApi(raw: string | undefined): ApiEnv {
   return { mode: "live", baseUrl: raw.replace(/\/$/, "") }
 }
 
+function readPublicUrl(raw: string | undefined): string | undefined {
+  if (!raw || !/^https?:\/\/[^<>\s]+$/.test(raw)) return undefined
+  try {
+    return new URL(raw).toString().replace(/\/$/, "")
+  } catch {
+    return undefined
+  }
+}
+
 /** Reads `import.meta.env`. Unset relay or API means mock, so the stream runs alone (contract 13). */
 export function readEnv(raw: Record<string, unknown>): WebEnv {
   const explorerUrl = (str(raw.VITE_EXPLORER_URL) ?? DEFAULT_EXPLORER).replace(/\/$/, "")
+  const publicWebUrl = readPublicUrl(str(raw.PUBLIC_WEB_URL))
   return {
+    ...(publicWebUrl ? { publicWebUrl } : {}),
     relay: readRelay(str(raw.VITE_RELAY_URL)),
     api: readApi(str(raw.VITE_API_URL)),
     explorerUrl,

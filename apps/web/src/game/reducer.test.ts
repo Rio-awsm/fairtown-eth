@@ -464,3 +464,10 @@ describe("handover facts (S3 2.2)", () => {
     expect(lot.noShowBuyer).toBe(BUYER)
   })
 })
+
+describe("redraw keeps reference plaques", () => {
+  it("restores the plaque for a late-mounting scene", () => {
+    const s = run([S["reference.updated"]])
+    expect(commandsForState(s)).toContainEqual({ kind: "plaque", building: "fish_dock", text: "Reference €8.30" })
+  })
+})

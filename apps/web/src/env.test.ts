@@ -39,6 +39,18 @@ describe("readEnv", () => {
     expect(readEnv({ VITE_EXPLORER_URL: "https://example.org/" }).explorerUrl).toBe("https://example.org")
   })
 
+  it("reads the public web URL phones use for the walk-in QR", () => {
+    expect(readEnv({ PUBLIC_WEB_URL: "https://abc.trycloudflare.com/" }).publicWebUrl).toBe(
+      "https://abc.trycloudflare.com",
+    )
+  })
+
+  it("treats the .env.example placeholder or a bad value as unset", () => {
+    expect(readEnv({ PUBLIC_WEB_URL: "https://<tunnel>.trycloudflare.com" }).publicWebUrl).toBeUndefined()
+    expect(readEnv({ PUBLIC_WEB_URL: "ftp://x" }).publicWebUrl).toBeUndefined()
+    expect(readEnv({}).publicWebUrl).toBeUndefined()
+  })
+
   it("rejects a relay URL that is not ws, wss or mock", () => {
     expect(() => readEnv({ VITE_RELAY_URL: "http://nope" })).toThrow(EnvError)
   })

@@ -28,3 +28,11 @@ test("/ redirects to /town", async ({ page }) => {
   await page.goto("/")
   await expect(page).toHaveURL(/\/town$/)
 })
+
+test("/town shows the walk-in QR pointing phones at /walkin on the public address", async ({ page }) => {
+  await page.goto("/town")
+  await expect(page.getByRole("img", { name: "Scan to join and bid" })).toHaveAttribute(
+    "data-qr",
+    "https://fairtown.example/walkin",
+  )
+})

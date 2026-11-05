@@ -402,9 +402,8 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       const text = price
         ? `Reference price for ${event.commodity}: ${price}`
         : `Reference price for ${event.commodity} updated`
-      const building = asBuilding(event.market)
-      const commands: TownCommand[] =
-        building && price ? [{ kind: "plaque", building, text: `Reference ${price}` }] : []
+      const plaque = plaqueFor(event.market, event.perUnit, event.currency)
+      const commands: TownCommand[] = plaque ? [plaque] : []
       commands.push({ kind: "toast", text, tone: "info" })
       return {
         state: { ...state, references: { ...state.references, [`${event.commodity}@${event.market}`]: ref } },
@@ -436,6 +435,13 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
   }
 }
 
+/** The reference plaque at a market building, when the market is a building and the price can be shown. */
+function plaqueFor(market: string, perUnit: string, currency: string): TownCommand | undefined {
+  const building = asBuilding(market)
+  const price = money(perUnit, currency)
+  return building && price ? { kind: "plaque", building, text: `Reference ${price}` } : undefined
+}
+
 const isActive = (l: LotState) => !FREES_SLOT.has(l.status)
 
 /** Everything a scene needs to draw the current state from scratch, e.g. when it mounts late. */
@@ -447,6 +453,11 @@ export function commandsForState(state: TownState): TownCommand[] {
   }
   for (const agent of Object.values(state.agents)) commands.push(spawnAgent(agent))
   for (const signal of Object.values(state.signals)) commands.push(...signalCommands(signal))
+  // Plaques persist, so a scene that mounts late (slow map load) must still get them.
+  for (const [key, ref] of Object.entries(state.references)) {
+    const plaque = plaqueFor(key.split("@")[1] ?? "", ref.perUnit, ref.currency)
+    if (plaque) commands.push(plaque)
+  }
   for (const [seller, r] of Object.entries(state.sellers))
     commands.push({
       kind: "markSeller",

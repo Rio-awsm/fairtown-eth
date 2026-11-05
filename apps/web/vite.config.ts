@@ -12,6 +12,8 @@ const TUNNEL_HOSTS = [".trycloudflare.com"]
 export default defineConfig({
   base: "/",
   envDir: repoRoot,
+  // PUBLIC_WEB_URL (contract 4) is the public phone address for the walk-in QR; nothing secret.
+  envPrefix: ["VITE_", "PUBLIC_WEB_URL"],
   plugins: [react(), tailwindcss()],
   server: { port: 8080, allowedHosts: TUNNEL_HOSTS },
   preview: { allowedHosts: TUNNEL_HOSTS },

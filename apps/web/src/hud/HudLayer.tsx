@@ -6,6 +6,7 @@ import { BuildingPanel } from "./BuildingPanel"
 import { LotPanel } from "./LotPanel"
 import { Ticker } from "./Ticker"
 import { TopBar } from "./TopBar"
+import { WalkinQr } from "./WalkinQr"
 import { WorldClock } from "./WorldClock"
 
 /** Keys 1 to 7 open the buildings in demo order (S3 1.4). */
@@ -57,6 +58,9 @@ export function HudLayer() {
       <div className="pointer-events-auto absolute top-2 left-2 space-y-2">
         <TopBar />
         <WorldClock />
+      </div>
+      <div className="pointer-events-auto absolute bottom-12 left-2">
+        <WalkinQr />
       </div>
       <div className="pointer-events-auto absolute right-2 bottom-2 left-2">
         <Ticker />

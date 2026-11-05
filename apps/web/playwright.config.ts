@@ -7,7 +7,7 @@ import { MOCK_HANSE, MOCK_LOT12_UNITS, mockQrText, mockTicket } from "./src/mock
 const QR_VIDEO = fileURLToPath(new URL("./e2e/.generated/lot12-code.y4m", import.meta.url))
 writeQrVideo(mockQrText(mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS)), QR_VIDEO)
 
-const MOCKS = { VITE_RELAY_URL: "mock", VITE_API_URL: "mock" }
+const MOCKS = { VITE_RELAY_URL: "mock", VITE_API_URL: "mock", PUBLIC_WEB_URL: "https://fairtown.example" }
 const viewport = { width: 1920, height: 1080 }
 
 export default defineConfig({
@@ -21,7 +21,7 @@ export default defineConfig({
     {
       // iPhone 13 screen and touch in Chromium: only Chromium can fake a camera for getUserMedia.
       name: "mobile",
-      testMatch: /sell\.spec\.ts/,
+      testMatch: /(sell|walkin)\.spec\.ts/,
       use: {
         ...devices["iPhone 13"],
         browserName: "chromium",
@@ -63,7 +63,7 @@ export default defineConfig({
     },
     {
       name: "dev",
-      testIgnore: /(prod|sell|handover|buy)\.spec\.ts/,
+      testIgnore: /(prod|sell|handover|buy|walkin)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081" },
     },
     {

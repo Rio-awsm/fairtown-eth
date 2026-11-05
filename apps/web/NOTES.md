@@ -147,9 +147,24 @@
 
 **Assumed API fields (S2 to confirm).** `GET /api/agents/:agentId`: `currency`, `budget`, `paused`, `mandate`, `persona`; SOCIETY agents: `families: [{ name, qty }]`.
 
+## 2026-11-06, S3 3.2
+
+**Walk-in prices snap to ticks.** `src/walkin/model.ts`: tick = `tickFor(toQ96(floor))`; the first slider step is the smallest tick strictly above clearing (or the floor before bids); each step is one tick. It sends `maxPerUnit = fromQ96(tick)`, which the API's `ceilToTick(toQ96(…))` rounds back to exactly that tick (tested across 24 floor and price combinations, 40 steps each).
+
+**Walk-in budget.** `POST /api/walkin` has no budget in contract 11, so the walk-in may spend up to 100.00 in the lot's currency (`DEFAULT_BUDGET`) unless the response carries `budget`. S2: add `budget` to `WalkinResponse` (minor ICR). The server's guardrails still decide.
+
+**Session** lives in memory and `sessionStorage` (try/catch: Safari private mode throws); a reload keeps the walk-in in.
+
+**QR overlay** on `/town` and `/board` encodes `PUBLIC_WEB_URL/walkin`. `PUBLIC_WEB_URL` reaches the browser through `envPrefix` (it is public). Unset or the `.env.example` placeholder: falls back to the page address and warns outside production. Set it to the tunnel address before a demo.
+
+**Baselines fixed.** The HUD mask on the zero-size `[data-hud]` wrapper hid nothing, so baselines included the HUD (and its wall-clock world clock with `?relay=off`). They now hide the HUD with a style tag before each shot and judge only the canvas.
+
+**Late scenes missed plaques.** Under load the map loads after the first reference price, and the redraw on `scene:ready` had no plaques. `commandsForState` now redraws them (test added); found by a flaky 20× effects run.
+
 ## Open questions
 
 - S2: confirm the `LotView.gradeReport` and `AgentView` fields above, or add them to `@fairtown/shared/api`.
 - S2: add `winners: [{ buyer, tokenAmount }]` to `LotView` (D-38), so lots with several buyers get handover codes.
+- S2: add `budget` to `WalkinResponse`, or confirm the 100.00 demo default.
 
 - Should S2 add `AgentList` and `LotMeta` schemas to `@fairtown/shared/api` (minor ICR)?
