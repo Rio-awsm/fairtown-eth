@@ -105,6 +105,22 @@
 
 **Baselines** mask the DOM HUD (`mask: [data-hud]`), so they judge only the canvas.
 
+## 2026-11-06, S3 2.1
+
+**Payout preview** is the honest minimum: `splitPayout` at the floor price × qty, fee 1% (D-09, `FEE_BPS` in `src/sell/model.ts`), and the draft's `advanceBps`. Wording: "At least €2,227.50 at sale, about NOK 26,222, and the rest at handover." The "about" part uses `/api/fx` and is display only.
+
+**Auction length** for a new listing is 150 blocks (about 5 minutes), `DURATION_BLOCKS` in `src/sell/model.ts`. Change it if S1 sets a different default (D-12).
+
+**Camera.** In-app only (`getUserMedia`, no file input). The 4-digit lot code is shown over the preview for the seller to hold in frame, and travels with each photo as `lotCode`, with `capturedAt` and GPS when allowed. Cameras need a secure page: localhost or the HTTPS tunnel (D-24).
+
+**Mobile e2e** runs Chromium with the iPhone 13 screen and touch, because only Chromium can fake a camera (`--use-fake-device-for-media-stream`). Real iPhone Safari stays a manual check over the tunnel.
+
+**axe** found two real issues, both fixed: nav links overflowed onto the browser's white background on a phone (header now wraps, page background is dark), and white text on `emerald-600` buttons was below 4.5:1 (now `emerald-700`).
+
+**Assumed API fields (S2 to confirm).** `GET /api/sellers/:sellerId`: `lots[]` with `lotId, commodity, qty, unit, status`; `payouts[]` with `lotId, kind (at_sale | at_handover | refund), amount, currency, tx`. Rows that do not match are skipped.
+
+**Phones over the tunnel.** Vite 6 answers "Blocked request. This host is not allowed" for any host it does not know, so a phone on `https://<name>.trycloudflare.com` saw an error page. `vite.config.ts` now allows `.trycloudflare.com` for `dev` and `preview`; other hosts still get 403. Hot reload does not work through the tunnel (the page still does).
+
 ## Open questions
 
 - S2: confirm the `LotView.gradeReport` and `AgentView` fields above, or add them to `@fairtown/shared/api`.

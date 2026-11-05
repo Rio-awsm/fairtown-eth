@@ -164,3 +164,18 @@ export function buildingSummary(state: TownState, building: Building): BuildingS
     references,
   }
 }
+
+/** Lot status in plain words, for sellers and panels. */
+export const STATUS_WORDS: Record<string, string> = {
+  open: "Open",
+  unsold: "Not sold",
+  sold: "Sold",
+  truck_booked: "Truck booked",
+  picked_up: "Picked up",
+  delivered: "Delivered",
+  paid_in_full: "Paid in full",
+  no_show_reported: "No-show reported",
+  disputed: "Being checked",
+  refunded: "Refunded",
+  relisted: "Listed again",
+}

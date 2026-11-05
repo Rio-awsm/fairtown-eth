@@ -12,8 +12,21 @@ export default defineConfig({
   use: { trace: "retain-on-failure" },
   projects: [
     {
+      // iPhone 13 screen and touch in Chromium: only Chromium can fake a camera for getUserMedia.
+      name: "mobile",
+      testMatch: /sell\.spec\.ts/,
+      use: {
+        ...devices["iPhone 13"],
+        browserName: "chromium",
+        baseURL: "http://localhost:8081",
+        permissions: ["camera", "microphone", "geolocation"],
+        geolocation: { latitude: 60.39, longitude: 5.32 },
+        launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
+      },
+    },
+    {
       name: "dev",
-      testIgnore: /prod\.spec\.ts/,
+      testIgnore: /(prod|sell)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081" },
     },
     {

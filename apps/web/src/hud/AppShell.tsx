@@ -22,11 +22,11 @@ export function AppShell() {
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
         {!fullScreen && (
-          <header className="flex items-center gap-3 border-b border-slate-800 px-3 py-2">
+          <header className="flex flex-wrap items-center gap-3 border-b border-slate-800 px-3 py-2">
             <span className="font-bold">Fairtown</span>
             <ModeBadge />
             <TestMoneyBadge />
-            <nav className="ml-auto flex gap-3 text-sm text-slate-400">
+            <nav className="ml-auto flex flex-wrap gap-3 text-sm text-slate-300">
               {LINKS.map(([to, label]) => (
                 <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "text-white" : "")}>
                   {label}

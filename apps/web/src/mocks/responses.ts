@@ -55,7 +55,16 @@ export const MOCK_RESPONSES: { [K in RouteKey]: z.input<ApiRoutes[K]["res"]> } =
       { name: "Paid in full", status: "pending" },
     ],
   },
-  seller: { sellerId: "ingrid", name: "Ingrid Solheim", tier: "new", lots: [], payouts: [] },
+  seller: {
+    sellerId: "ingrid",
+    name: "Ingrid Solheim",
+    tier: "new",
+    lots: [{ lotId: "12", commodity: "cod", qty: "600", unit: "kg", status: "paid_in_full", currency: "EUR" }],
+    payouts: [
+      { lotId: "12", kind: "at_sale", amount: "2702700000", currency: "EUR", tx: TX },
+      { lotId: "12", kind: "at_handover", amount: "2702700000", currency: "EUR", tx: TX },
+    ],
+  },
   sellerAdvice: {
     advice: "Storm tomorrow: list before 05:00 for more buyers.",
     basis: { storm: true, avgPerUnit: "9100000" },

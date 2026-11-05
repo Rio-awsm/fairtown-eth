@@ -5,12 +5,16 @@ import { defineConfig } from "vitest/config"
 
 // VITE_* values live in the repo-root .env, next to every other service's env.
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url))
+// Phones reach the app through `pnpm tunnel` (HTTPS, which the camera needs). Vite blocks unknown host
+// names, so allow Cloudflare quick-tunnel hosts.
+const TUNNEL_HOSTS = [".trycloudflare.com"]
 
 export default defineConfig({
   base: "/",
   envDir: repoRoot,
   plugins: [react(), tailwindcss()],
-  server: { port: 8080 },
+  server: { port: 8080, allowedHosts: TUNNEL_HOSTS },
+  preview: { allowedHosts: TUNNEL_HOSTS },
   build: {
     rollupOptions: {
       output: { manualChunks: { phaser: ["phaser"] } },

@@ -10,7 +10,7 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-05 | Seller wallets | S2 3.1 | Server-held demo keys, disclosed |  |  |  |
 | D-06 | Live scenes | S2 5.2 | Bergen, Dallas, GPU, Diwali |  |  |  |
 | D-07 | AI per role | S2 1.1 | Local bidding; 0G vision if verified, else cloud |  |  |  |
-| D-08 | Speech | S3 2.1 | Text first, English browser speech |  |  |  |
+| D-08 | Speech | S3 2.1 | Text first, English browser speech | Text first; browser `SpeechRecognition` in `en-US`, else record and `POST /api/stt`, else no mic | iamanirbanbasak | 2026-11-06 |
 | D-09 | Fee and advance tiers | S1 1.3 | 1%, new 50%, proven 90%, truck 10% |  |  |  |
 | D-10 | Arkiv | S2 2.1 | **Closed:** Rabdi, SDK 1.0.x | Rabdi, SDK 1.0.x | Planning docs | 2026-11-05 |
 | D-11 | REST framework | S2 0.1 | Fastify |  |  |  |

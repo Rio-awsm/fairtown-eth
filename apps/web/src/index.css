@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+/* Dark page behind everything, so nothing ever sits on the browser's default white. */
+html,
+body {
+  background-color: #020617;
+  color: #f1f5f9;
+}
