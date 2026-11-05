@@ -28,7 +28,7 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-23 | Art | S3 1.1 | Kenney, Ninja Adventure |  |  |  |
 | D-24 | Public URL | S3 2.2 | **HTTPS tunnel required**, because camera access needs a secure page. Own hotspot |  |  |  |
 | D-25 | Integration captain | C 0.1 | S1 CRE + keeper lead |  |  |  |
-| D-26 | Proven threshold and seeding | S1 1.3 | 3 clean lots; operator marks seeded sellers, disclosed |  |  |  |
+| D-26 | Proven threshold and seeding | S1 1.3 | 3 clean lots; operator marks seeded sellers, disclosed | Default: proven = 3 clean lots and no open no-show, or operator-marked (disclosed). A finalized no-show resets clean lots and clears the mark | maxspxtr | 2026-11-06 |
 | D-27 | Circle USDC proof lot | C 3.2 | Yes |  |  |  |
 | D-28 | Commit message format | C 0.1 | Guide: `s2-4.1: msg` | `type(step): msg`, e.g. `feat(c-0.1): shared units` | Rio-awsm | 2026-11-05 |
 | D-29 | pnpm version | C 0.1 | Contract: 9.x | 9.15.9 pinned via `packageManager` | Rio-awsm | 2026-11-05 |
@@ -44,3 +44,9 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-39 | `LotToken` resolver address | S1 1.1 | Guide: escrow by settlement and resolver | Immutable constructor arg, `address(0)` until DisputeResolver (S1 4.1); zero grants nothing. v2 redeploy in 4.1 sets it | Claude during S1 1.1, needs review | 2026-11-06 |
 | D-40 | `LAST_BLOCK_SHARE_BPS` default | S1 1.2 | 5000 (`.env.example`, SoT 8.2) | 7500. Spread test at 5000: 10.7%; at 7500: 4.5% (target 5%). More end weight invites sniping; mentor to confirm. ICR-002 | maxspxtr | 2026-11-06 |
 | D-41 | LotFactory and settlement wiring | S1 1.2 | Unspecified | Both immutable. Deploy script predicts settlement's CREATE address for the LotFactory constructor (S1 1.4). No setter, no ICR | maxspxtr | 2026-11-06 |
+| D-42 | `LotSettled.soldUnits`, `TransportNeeded.qty` | S1 1.3 | Contract: whole units | `ceil(soldTokens / 1e18)`, so 444.44 kg reports 445 and a truck is never under-booked. Exact tokens in `heldOf` | maxspxtr | 2026-11-06 |
+| D-43 | `reclaimUnsold` | S1 1.3 | Unspecified | Burns the unsold tokens and closes them to relisting; the seller keeps the goods | maxspxtr | 2026-11-06 |
+| D-44 | When `LotPaidInFull` fires | S1 1.3 | Contract 7.5: held fully released (and the carrier's) | Only when every held unit went to the seller (no refund on the lot), and the truck lot is also complete and clean if a carrier was assigned. Refunded lots end at `refunded` | Claude during S1 1.3, needs review | 2026-11-06 |
+| D-45 | Lot status after sale | S1 1.3 | Contract 7.4: detailed status in settlement views | `MarketSettlement.statusOf(lotId)` (LOT_STATUS index). `LotFactory.Lot.status` stays OPEN. No ICR | maxspxtr | 2026-11-06 |
+| D-46 | Held-share rounding and dust | S1 1.3 | Guide: `held * tokenAmount / soldTokens`, last release takes dust | Pro-rata on what is still outstanding (`heldRemaining * tokens / outstanding`); tokens below `TOKEN_DUST` = 1e12 (CCA round-down) count as done, and the remainder goes to the seller | Claude during S1 1.3, needs review | 2026-11-06 |
+| D-47 | Late handover and the report window | S1 1.3 | Unspecified | A signed handover still works after the pickup deadline until `releaseExpired` runs (the seller agreed by signing). `releaseExpired` counts silence as a clean lot (SoT 8.6: Sold to PickedUp) | Claude during S1 1.3, needs review | 2026-11-06 |

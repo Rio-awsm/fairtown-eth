@@ -88,6 +88,24 @@ The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depe
 
 **Lot status.** `Lot.status` stays 0 (OPEN) in 1.2. Contract 7.4 has no function for settlement to update it. Decide in 1.3: read status from settlement views (contract 7.4 says "detailed status lives in settlement views"), or add a minor ICR.
 
+## 2026-11-06, S1 1.3
+
+**Wiring (D-41) in tests.** `SettlementFixture` predicts settlement with `vm.computeCreateAddress(this, nonce + 2)` before deploying LotFactory (+0) and ChainTrigger (+1), then asserts the deployed address. The 1.4 deploy script must keep that order.
+
+**Exact numbers from real CCA auctions.** One bid of €5,460 on 1,000 kg at €7.50 (capacity €7,500) fills fully at the floor, so `currencyRaised` is exactly 5,460.000000. Settle gives 54.60 fee, 2,702.70 advance and 2,702.70 held (guide example, exact). Proven: €1,000 gives 891.00 now and 99.00 held (SoT 8.4). Truck: €50 gives 44.55 held.
+
+**Ticket identity.** Same lot, buyer, amount and expiry produce the same digest, so a second identical ticket is a replay and is rejected. **S2:** when signing repeated equal partial pickups, vary `expiryBlock`.
+
+**`soldTokens` vs claims.** `soldTokens = auction.totalCleared()`. Buyers' claimed tokens can be a few wei less (CCA rounds down). Handover shares are pro-rata on outstanding tokens, and below `TOKEN_DUST` (1e12 wei) a lot counts as handed over, with the remaining money going to the seller (D-46).
+
+**Reentrancy lints.** `reentrancy-no-eth` and `reentrancy-events` are scoped off for `MarketSettlement` only (`disable-start/end`). The lint counts OZ ReentrancyGuard's own `_status` reset and SignatureChecker's ERC-1271 staticcall. Every external entry point is `nonReentrant` and checks-effects-interactions ordered: `_maybeComplete` returns dust instead of transferring it, so transfers come last. Calls that must come first (CCA sweeps, resolver dispute id, LotFactory relist id) are commented in place. **Recheck on any change.**
+
+**Contest needs a resolver.** v1 (S1 1.4) deploys with `resolver = address(0)`: `contestNoShow` reverts `NoResolver`, and the uncontested path (finalize after the contest window) still ends in a money outcome. Tests use `MockResolver`.
+
+**Relisting fractions.** `relist` burns all unsold tokens and relists `floor(unsold / 1e18)` whole units, so a fractional remainder isn't relisted. A relisted truck lot's `parentLotId` points at the old truck lot, not the goods lot, which matters for chaining in S1 3.1.
+
+**NatSpec gotcha.** `/// ... @fairtown/shared/...` in a function doc is parsed as a NatSpec tag and fails the build. Use `//`.
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.
