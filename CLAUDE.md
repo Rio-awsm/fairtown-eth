@@ -1,0 +1,20 @@
+# Rules for this repo
+- Read specs/03_00_START_HERE.md, specs/03_01_INTEGRATION_CONTRACT.md and your stream's build guide. Work on ONE step at a time, the one named in the prompt.
+- Do not start a step until the previous step is tagged green, for example s1-step-1.2-green.
+- Stay in your stream's folders. Change packages/shared only through an approved ICR.
+- Money is bigint base units (6 decimals). CCA prices are Q96. Never JS number for money.
+- No bid reaches the chain except through guardrails. No exceptions. LLM output is always zod-validated.
+- All money moves onchain through the CCA and MarketSettlement. Every lot state has a timeout and a money outcome.
+- Code against CCA source at v2.1.0, not the website docs. Bids pull currency through Permit2.
+- No AI provider is hard-wired. Everything comes from env. Add-ons stay behind ADDON_* flags.
+- Never log or print secrets. Never put keys in code, tests or fixtures.
+- Every change ships with tests. Failure-path tests are mandatory.
+- Run the stream's full test command and paste the output before saying done.
+- If docs and source disagree, trust the source, record it in the stream's NOTES.md.
+- When unsure about sponsor tech or payout behaviour, stop and ask. Do not guess.
+- Always use context7 mcp before starting any step or doing any task.
+- When a step's tests pass, follow MILESTONE_SYNC.md only when told "Step <ID> is done."
+- Suggested commit messages use `type(step): message`, for example `feat(s2-4.1): relay snapshot`. Tags: `<stream>-step-<ID>-green`.
+- pnpm 9.15.9 is pinned. viem, zod, vitest, typescript, tsx and @types/node come from the workspace catalog: write `catalog:` as their version.
+- Run the doctor with `pnpm run doctor`. Plain `pnpm doctor` runs pnpm's built-in check. Stream doctor rows go in scripts/doctor/checks/<stream>.ts.
+- Never run git commit, git tag or git push. The user does all commits. When milestone sync docs or a plan says to commit or tag, stop and hand over the list of changed files and a suggested message instead.

@@ -1,0 +1,5 @@
+pnpm-lock.yaml
+specs/
+docs/
+*.md
+contracts/lib/

@@ -1,5 +1,13 @@
-.env
 node_modules
+.env
+.env.*
+!.env.example
 out
 cache
+broadcast
+dist
+coverage
 .data
+playwright-report
+test-results
+.DS_Store
