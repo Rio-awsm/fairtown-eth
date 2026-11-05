@@ -5,13 +5,13 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | ID | Question | Needed by | Default | Chosen | By | When |
 | --- | --- | --- | --- | --- | --- | --- |
 | D-02 | Demo chain | S1 0.1 | Base Sepolia | Base Sepolia (84532) | maxspxtr | 2026-11-06 |
-| D-03 | Settlement assets | S1 1.1 | `tUSD`, `tEUR`, one Circle USDC proof lot |  |  |  |
+| D-03 | Settlement assets | S1 1.1 | `tUSD`, `tEUR`, one Circle USDC proof lot | Default: `tUSD`, `tEUR`, one Circle USDC proof lot | maxspxtr | 2026-11-06 |
 | D-04 | CCA deployment | S1 1.2 | Own factory v2.1.0, zero fee controller | Own `ContinuousClearingAuctionFactory` v2.1.0, `_protocolFeeController = address(0)` | maxspxtr | 2026-11-06 |
 | D-05 | Seller wallets | S2 3.1 | Server-held demo keys, disclosed |  |  |  |
 | D-06 | Live scenes | S2 5.2 | Bergen, Dallas, GPU, Diwali |  |  |  |
 | D-07 | AI per role | S2 1.1 | Local bidding; 0G vision if verified, else cloud |  |  |  |
 | D-08 | Speech | S3 2.1 | Text first, English browser speech |  |  |  |
-| D-09 | Fee and advance tiers | S1 1.3 | 1%, new 50%, proven 90%, truck 10% |  |  |  |
+| D-09 | Fee and advance tiers | S1 1.3 | 1%, new 50%, proven 90%, truck 10% | Default: 1%, new 50%, proven 90%, truck 10% | maxspxtr | 2026-11-06 |
 | D-10 | Arkiv | S2 2.1 | **Closed:** Rabdi, SDK 1.0.x | Rabdi, SDK 1.0.x | Planning docs | 2026-11-05 |
 | D-11 | REST framework | S2 0.1 | Fastify |  |  |  |
 | D-12 | Durations and pickup windows | S1 1.2 | Source of truth section 14 |  |  |  |
@@ -40,3 +40,5 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-35 | How to run the doctor | C 0.1 | Contract 14: `pnpm doctor` | `pnpm run doctor`, because `pnpm doctor` is a pnpm built-in that shadows the script and exits 0 silently | Claude during C 0.1, needs team ack (possible ICR) | 2026-11-06 |
 | D-36 | Optimizer runs (S1) | S1 0.1 | Guide: 200 | 200 for our contracts; CCA's `via_ir` profile at 11111 runs kept for `ContinuousClearingAuctionFactory.sol`, as in CCA's own `foundry.toml` | maxspxtr | 2026-11-06 |
 | D-37 | Permit2, OZ, forge-std source (S1) | S1 0.1 | Guide: separate submodules | Remap to CCA v2.1.0's pinned copies (OZ 5.3.0 `e4f7021`, Permit2 `cc56ad0`, forge-std v1.9.7). One copy each, no extra submodules | maxspxtr | 2026-11-06 |
+| D-38 | `AgentRegistry.setRole` event | S1 1.1 | Contract 7.2 lists only `AgentRegistered` | `setRole` re-emits `AgentRegistered(agent, newRole, name)`; role 0 revokes. No new event, so no ICR | Claude during S1 1.1, needs review | 2026-11-06 |
+| D-39 | `LotToken` resolver address | S1 1.1 | Guide: escrow by settlement and resolver | Immutable constructor arg, `address(0)` until DisputeResolver (S1 4.1); zero grants nothing. v2 redeploy in 4.1 sets it | Claude during S1 1.1, needs review | 2026-11-06 |

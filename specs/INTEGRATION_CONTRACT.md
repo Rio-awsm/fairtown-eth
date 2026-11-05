@@ -629,3 +629,4 @@ The agents service publishes `agent.*`, `human.joined` and `clock` phase events 
 | ID | Author | Change | Why | Affects | Acks | Status |
 |---|---|---|---|---|---|---|
 | ICR-000 | all | v1 frozen | Baseline | all | S1, S2, S3 | Pending C 0.1 |
+| ICR-001 | S1 (maxspxtr) | Minor: add `packages/shared/fixtures/price-vectors.json` (20 vectors from Solidity `PriceMath`, written by `forge test`) and `packages/shared/test/price-vectors.test.ts`. No source or interface change | S1 1.1 requires TS and Solidity price math to match | shared | maxspxtr (S1) | Approved 2026-11-06 |

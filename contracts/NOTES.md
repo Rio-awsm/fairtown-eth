@@ -44,6 +44,20 @@ Gotchas, doc vs source mismatches and open questions. These feed `FEEDBACK.md`.
 
 **Anvil prints the fork URL in its banner.** That URL can contain an RPC API key. `pnpm chain:fork` (`scripts/chain-fork.ts`) redacts it line by line.
 
+## 2026-11-06, S1 1.1
+
+**The hook can't be bypassed: CCA passes `msg.sender` as `sender`.** `ContinuousClearingAuction.sol` `_submitBid` calls `VALIDATION_HOOK.handleValidate(_maxPriceQ96, _amount, _owner, msg.sender, _hookData)`. The hook reverts unless `sender == owner && canBid(owner)`, so a router bidding for someone else is rejected (`HookOnCca.t.sol`). CCA wraps the hook's revert as `ValidationHookCallFailed(bytes reason)`. ERC-165 id of `IValidationHook` is `0x22c44b5f`, matching contract 7.3.
+
+**Hook runs before the currency check matters.** The `submitBid` order is: amount and owner checks, currency pull (native `msg.value` or Permit2), then `_submitBid`, which calls the hook. The 1.1 integration test uses native ETH so it needs no Permit2 setup. Permit2 bids come in 1.2.
+
+**Step data rules (`StepStorage._validate`).** `sum(mps * blockDelta) == 1e7` and `sum(blockDelta) == endBlock - startBlock`. A zero `blockDelta` reverts. A zero `mps` is allowed, so `endWeighted(d, 10000)` is valid. `endWeighted(45, 5000)` = `(113636 mps x 44 blocks) + (5000016 mps x 1 block)`.
+
+**forge MemoryOOG on long sweeps.** Calling a harness that returns `bytes` about 45,000 times in one test grows memory until it runs out. Decode inside the harness and return only numbers.
+
+**forge-lint.** `vm.getBlockTimestamp()` is used in tests after `vm.warp` (`environment-read-across-mutation`). `require-revert-in-loop` is excluded in `foundry.toml`: our libraries revert on bad input by design, and the tests call them in loops.
+
+**Price vectors.** `forge test` rewrites `packages/shared/fixtures/price-vectors.json` (ICR-001). The file is deterministic, so a rerun shows no diff unless `PriceMath` changes. Prettier ignores it.
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.
