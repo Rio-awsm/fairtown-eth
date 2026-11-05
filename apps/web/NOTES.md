@@ -61,6 +61,20 @@
 **Broken map.**
 - If `town.tmj` is missing or invalid, the scene logs the problems, draws them in red and uses the stub layout, so the replay and demo keep running. `__TOWN__.map` reports `status: "error"` with the problem list.
 
+## 2026-11-06, S3 1.2
+
+**Who can walk where.**
+- People: any tile on `collision`, `water` or `buildings` blocks, so a forgotten collision tile under a building cannot let agents through. Trucks: `roads` tiles only.
+- Pathing is easystar 0.4.4 in sync mode, 4 directions (sprites face 4 ways). The 60 × 34 grid is small enough to path on the main thread.
+- Agents stand on tile centres. Queue anchors in the Tiled map should sit on open tiles; one on a blocked tile snaps to the nearest open one.
+
+**Queues and pool.**
+- One agent per queue spot, one spot per agent. A full building sends the agent to its entry, never onto a taken spot.
+- At most 80 agent sprites. Agent 81 recycles the least recently active non-human; walk-ins are never recycled.
+
+**Persona sprites.**
+- Placeholders until sheets land: a role-coloured disc with a facing notch. To add one, put `<sprite>.png` (16 px frames, rows down, left, right, up, 4 frames each) in `public/assets/sprites/`, list its name in `sprites.json`, and credit it in `CREDITS.md`. The `sprite` value comes from `agent.spawned`.
+
 ## Open questions
 
 - Should S2 add `AgentList` and `LotMeta` schemas to `@fairtown/shared/api` (minor ICR)?

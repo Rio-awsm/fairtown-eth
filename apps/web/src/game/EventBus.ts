@@ -3,10 +3,15 @@ import type { TownCommand } from "./commands"
 /** Town map load result. On "error" the scene falls back to the stub layout and lists the problems. */
 export type MapStatus = { status: "loading" | "ready" | "error"; buildings: number; problems: string[] }
 
+/** What the scene reports about its sprites, for the e2e checks (no agent on a blocked tile, no shared spot). */
+export type AgentProbe = { id: string; x: number; y: number; blocked: boolean; queue: string | null }
+export type SceneProbe = { active: number; agents: AgentProbe[]; trucks: AgentProbe[] }
+
 /** Events between React, the store and the Phaser scene. */
 export type BusEvents = {
   "town:commands": TownCommand[]
   "map:status": MapStatus
+  "scene:probe": () => SceneProbe
   "scene:ready": undefined
   "scene:applied": number
 }

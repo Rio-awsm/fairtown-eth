@@ -1,5 +1,5 @@
 import type { StoreApi } from "zustand/vanilla"
-import type { MapStatus } from "../game/EventBus"
+import type { MapStatus, SceneProbe } from "../game/EventBus"
 import type { TownCommand } from "../game/commands"
 import type { TownState } from "../game/reducer"
 import type { RelayStatus } from "../net/relayClient"
@@ -15,6 +15,7 @@ export type TownDebug = {
   readonly commandLog: readonly TownCommand[]
   readonly sceneCommandsApplied: number
   readonly map: MapStatus
+  readonly agents: SceneProbe
   readonly lastEventId: string | undefined
 }
 
@@ -61,6 +62,9 @@ export function exposeTown(target: object, store: StoreApi<TownStoreState>, enab
     },
     get map() {
       return frozen(s().map)
+    },
+    get agents() {
+      return frozen(s().probe())
     },
     get lastEventId() {
       return s().lastEventId
