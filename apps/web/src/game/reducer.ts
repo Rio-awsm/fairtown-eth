@@ -11,7 +11,18 @@ export type LotState = LotListedEvent & {
   avgPerUnit?: string
   pickupDeadline?: number
   deadlineBlock?: number
+  /** History for the lot panel (S3 1.4). */
+  bidLog: BidEntry[]
+  priceLog: { block: number; perUnit: string }[]
+  settlement?: { sellerPaid: string; held: string; fee: string; advanceBps: number; tx: string }
+  handoverTx?: string
+  relistedAs?: string
+  /** Furthest of the five steps reached (0 to 5), kept through refunds. */
+  progress: number
+  refundReason?: "no_show" | "dispute"
+  refundBps?: number
 }
+export type BidEntry = { agentId: string; maxPerUnit: string; amount: string; tx: string }
 export type AgentState = {
   agentId: string
   name: string
@@ -20,6 +31,8 @@ export type AgentState = {
   sprite: string
   ensName?: string
   human: boolean
+  /** Last few reasons from agent.intent, newest last, for the agent panel. */
+  reasons: string[]
 }
 export type SellerState = { cleanLots: number; noShows: number; proven: boolean }
 export type ReferenceState = { perUnit: string; currency: string; source: string }
@@ -38,6 +51,10 @@ export type TownState = {
 export type ReduceResult = { state: TownState; commands: TownCommand[] }
 
 export const SLOTS_PER_BUILDING = 6
+const REASONS_KEPT = 5
+/** The five timeline steps as lot statuses, in order (S3 1.4). */
+export const STEP_STATUSES: readonly LotStatus[] = ["sold", "truck_booked", "picked_up", "delivered", "paid_in_full"]
+const progressOf = (status: LotStatus) => STEP_STATUSES.indexOf(status) + 1
 /** Statuses that give the stall slot back. */
 const FREES_SLOT: ReadonlySet<LotStatus> = new Set(["paid_in_full", "refunded", "relisted", "unsold"])
 
@@ -82,6 +99,7 @@ function patchLot(state: TownState, lotId: string, patch: Partial<LotState>): To
   if (!lot) return state
   const next = { ...lot, ...patch }
   if (patch.status && FREES_SLOT.has(patch.status)) next.slot = null
+  if (patch.status) next.progress = Math.max(lot.progress, progressOf(patch.status))
   return { ...state, lots: { ...state.lots, [lotId]: next } }
 }
 
@@ -150,6 +168,9 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
     case "lot.listed": {
       const next: LotState = {
         ...event,
+        bidLog: [],
+        priceLog: [],
+        progress: 0,
         status: "open",
         slot: freeSlot(state.lots, event.building, event.lotId),
         bids: 0,
@@ -167,6 +188,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
         building: event.building,
         sprite: event.sprite,
         human: event.role === "HUMAN",
+        reasons: state.agents[event.agentId]?.reasons ?? [],
         ...(event.ensName ? { ensName: event.ensName } : {}),
       }
       return { state: { ...state, agents: { ...state.agents, [event.agentId]: agent } }, commands: [spawnAgent(agent)] }
@@ -175,11 +197,20 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       const target = event.moveTo ?? (event.lotId ? state.lots[event.lotId]?.building : undefined)
       const commands: TownCommand[] = target ? [{ kind: "walkTo", agentId: event.agentId, building: target }] : []
       commands.push({ kind: "showBubble", agentId: event.agentId, text: bubble(event.reason) })
-      return { state, commands }
+      const agent = state.agents[event.agentId]
+      if (!agent) return { state, commands }
+      const reasons = [...agent.reasons, event.reason].slice(-REASONS_KEPT)
+      return { state: { ...state, agents: { ...state.agents, [event.agentId]: { ...agent, reasons } } }, commands }
     }
     case "bid.placed": {
       if (!lot) return { state, commands: [] }
-      const next = patchLot(state, event.lotId, { bids: lot.bids + 1 })
+      const entry: BidEntry = {
+        agentId: event.agentId,
+        maxPerUnit: event.maxPerUnit,
+        amount: event.amount,
+        tx: event.tx,
+      }
+      const next = patchLot(state, event.lotId, { bids: lot.bids + 1, bidLog: [...lot.bidLog, entry] })
       return {
         state: next,
         commands: [{ kind: "coinArc", lotId: event.lotId, agentId: event.agentId }, tickPrice(next.lots[event.lotId]!)],
@@ -187,7 +218,10 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
     }
     case "price.tick": {
       if (!lot) return { state, commands: [] }
-      const next = patchLot(state, event.lotId, { clearingPerUnit: event.clearingPerUnit })
+      const next = patchLot(state, event.lotId, {
+        clearingPerUnit: event.clearingPerUnit,
+        priceLog: [...lot.priceLog, { block: state.block, perUnit: event.clearingPerUnit }],
+      })
       return { state: next, commands: [tickPrice(next.lots[event.lotId]!)] }
     }
     case "lot.settled": {
@@ -203,6 +237,13 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
           avgPerUnit: event.avgPerUnit,
           pickupDeadline: event.pickupDeadline,
           deadlineBlock: event.pickupDeadline,
+          settlement: {
+            sellerPaid: event.sellerPaid,
+            held: event.held,
+            fee: event.fee,
+            advanceBps: event.advanceBps,
+            tx: event.tx,
+          },
         }),
         commands: [{ kind: "flashClear", lotId: event.lotId }, { kind: "toast", text, tone: "money" }, status],
       }
@@ -210,7 +251,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
     case "lot.relisted": {
       const label = lot ? perUnit(event.newFloorPerUnit, lot.currency, lot.unit) : undefined
       return {
-        state: patchLot(state, event.lotId, { status: "relisted" }),
+        state: patchLot(state, event.lotId, { status: "relisted", relistedAs: event.newLotId }),
         commands: [
           label
             ? { kind: "fadeStall", lotId: event.lotId, newFloorLabel: label }
@@ -251,7 +292,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       if (!lot) return { state, commands: [{ kind: "toast", text, tone: "money" }, status] }
       const to = event.receiver.toLowerCase() === event.buyer.toLowerCase() ? "buyer" : "truck"
       return {
-        state: patchLot(state, event.lotId, { status: "picked_up" }),
+        state: patchLot(state, event.lotId, { status: "picked_up", handoverTx: event.tx }),
         commands: [
           { kind: "moveCrate", lotId: event.lotId, from: lot.building, to },
           { kind: "toast", text, tone: "money" },
@@ -293,7 +334,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
         ? `${amount} returned to the buyer on Lot ${event.lotId}`
         : `Lot ${event.lotId} refunded to the buyer`
       return {
-        state: patchLot(state, event.lotId, { status: "refunded" }),
+        state: patchLot(state, event.lotId, { status: "refunded", refundReason: "no_show" }),
         commands: [
           { kind: "refundCoins", lotId: event.lotId, buyer: event.buyer, amountLabel: amount ?? "" },
           setStatus(event.lotId, "refunded"),
@@ -336,7 +377,11 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       const badge: TownCommand = { kind: "refundBadge", lotId: event.lotId, label }
       if (event.refundBps <= 0) return { state, commands: [toast, badge] }
       return {
-        state: patchLot(state, event.lotId, { status: "refunded" }),
+        state: patchLot(state, event.lotId, {
+          status: "refunded",
+          refundReason: "dispute",
+          refundBps: event.refundBps,
+        }),
         commands: [toast, badge, setStatus(event.lotId, "refunded")],
       }
     }
@@ -367,6 +412,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
         building: "town_gate",
         sprite: "human",
         human: true,
+        reasons: [],
       }
       return { state: { ...state, agents: { ...state.agents, [event.agentId]: human } }, commands: [spawnAgent(human)] }
     }
@@ -417,11 +463,12 @@ export function reduceEnvelope(state: TownState, envelope: TownEnvelope): Reduce
 export function hydrate(snapshot: TownSnapshot): ReduceResult {
   const lots: Record<string, LotState> = {}
   for (const l of snapshot.lots) {
-    const draft: LotState = { ...l, slot: null }
+    const priceLog = l.clearingPerUnit ? [{ block: snapshot.block, perUnit: l.clearingPerUnit }] : []
+    const draft: LotState = { ...l, slot: null, bidLog: [], priceLog, progress: progressOf(l.status) }
     lots[l.lotId] = { ...draft, slot: isActive(draft) ? freeSlot(lots, l.building) : null }
   }
   const agents: Record<string, AgentState> = {}
-  for (const a of snapshot.agents) agents[a.agentId] = { ...a, human: a.role === "HUMAN" }
+  for (const a of snapshot.agents) agents[a.agentId] = { ...a, human: a.role === "HUMAN", reasons: [] }
   const signals: Record<string, SignalEvent> = {}
   for (const s of snapshot.signals) signals[s.id] = s
   const state: TownState = { ...initialTownState, block: snapshot.block, lots, agents, signals, fx: { ...snapshot.fx } }

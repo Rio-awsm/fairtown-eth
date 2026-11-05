@@ -15,8 +15,9 @@ export type TownDebug = {
   readonly commandLog: readonly TownCommand[]
   readonly sceneCommandsApplied: number
   readonly map: MapStatus
-  readonly agents: Omit<SceneProbe, "effectsSeen">
+  readonly agents: Pick<SceneProbe, "active" | "agents" | "trucks">
   readonly effectsSeen: Readonly<Record<string, number>>
+  readonly stallsOnScreen: SceneProbe["stalls"]
   readonly lastEventId: string | undefined
 }
 
@@ -67,6 +68,9 @@ export function exposeTown(target: object, store: StoreApi<TownStoreState>, enab
     get agents() {
       const { active, agents, trucks } = s().probe()
       return frozen({ active, agents, trucks })
+    },
+    get stallsOnScreen() {
+      return frozen(s().probe().stalls)
     },
     get effectsSeen() {
       return frozen(s().probe().effectsSeen)

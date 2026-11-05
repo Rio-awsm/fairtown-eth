@@ -1,3 +1,5 @@
+export const DEFAULT_EXPLORER = "https://sepolia.basescan.org"
+
 export class EnvError extends Error {
   constructor(message: string) {
     super(message)
@@ -11,7 +13,8 @@ export type ApiEnv = { mode: "mock"; baseUrl: "" } | { mode: "live"; baseUrl: st
 export type WebEnv = {
   relay: RelayEnv
   api: ApiEnv
-  explorerUrl?: string
+  /** Block explorer for tx and address links. Defaults to Base Sepolia, the demo chain (D-02). */
+  explorerUrl: string
   /** window.__TOWN__ is a test hook and must never ship to production. */
   exposeTown: boolean
 }
@@ -41,11 +44,11 @@ function readApi(raw: string | undefined): ApiEnv {
 
 /** Reads `import.meta.env`. Unset relay or API means mock, so the stream runs alone (contract 13). */
 export function readEnv(raw: Record<string, unknown>): WebEnv {
-  const explorerUrl = str(raw.VITE_EXPLORER_URL)
+  const explorerUrl = (str(raw.VITE_EXPLORER_URL) ?? DEFAULT_EXPLORER).replace(/\/$/, "")
   return {
     relay: readRelay(str(raw.VITE_RELAY_URL)),
     api: readApi(str(raw.VITE_API_URL)),
-    ...(explorerUrl ? { explorerUrl } : {}),
+    explorerUrl,
     exposeTown: raw.PROD !== true,
   }
 }

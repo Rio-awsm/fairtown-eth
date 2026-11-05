@@ -424,3 +424,32 @@ describe("reduceEnvelope", () => {
     })
   })
 })
+
+describe("history for panels (S3 1.4)", () => {
+  it("logs bids, prices, the settlement and the handover on the lot", () => {
+    const s = run([S["lot.listed"], S["bid.placed"], S["price.tick"], S["lot.settled"], S["handover.confirmed"]])
+    const lot = s.lots["12"]!
+    expect(lot.bidLog).toEqual([
+      { agentId: BUYER, maxPerUnit: "9400000", amount: "5460000000", tx: S["bid.placed"].tx },
+    ])
+    expect(lot.priceLog).toEqual([{ block: 0, perUnit: "8100000" }])
+    expect(lot.settlement).toEqual({
+      sellerPaid: "2702700000",
+      held: "2702700000",
+      fee: "54600000",
+      advanceBps: 5000,
+      tx: S["lot.settled"].tx,
+    })
+    expect(lot.handoverTx).toBe(S["handover.confirmed"].tx)
+  })
+
+  it("links a relisted lot to its new lot", () => {
+    expect(run([S["lot.listed"], S["lot.relisted"]]).lots["12"]?.relistedAs).toBe("13")
+  })
+
+  it("keeps the last 5 reasons per agent", () => {
+    const intents = Array.from({ length: 7 }, (_, i) => ({ ...S["agent.intent"], reason: `reason ${i}` }))
+    const s = run([S["agent.spawned"], ...intents])
+    expect(s.agents[BUYER]?.reasons).toEqual(["reason 2", "reason 3", "reason 4", "reason 5", "reason 6"])
+  })
+})

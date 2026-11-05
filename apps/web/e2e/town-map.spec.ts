@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test"
 
+// The HUD is DOM over the canvas and its clock reads real time when the relay is off: mask it.
+const SHOT_OPTS = (page: Page) => ({ maxDiffPixelRatio: 0.01, mask: [page.locator("[data-hud]")] })
+
 const mapStatus = (page: Page) => page.evaluate(() => window.__TOWN__?.map)
 const waitForMap = (page: Page) =>
   page.waitForFunction(
@@ -23,7 +26,7 @@ test("town map screenshot baseline", async ({ page }) => {
   await page.goto("/town?relay=off")
   await waitForMap(page)
   await nextFrames(page)
-  await expect(page.locator("#game-container canvas")).toHaveScreenshot("town-map.png", { maxDiffPixelRatio: 0.01 })
+  await expect(page.locator("#game-container canvas")).toHaveScreenshot("town-map.png", SHOT_OPTS(page))
 })
 
 // MSW's service worker makes the request, so route at the context, which also sees service worker traffic.

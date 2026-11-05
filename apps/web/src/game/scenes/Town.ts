@@ -141,6 +141,8 @@ export class Town extends Scene {
         .text(label.x, label.y, BUILDING_SIGNS[b], { ...TEXT, fontSize: "8px" })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH.text)
+        .setInteractive({ useHandCursor: true })
+        .on("pointerdown", () => EventBus.emit("select", { kind: "building", id: b }))
     }
     const gate = town.anchors.gateSpawn
     this.add
@@ -199,7 +201,8 @@ export class Town extends Scene {
     }
     const previous = this.agents.get(c.agentId)
     if (previous && previous !== this.pool[admitted.slot]) previous.retire()
-    const sprite = (this.pool[admitted.slot] ??= new AgentSprite(this).setDepth(DEPTH.agent))
+    const onSelect = (id: string) => EventBus.emit("select", { kind: "agent", id })
+    const sprite = (this.pool[admitted.slot] ??= new AgentSprite(this, onSelect).setDepth(DEPTH.agent))
     sprite.setSpeed(this.speed)
     const at = this.standAt(this.walkGrid, this.spotFor(c.agentId, c.building))
     sprite.reset({ agentId: c.agentId, label: c.label, role: c.role, sprite: c.sprite, highlight: c.highlight }, at)
@@ -255,7 +258,13 @@ export class Town extends Scene {
       blocked: !isWalkable(this.roadGrid, t),
       queue: null,
     }))
-    return { active: agents.length, agents, trucks, effectsSeen: Object.fromEntries(this.seen) }
+    const cam = this.cameras.main
+    const stalls = [...this.stalls.entries()].map(([lotId, s]) => ({
+      lotId,
+      x: (s.x - cam.worldView.x) * cam.zoom,
+      y: (s.y - cam.worldView.y) * cam.zoom,
+    }))
+    return { active: agents.length, agents, trucks, effectsSeen: Object.fromEntries(this.seen), stalls }
   }
 
   private see(effect: string) {
@@ -283,6 +292,7 @@ export class Town extends Scene {
     this.stalls.get(c.lotId)?.destroy()
     // Alternate labels above and below so neighbouring stalls stay readable.
     const stall = new StallView(this, this.stallSpot(c), c, (c.slot ?? 0) % 2 === 1).setDepth(DEPTH.stall)
+    stall.onSelect(() => EventBus.emit("select", { kind: "lot", id: c.lotId }))
     stall.setClock(this.block)
     const tier = this.sellerTier.get(c.seller)
     if (tier) stall.setTier(tier)

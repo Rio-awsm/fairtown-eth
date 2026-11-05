@@ -39,7 +39,13 @@ export const MOCK_RESPONSES: { [K in RouteKey]: z.input<ApiRoutes[K]["res"]> } =
   },
   confirmListing: { lotId: "12", auction: addr(0xa00c), token: addr(0xb00c), tx: TX },
   lotMeta: { name: "Lot 12: 600 kg cod, Bergen", grade: "fresh_a" },
-  lot: { spec: { commodity: "cod", qty: "600", unit: "kg" }, status: "open", clearing: "8100000", bids: [] },
+  lot: {
+    spec: { commodity: "cod", qty: "600", unit: "kg" },
+    status: "open",
+    clearing: "8100000",
+    bids: [],
+    gradeReport: { grade: "fresh_a", defects: [], confidence: 0.92, standard: "EU fish freshness", tee_verified: true },
+  },
   lotTimeline: {
     steps: [
       { name: "Sold", status: "done", block: 1046, tx: TX },
@@ -56,7 +62,15 @@ export const MOCK_RESPONSES: { [K in RouteKey]: z.input<ApiRoutes[K]["res"]> } =
   },
   createBuyer: { agentId: HANSE, address: HANSE },
   agents: [{ agentId: HANSE, name: "Hanse Kitchen", role: "BUYER" }],
-  agent: { agentId: HANSE, name: "Hanse Kitchen", role: "BUYER" },
+  agent: {
+    agentId: HANSE,
+    name: "Hanse Kitchen",
+    role: "BUYER",
+    persona: "Hamburg restaurant group buying fresh fish",
+    currency: "EUR",
+    mandate: { commodities: ["cod", "haddock"], maxPerUnit: "9400000", minGrade: "fresh_a", avoidNoShowSellers: true },
+    budget: "50000000000",
+  },
   patchAgent: { agentId: HANSE, name: "Hanse Kitchen", role: "BUYER", paused: true },
   walkin: { agentId: addr(0x10f), address: addr(0x10f), token: "walkin-mock-session" },
   walkinBid: { bidId: "1", tx: TX },

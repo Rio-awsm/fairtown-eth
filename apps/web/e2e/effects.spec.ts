@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Page } from "@playwright/test"
 
+// The HUD is DOM over the canvas: mask it so baselines only judge the town.
+const SHOT_OPTS = (page: Page) => ({ maxDiffPixelRatio: 0.01, mask: [page.locator("[data-hud]")] })
+
 type Envelope = { id: string; event: { type: string; kind?: string; lotId?: string; seller?: string } }
 const day: Envelope[] = readFileSync(new URL("../src/mocks/day.jsonl", import.meta.url), "utf8")
   .split("\n")
@@ -79,8 +82,6 @@ for (const [name, until] of BASELINES) {
     await replayDone(page)
     // Let walks, coins and bubbles finish; weather and lights are static.
     await page.waitForTimeout(1500)
-    await expect(page.locator("#game-container canvas")).toHaveScreenshot(`effects-${name}.png`, {
-      maxDiffPixelRatio: 0.01,
-    })
+    await expect(page.locator("#game-container canvas")).toHaveScreenshot(`effects-${name}.png`, SHOT_OPTS(page))
   })
 }

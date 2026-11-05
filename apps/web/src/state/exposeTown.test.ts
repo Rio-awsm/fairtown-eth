@@ -21,6 +21,7 @@ describe("exposeTown", () => {
       agents: [{ id: "a", x: 8, y: 8, blocked: false, queue: "fish_dock:0" }],
       trucks: [],
       effectsSeen: { coinArc: 2 },
+      stalls: [],
     }
     bus.emit("scene:probe", () => probe)
     expect(target.__TOWN__?.agents).toEqual({ active: 1, agents: probe.agents, trucks: [] })
@@ -48,6 +49,7 @@ describe("exposeTown", () => {
     expect(target.__TOWN__?.map).toEqual({ status: "loading", buildings: 0, problems: [] })
     expect(target.__TOWN__?.agents).toEqual({ active: 0, agents: [], trucks: [] })
     expect(target.__TOWN__?.effectsSeen).toEqual({})
+    expect(target.__TOWN__?.stallsOnScreen).toEqual([])
     expect(() => {
       ;(target.__TOWN__!.map.problems as string[]).push("x")
     }).toThrow(TypeError)

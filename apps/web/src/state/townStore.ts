@@ -1,12 +1,16 @@
 import type { TownEnvelope, TownSnapshot } from "@fairtown/shared/protocol"
 import { useStore } from "zustand"
 import { createStore, type StoreApi } from "zustand/vanilla"
-import { EventBus, type EventBusApi, type MapStatus, type SceneProbe } from "../game/EventBus"
+import { EventBus, type EventBusApi, type MapStatus, type SceneProbe, type Selection } from "../game/EventBus"
 import type { TownCommand } from "../game/commands"
 import { commandsForState, hydrate, initialTownState, reduceEnvelope, type TownState } from "../game/reducer"
+import { tickerLine } from "../hud/model"
 import type { RelayStatus } from "../net/relayClient"
 
 export const COMMAND_LOG_MAX = 200
+export const TICKER_MAX = 20
+
+export type TickerLine = { id: string; text: string }
 
 export type TownMode = "live" | "replay"
 
@@ -22,6 +26,11 @@ export type TownStoreState = {
   /** Set by the scene once it runs; reads live sprite positions. */
   probe: () => SceneProbe
   lastEventId?: string
+  /** Time of the latest envelope (replay or live), for the world clock. */
+  ts: number | undefined
+  ticker: TickerLine[]
+  selection: Selection
+  select(selection: Selection): void
   setMode(mode: TownMode): void
   setStatus(status: RelayStatus): void
   applySnapshot(snapshot: TownSnapshot): void
@@ -43,7 +52,11 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
     commandLog: [],
     sceneCommandsApplied: 0,
     map: { status: "loading", buildings: 0, problems: [] },
-    probe: () => ({ active: 0, agents: [], trucks: [], effectsSeen: {} }),
+    probe: () => ({ active: 0, agents: [], trucks: [], effectsSeen: {}, stalls: [] }),
+    ts: undefined,
+    ticker: [],
+    selection: null,
+    select: (selection) => set({ selection }),
     setMode: (mode) => set({ mode }),
     setStatus: (status) => set({ status }),
     applySnapshot(snapshot) {
@@ -52,8 +65,12 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
       bus.emit("town:commands", commands)
     },
     applyEnvelope(envelope) {
-      const { state, commands } = reduceEnvelope(get().town, envelope)
+      const before = get().town
+      const { state, commands } = reduceEnvelope(before, envelope)
+      const line = tickerLine(before, envelope.event)
       set((s) => ({
+        ts: envelope.ts,
+        ticker: line ? [{ id: envelope.id, text: line }, ...s.ticker].slice(0, TICKER_MAX) : s.ticker,
         town: state,
         eventsApplied: s.eventsApplied + 1,
         lastEventId: envelope.id,
@@ -67,6 +84,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
   bus.on("scene:ready", () => bus.emit("town:commands", commandsForState(store.getState().town)))
   bus.on("map:status", (map) => store.setState({ map }))
   bus.on("scene:probe", (probe) => store.setState({ probe }))
+  bus.on("select", (selection) => store.setState({ selection }))
   bus.on("scene:applied", (n) => store.setState((s) => ({ sceneCommandsApplied: s.sceneCommandsApplied + n })))
   return store
 }

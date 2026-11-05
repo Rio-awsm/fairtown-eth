@@ -31,6 +31,14 @@ describe("readEnv", () => {
     )
   })
 
+  it("defaults the explorer to Base Sepolia (D-02) so every tx gets a link", () => {
+    expect(readEnv({}).explorerUrl).toBe("https://sepolia.basescan.org")
+  })
+
+  it("drops a trailing slash from the explorer URL", () => {
+    expect(readEnv({ VITE_EXPLORER_URL: "https://example.org/" }).explorerUrl).toBe("https://example.org")
+  })
+
   it("rejects a relay URL that is not ws, wss or mock", () => {
     expect(() => readEnv({ VITE_RELAY_URL: "http://nope" })).toThrow(EnvError)
   })

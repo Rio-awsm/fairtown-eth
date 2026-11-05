@@ -89,6 +89,24 @@
 
 **Readability.** Stall text is 4 px in map units (about 8 px on screen at 1920 × 1080). Fine on a laptop, small on a projector; enlarge in `?demo=1` (S3 5.1).
 
+## 2026-11-06, S3 1.4
+
+**HUD.** `/town` is full screen; its HUD top bar carries LIVE or REPLAY and TEST MONEY there (every other route keeps the shell header). Keys `1` to `7`: Fish Dock, Freight Yard, Flower Hall, Harvest Hall, Cold Vault, Neighbourhood Pool, Compute Yard. `Esc` closes the panel.
+
+**World clock** reads the time of the latest envelope, so replays show the recorded time (Bergen 05:00 at the start of the day). With no envelope yet it uses the wall clock.
+
+**Explorer links.** `VITE_EXPLORER_URL`, defaulting to `https://sepolia.basescan.org` (D-02), so every tx and address links somewhere.
+
+**Assumed API fields (S2 to confirm, possible minor ICR).**
+- `GET /api/lots/:lotId` (`LotView`, loose): the grade report is read from `gradeReport` or `spec.gradeReport`, with `grade`, `confidence`, `standard`, `defects`, `tee_verified`. The Verified badge shows only for `tee_verified === true`.
+- `GET /api/agents/:agentId` (`AgentView`, loose): `persona`, `currency`, `budget`, `mandate.commodities`, `mandate.maxPerUnit`.
+
+**uPlot** loads on demand when a lot panel opens (it touches `matchMedia` at import, and keeps 52 kB out of the main bundle).
+
+**Baselines** mask the DOM HUD (`mask: [data-hud]`), so they judge only the canvas.
+
 ## Open questions
+
+- S2: confirm the `LotView.gradeReport` and `AgentView` fields above, or add them to `@fairtown/shared/api`.
 
 - Should S2 add `AgentList` and `LotMeta` schemas to `@fairtown/shared/api` (minor ICR)?

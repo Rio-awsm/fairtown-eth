@@ -84,6 +84,11 @@ export class StallView extends GameObjects.Container {
     scene.add.existing(this)
   }
 
+  /** Clicking the stall opens its lot panel (S3 1.4). */
+  onSelect(fn: () => void): void {
+    this.box.setInteractive({ useHandCursor: true }).on("pointerdown", fn)
+  }
+
   setClock(block: number): void {
     this.block = block
     this.drawTimer()

@@ -1,3 +1,4 @@
+import type { Building } from "@fairtown/shared/keys"
 import type { TownCommand } from "./commands"
 
 /** Town map load result. On "error" the scene falls back to the stub layout and lists the problems. */
@@ -11,13 +12,20 @@ export type SceneProbe = {
   agents: AgentProbe[]
   trucks: AgentProbe[]
   effectsSeen: Record<string, number>
+  /** Where each stall sits in game pixels (1920 × 1080), so e2e can click it. */
+  stalls: { lotId: string; x: number; y: number }[]
 }
+
+/** What a click in the scene or a panel opens (S3 1.4). */
+export type Selection =
+  { kind: "lot"; id: string } | { kind: "agent"; id: string } | { kind: "building"; id: Building } | null
 
 /** Events between React, the store and the Phaser scene. */
 export type BusEvents = {
   "town:commands": TownCommand[]
   "map:status": MapStatus
   "scene:probe": () => SceneProbe
+  select: Selection
   "scene:ready": undefined
   "scene:applied": number
 }

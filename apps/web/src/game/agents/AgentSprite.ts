@@ -62,12 +62,13 @@ export class AgentSprite extends GameObjects.Container {
   private walkTween: Phaser.Tweens.Tween | undefined
   private stepMs = STEP_MS
 
-  constructor(scene: Scene) {
+  constructor(scene: Scene, onSelect?: (agentId: string) => void) {
     super(scene, 0, 0)
     this.figure = scene.add.image(0, 0, "agent:NONE:down")
     this.badge = scene.add.text(6, -8, "", { ...TEXT, fontSize: "5px" }).setOrigin(0.5, 1)
     this.nameTag = scene.add.text(0, 7, "", { ...TEXT, fontSize: "5px" }).setOrigin(0.5, 0)
     this.add([this.figure, this.badge, this.nameTag])
+    if (onSelect) this.figure.setInteractive({ useHandCursor: true }).on("pointerdown", () => onSelect(this.agentId))
     scene.add.existing(this)
     this.setActive(false).setVisible(false)
   }

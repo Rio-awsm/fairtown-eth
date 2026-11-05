@@ -33,6 +33,28 @@ describe("townStore", () => {
     expect(emitted[0]).toEqual([{ kind: "setClock", block: 1050 }])
   })
 
+  it("keeps the envelope time and a plain-words ticker, newest first, at most 20", () => {
+    const { store } = setup()
+    store.getState().applyEnvelope(envelope(S["lot.listed"]))
+    store.getState().applyEnvelope(envelope(S["agent.spawned"]))
+    const bid = envelope(S["bid.placed"])
+    store.getState().applyEnvelope(bid)
+    expect(store.getState().ts).toBe(bid.ts)
+    expect(store.getState().ticker[0]).toEqual({ id: bid.id, text: "Hanse Kitchen bid €9.40/kg on Lot 12" })
+    for (let i = 0; i < 30; i++) store.getState().applyEnvelope(envelope(S["bid.placed"]))
+    expect(store.getState().ticker).toHaveLength(20)
+  })
+
+  it("selects what the scene or a panel points at, and clears it", () => {
+    const { store, bus } = setup()
+    bus.emit("select", { kind: "lot", id: "12" })
+    expect(store.getState().selection).toEqual({ kind: "lot", id: "12" })
+    store.getState().select({ kind: "building", id: "fish_dock" })
+    expect(store.getState().selection).toEqual({ kind: "building", id: "fish_dock" })
+    store.getState().select(null)
+    expect(store.getState().selection).toBeNull()
+  })
+
   it("keeps only the last 200 commands in the log", () => {
     const { store } = setup()
     for (let i = 0; i < 250; i++) store.getState().applyEnvelope(envelope(S["fx.updated"]))

@@ -5,7 +5,7 @@ import { startGame } from "./main"
 const CONTAINER_ID = "game-container"
 
 /** Mounts one Phaser game and destroys it on unmount (adapted from phaserjs/template-react-ts). */
-export function PhaserGame() {
+export function PhaserGame({ className = "h-[calc(100vh-49px)] w-full" }: { className?: string }) {
   const game = useRef<Game | null>(null)
 
   useLayoutEffect(() => {
@@ -16,5 +16,5 @@ export function PhaserGame() {
     }
   }, [])
 
-  return <div id={CONTAINER_ID} className="h-[calc(100vh-49px)] w-full" />
+  return <div id={CONTAINER_ID} className={className} />
 }
