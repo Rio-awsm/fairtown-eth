@@ -29,6 +29,8 @@ export const AgentsConfig = z.object({
   PICKUP_WINDOW_STORAGE: blocks.default(150n),
   PICKUP_WINDOW_COMPUTE: blocks.default(60n),
   RELIST_STEP_BPS: bps.default(1500),
+  STORAGE_DIR: z.string().default("./.data"),
+  PUBLIC_BASE_URL: z.string().url().default("http://localhost:8787"),
   TREASURY_ADDRESS: z
     .string()
     .regex(/^0x[0-9a-fA-F]{40}$/)

@@ -22,7 +22,7 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-17 | Refund bands, of held share | S1 4.4 | Same grade 0%, one lower 25%, two lower 50%, unfit or no-show upheld 100% |  |  |  |
 | D-18 | Agent counts | S2 0.1 | 6 sellers, 12 buyers, 4 trucks, 2 cold stores, 2 societies, 1 compute provider | Guide default, 27 personas in `fixtures/agents.json` | Rio-awsm | 2026-11-06 |
 | D-19 | LLM budget | S2 1.1 | Concurrency 4, events only, rule fallback after 4s | Guide default (gateway defaults: concurrency 4, timeout 4000 ms) | Rio-awsm | 2026-11-06 |
-| D-20 | Photo storage | S2 1.2 | Local disk, hash on Arkiv |  |  |  |
+| D-20 | Photo storage | S2 1.2 | Local disk, hash on Arkiv | Guide default: `STORAGE_DIR/photos/<sha256>`, served at `/api/photos/:hash` | Rio-awsm | 2026-11-06 |
 | D-21 | Styling | S3 0.1 | Tailwind |  |  |  |
 | D-22 | Charts | S3 0.1 | uPlot |  |  |  |
 | D-23 | Art | S3 1.1 | Kenney, Ninja Adventure |  |  |  |
@@ -43,3 +43,4 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-38 | Agents config when a mode var is unset | S2 0.1 | Undefined | Defaults to `CHAIN_MODE=fake`, `ARKIV_MODE=memory`, `MOCK_AI=1` (guide rule 7) | Proposed by Claude in the S2 0.1 plan, approved by Rio-awsm | 2026-11-06 |
 | D-39 | FakeChain clearing and auto-keeper | S2 0.1 | Undefined | Uniform clearing at the lowest price where demand fits qty; marginal tier rationed by time. FakeChain settles, assigns carriers, finalizes no-shows and releases expired held money on `mine()` | Rio-awsm (design approval) | 2026-11-06 |
 | D-40 | AI provider for S2 | S2 1.1 | Local model (D-07) | Team LiteLLM gateway (OpenAI-compatible): bidder `gemini-2.5-flash-lite`, listing and vision `gemini-3.5-flash-lite`. All three pass native JSON-schema output, about 1.1 s per call | Rio-awsm | 2026-11-06 |
+| D-41 | Listing parse and floor | S2 1.2 | Undefined | LLM returns words as written; code maps synonyms and converts units; deterministic rule parser as fallback; place defaults to the seller's home place. Floor = reference (or blend with median of last 10 clears) x grade factor, 10% below (15% if under 6 h), rounded down to 0.01 | Proposed by Claude, approved by Rio-awsm ("start 1.2") | 2026-11-06 |

@@ -1,0 +1,92 @@
+[
+  {
+    "commodity": "cod",
+    "market": "bergen",
+    "perUnit": "8300000",
+    "currency": "EUR",
+    "date": "2026-11-05",
+    "source": "illustrative: scene value; replace with the Rafisklaget minimum price before the demo",
+    "sourceUrl": "https://www.rafisklaget.no/minstepriser"
+  },
+  {
+    "commodity": "tomato",
+    "market": "lagos",
+    "perUnit": "380000",
+    "currency": "USD",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  },
+  {
+    "commodity": "marigold",
+    "market": "mumbai",
+    "perUnit": "950000",
+    "currency": "USD",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  },
+  {
+    "commodity": "gpu_hour",
+    "market": "any_dc",
+    "perUnit": "2000000",
+    "currency": "USD",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  },
+  {
+    "commodity": "truck_capacity",
+    "market": "dallas",
+    "perUnit": "55000",
+    "currency": "USD",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  },
+  {
+    "commodity": "haddock",
+    "market": "bergen",
+    "perUnit": "6500000",
+    "currency": "EUR",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  },
+  {
+    "commodity": "onion",
+    "market": "houston",
+    "perUnit": "450000",
+    "currency": "USD",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  },
+  {
+    "commodity": "rose",
+    "market": "nairobi",
+    "perUnit": "4400000",
+    "currency": "EUR",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  },
+  {
+    "commodity": "cargo_slot",
+    "market": "nairobi",
+    "perUnit": "1600000",
+    "currency": "EUR",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  },
+  {
+    "commodity": "storage_slot",
+    "market": "lagos",
+    "perUnit": "5500000",
+    "currency": "USD",
+    "date": "2026-11-05",
+    "source": "illustrative",
+    "sourceUrl": ""
+  }
+]

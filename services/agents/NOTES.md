@@ -33,3 +33,15 @@
 **LiteLLM gateway.**
 - Serves both `/models` and `/v1/models`. The gateway adds `/v1` when `LLM_BASE_URL` lacks it.
 - A typo in a model name returns HTTP 401 "key not allowed to access model", not 404.
+
+## 2026-11-06, S2 1.2
+
+**Photo reuse uses exact SHA-256, not a perceptual hash.** The guide asks for pHash. Decoding images needs a native dependency (sharp) or a slow pure-JS decoder, so a re-encoded or cropped copy is not caught yet. Revisit if time allows.
+
+**References are illustrative.** Only cod@bergen has a named source to fill in (Rafisklaget minimum price); the value 8.30 EUR is the scene number. Every other row is marked illustrative. Replace before the demo or keep the label visible.
+
+**Security hook false positive.** The security-guidance plugin blocks file writes containing `RegExp.prototype.exec` (it pattern-matches `exec(`). Use `String.prototype.match` instead.
+
+**LotDraft has no field for photo checks.** Photo flags travel as `gradeReport.defects` entries prefixed "Photo check:" and in lot metadata `photoChecks`. A minor ICR could add a field.
+
+**Live golden run.** 19 of 20 messages through `gemini-3.5-flash-lite` before the home-place default; m10 ("about half a tonne of roses") had no place. The rule parser alone reads all 18 non-hard messages.

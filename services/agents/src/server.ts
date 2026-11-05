@@ -4,8 +4,9 @@ import type { AiGateway } from "./ai/gateway"
 import type { ArkivStore } from "./arkiv/ArkivStore"
 import type { ChainAdapter } from "./chain/types"
 import type { AgentsConfig } from "./config"
+import { registerListingRoutes, type ListingDeps } from "./listing/routes"
 
-export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; logger?: boolean }
+export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; logger?: boolean }
 
 export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
 
@@ -34,6 +35,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     const ai = await deps.ai.health()
     return HealthResponse.parse({ ok: chain.ok && arkiv.ok && ai.ok, chain, arkiv, ai, addons: {} })
   })
+
+  if (deps.listing) registerListingRoutes(app, { ...deps.listing, config: deps.config, chain: deps.chain })
 
   return app
 }

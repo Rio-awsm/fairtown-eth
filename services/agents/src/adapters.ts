@@ -7,7 +7,7 @@ import { protocolParams, type AgentsConfig } from "./config"
 
 export const FAKE_BLOCK_MS = 2000
 
-export function createAdapters(config: AgentsConfig): { chain: ChainAdapter; arkiv: ArkivStore; stop: () => void } {
+export function createAdapters(config: AgentsConfig): { chain: ChainAdapter; arkiv: ArkivStore; stop: () => void; fake?: FakeChain } {
   if (config.CHAIN_MODE !== "fake")
     throw new Error(`CHAIN_MODE=${config.CHAIN_MODE} needs ViemChain, which lands in S2 3.1. Use CHAIN_MODE=fake for now.`)
   if (config.ARKIV_MODE !== "memory")
@@ -17,6 +17,5 @@ export function createAdapters(config: AgentsConfig): { chain: ChainAdapter; ark
     chainId: config.CHAIN_ID,
     treasury: config.TREASURY_ADDRESS as Address | undefined,
   })
-  const stop = chain.autoMine(FAKE_BLOCK_MS)
-  return { chain, arkiv: new MemoryArkivStore(), stop }
+  return { chain, arkiv: new MemoryArkivStore(), stop: () => {}, fake: chain }
 }
