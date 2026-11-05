@@ -1,7 +1,7 @@
 import type { TownEnvelope, TownSnapshot } from "@fairtown/shared/protocol"
 import { useStore } from "zustand"
 import { createStore, type StoreApi } from "zustand/vanilla"
-import { EventBus, type EventBusApi } from "../game/EventBus"
+import { EventBus, type EventBusApi, type MapStatus } from "../game/EventBus"
 import type { TownCommand } from "../game/commands"
 import { commandsForState, hydrate, initialTownState, reduce, type TownState } from "../game/reducer"
 import type { RelayStatus } from "../net/relayClient"
@@ -18,6 +18,7 @@ export type TownStoreState = {
   rejected: number
   commandLog: TownCommand[]
   sceneCommandsApplied: number
+  map: MapStatus
   lastEventId?: string
   setMode(mode: TownMode): void
   setStatus(status: RelayStatus): void
@@ -39,6 +40,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
     rejected: 0,
     commandLog: [],
     sceneCommandsApplied: 0,
+    map: { status: "loading", buildings: 0, problems: [] },
     setMode: (mode) => set({ mode }),
     setStatus: (status) => set({ status }),
     applySnapshot(snapshot) {
@@ -60,6 +62,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
   }))
 
   bus.on("scene:ready", () => bus.emit("town:commands", commandsForState(store.getState().town)))
+  bus.on("map:status", (map) => store.setState({ map }))
   bus.on("scene:applied", (n) => store.setState((s) => ({ sceneCommandsApplied: s.sceneCommandsApplied + n })))
   return store
 }

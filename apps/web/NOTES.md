@@ -43,6 +43,24 @@
 **Bundle size for phones.**
 - The main chunk is about 504 kB (154 kB gzip). viem comes in through `@fairtown/shared/keys` (`stringToHex`) and `/units` (`parseUnits`). Worth trimming before S3 2.1 tests `/sell` on a phone.
 
+## 2026-11-06, S3 1.1
+
+**Rules for `public/assets/maps/town.tmj` (checked by `src/game/map/town-map.test.ts`).**
+- 60 × 34 tiles of 16 px; the scene zooms to fit 1920 × 1080 (2× for this size).
+- Tilesets **embedded** (Phaser cannot load external `.tsx`), one image each, images in `public/assets/tiles/`, each credited in `CREDITS.md`.
+- Tile Layer Format **CSV** (Phaser cannot read zstd; any compression is rejected).
+- Tile layers `ground`, `water`, `roads`, `buildings`, `decor`, `collision` (any tile on `collision` blocks). Object layer `anchors` with Point objects: `<building>.entry`, `.label`, `.stall_1..6`, `.queue_1..8` for the 7 market buildings, `town_gate.spawn`, `road_1..n`.
+- `pnpm -F web map:stub` rewrites the generated stub map. It overwrites `town.tmj`, so never run it once the hand-built map is in.
+
+**Screenshot baseline.**
+- `e2e/town-map.spec.ts-snapshots/town-map-dev-darwin.png` is the stub map, rendered on macOS. When the Tiled map lands, refresh it with `pnpm -F web exec playwright test e2e/town-map.spec.ts --update-snapshots` and check the image. Other platforms create their own `-linux` baseline on first run.
+
+**Playwright cannot `page.route` requests made by MSW's service worker.**
+- With `VITE_API_URL=mock`, the MSW worker controls the page and fetches unhandled requests itself, so `page.route("**/town.tmj")` never fires. `page.context().route(...)` sees service worker traffic in Chromium.
+
+**Broken map.**
+- If `town.tmj` is missing or invalid, the scene logs the problems, draws them in red and uses the stub layout, so the replay and demo keep running. `__TOWN__.map` reports `status: "error"` with the problem list.
+
 ## Open questions
 
 - Should S2 add `AgentList` and `LotMeta` schemas to `@fairtown/shared/api` (minor ICR)?

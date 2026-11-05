@@ -22,8 +22,11 @@ async function startMockApi() {
 async function boot(root: HTMLElement) {
   if (env.api.mode === "mock") await startMockApi()
   // Outside React, so StrictMode's double effects never open a second relay connection.
-  const speed = Number(new URLSearchParams(window.location.search).get("speed")) || 1
-  connectTown(env, townStore, { speed }).start()
+  const params = new URLSearchParams(window.location.search)
+  const speed = Number(params.get("speed")) || 1
+  // ?relay=off (outside production) draws the bare map, for the screenshot baseline.
+  const relayOff = env.exposeTown && params.get("relay") === "off"
+  if (!relayOff) connectTown(env, townStore, { speed }).start()
   exposeTown(window, townStore, env.exposeTown)
   createRoot(root).render(
     <StrictMode>

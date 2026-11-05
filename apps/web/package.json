@@ -10,7 +10,8 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "typecheck": "tsc -p .",
-    "fixtures:day": "tsx scripts/write-day.ts"
+    "fixtures:day": "tsx scripts/write-day.ts",
+    "map:stub": "tsx scripts/make-stub-map.ts"
   },
   "msw": {
     "workerDirectory": [

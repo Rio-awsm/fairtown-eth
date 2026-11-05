@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand/vanilla"
+import type { MapStatus } from "../game/EventBus"
 import type { TownCommand } from "../game/commands"
 import type { TownState } from "../game/reducer"
 import type { RelayStatus } from "../net/relayClient"
@@ -13,6 +14,7 @@ export type TownDebug = {
   readonly rejected: number
   readonly commandLog: readonly TownCommand[]
   readonly sceneCommandsApplied: number
+  readonly map: MapStatus
   readonly lastEventId: string | undefined
 }
 
@@ -56,6 +58,9 @@ export function exposeTown(target: object, store: StoreApi<TownStoreState>, enab
     },
     get sceneCommandsApplied() {
       return s().sceneCommandsApplied
+    },
+    get map() {
+      return frozen(s().map)
     },
     get lastEventId() {
       return s().lastEventId

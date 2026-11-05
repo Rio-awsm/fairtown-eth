@@ -25,7 +25,7 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-20 | Photo storage | S2 1.2 | Local disk, hash on Arkiv |  |  |  |
 | D-21 | Styling | S3 0.1 | Tailwind | Tailwind 4.3 via `@tailwindcss/vite` | iamanirbanbasak | 2026-11-06 |
 | D-22 | Charts | S3 0.1 | uPlot | uPlot, installed at S3 1.4 with the first chart | iamanirbanbasak | 2026-11-06 |
-| D-23 | Art | S3 1.1 | Kenney, Ninja Adventure |  |  |  |
+| D-23 | Art | S3 1.1 | Kenney, Ninja Adventure | Kenney Tiny Town (16 px, CC0) as the base, Ninja Adventure (CC0) for decor. A generated stub map stands in until the Tiled map lands | iamanirbanbasak | 2026-11-06 |
 | D-24 | Public URL | S3 2.2 | **HTTPS tunnel required**, because camera access needs a secure page. Own hotspot |  |  |  |
 | D-25 | Integration captain | C 0.1 | S1 CRE + keeper lead |  |  |  |
 | D-26 | Proven threshold and seeding | S1 1.3 | 3 clean lots; operator marks seeded sellers, disclosed |  |  |  |

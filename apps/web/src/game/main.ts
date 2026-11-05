@@ -6,6 +6,7 @@ const config: Types.Core.GameConfig = {
   width: 1920,
   height: 1080,
   backgroundColor: "#0b1220",
+  pixelArt: true,
   scale: { mode: Scale.FIT, autoCenter: Scale.CENTER_BOTH },
   scene: [Town],
 }

@@ -1,8 +1,12 @@
 import type { TownCommand } from "./commands"
 
+/** Town map load result. On "error" the scene falls back to the stub layout and lists the problems. */
+export type MapStatus = { status: "loading" | "ready" | "error"; buildings: number; problems: string[] }
+
 /** Events between React, the store and the Phaser scene. */
 export type BusEvents = {
   "town:commands": TownCommand[]
+  "map:status": MapStatus
   "scene:ready": undefined
   "scene:applied": number
 }

@@ -26,6 +26,10 @@ describe("exposeTown", () => {
     expect(target.__TOWN__?.eventsApplied).toBe(2)
     expect(target.__TOWN__?.state.lots["12"]?.bids).toBe(1)
     expect(target.__TOWN__).toMatchObject({ mode: "replay", rejected: 0, sceneCommandsApplied: 0 })
+    expect(target.__TOWN__?.map).toEqual({ status: "loading", buildings: 0, problems: [] })
+    expect(() => {
+      ;(target.__TOWN__!.map.problems as string[]).push("x")
+    }).toThrow(TypeError)
   })
 
   it("is read-only: writes through the hook throw and never reach the store", () => {

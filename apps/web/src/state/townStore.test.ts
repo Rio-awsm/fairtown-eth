@@ -61,6 +61,17 @@ describe("townStore", () => {
     expect(store.getState().sceneCommandsApplied).toBe(5)
   })
 
+  it("tracks the map status the scene reports", () => {
+    const { store, bus } = setup()
+    expect(store.getState().map).toEqual({ status: "loading", buildings: 0, problems: [] })
+    bus.emit("map:status", { status: "error", buildings: 7, problems: ["missing anchor fish_dock.stall_3"] })
+    expect(store.getState().map).toEqual({
+      status: "error",
+      buildings: 7,
+      problems: ["missing anchor fish_dock.stall_3"],
+    })
+  })
+
   it("counts rejected frames", () => {
     const { store } = setup()
     store.getState().noteReject()

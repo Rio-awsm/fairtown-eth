@@ -14,6 +14,7 @@ const PURE = [
   "game/commands.ts",
   "game/EventBus.ts",
   "money/format.ts",
+  ...filesIn("game/map"),
   ...filesIn("net"),
   ...filesIn("state"),
 ]
