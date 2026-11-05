@@ -17,7 +17,10 @@ const ready = (page: Page) =>
   page.waitForFunction(() => window.__TOWN__?.status === "replay_done", null, { timeout: 20_000 })
 
 async function check(page: Page, state: string) {
-  expect((await page.locator("body").innerText()).replace(/[\u00a0\u202f]/g, " "), `crypto word (${state})`).not.toMatch(CRYPTO)
+  expect(
+    (await page.locator("body").innerText()).replace(/[\u00a0\u202f]/g, " "),
+    `crypto word (${state})`,
+  ).not.toMatch(CRYPTO)
   const axe = await new AxeBuilder({ page }).analyze()
   expect(
     axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),

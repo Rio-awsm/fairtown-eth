@@ -135,6 +135,18 @@
 
 **Assumed API field (S2, minor ICR).** `GET /api/lots/:lotId` → `winners: [{ buyer, tokenAmount }]` (D-38).
 
+## 2026-11-06, S3 3.1
+
+**Buyer console.** Agents are the API list (`GET /api/agents`) merged with buyer agents seen in the town, by address. A created buyer is added to the list and its detail straight from the create response. Money: max price and budget typed in plain units, sent as base units; the budget must cover max price × quantity when a quantity is set.
+
+**Mock API is stateful for agents** (`src/mocks/agents.ts`): create, pause and edit persist until reload, like the real service. Tests call `resetMockAgents()`.
+
+**Fixture.** A clock jump (`block += 160`) after Lot 60 sells makes Coastal Catch's pickup deadline pass before Hanse reports the no-show, so "Seller didn't come" is reachable at `until=<that clock id>`. The effects baselines did not change.
+
+**"Watch in town"** opens `/town?select=agent:<id>`; the Town page turns `select` into the panel selection (also `lot:<id>` and `building:<name>`).
+
+**Assumed API fields (S2 to confirm).** `GET /api/agents/:agentId`: `currency`, `budget`, `paused`, `mandate`, `persona`; SOCIETY agents: `families: [{ name, qty }]`.
+
 ## Open questions
 
 - S2: confirm the `LotView.gradeReport` and `AgentView` fields above, or add them to `@fairtown/shared/api`.

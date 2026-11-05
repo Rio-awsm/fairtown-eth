@@ -446,6 +446,9 @@ export function buildDay(): TownEnvelope[] {
     pickupDeadline: block + 150,
     tx: nextTx(),
   })
+  // Time passes: Coastal Catch's pickup deadline (150 blocks) runs out before Hanse reports the no-show.
+  block += 160
+  agents({ type: "clock", block })
   agents({
     type: "agent.intent",
     agentId: A.hanse,

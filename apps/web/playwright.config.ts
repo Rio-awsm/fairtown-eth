@@ -50,8 +50,20 @@ export default defineConfig({
       },
     },
     {
+      // Desktop buyer console with a fake camera for dispute photos.
+      name: "buy",
+      testMatch: /buy\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
+        baseURL: "http://localhost:8081",
+        permissions: ["camera"],
+        launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
+      },
+    },
+    {
       name: "dev",
-      testIgnore: /(prod|sell|handover)\.spec\.ts/,
+      testIgnore: /(prod|sell|handover|buy)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081" },
     },
     {

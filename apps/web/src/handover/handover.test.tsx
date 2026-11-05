@@ -10,7 +10,6 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { initialTownState, reduce, type TownState } from "../game/reducer"
 import { handlers } from "../mocks/handlers"
 import { MOCK_HANSE, MOCK_LOT12_UNITS, mockFallbackUrl, mockQrText, mockTicket } from "../mocks/ticket"
-import { BuyPage } from "../pages/Buy"
 import { ScanPage } from "../pages/Scan"
 import { SellPage } from "../pages/Sell"
 import { townStore } from "../state/townStore"
@@ -226,35 +225,6 @@ describe("ScanPage", () => {
 })
 
 describe("no-show", () => {
-  it("lets the buyer report only after the pickup deadline", async () => {
-    let sent: unknown
-    server.use(
-      http.get("*/api/lots/:lotId", () =>
-        HttpResponse.json({
-          spec: {},
-          status: "sold",
-          bids: [],
-          winners: [{ buyer: BUYER, tokenAmount: MOCK_LOT12_UNITS }],
-        }),
-      ),
-      http.post("*/api/noshow/report", async ({ request }) => {
-        sent = await request.json()
-        return HttpResponse.json({ tx: `0x${"ef".repeat(32)}`, contestEnds: 1260 })
-      }),
-    )
-    routed("/buy", <BuyPage />)
-    fireEvent.click(screen.getByRole("button", { name: /Hanse Kitchen/ }))
-    expect(
-      await screen.findByText(/You can report a no-show after the pickup deadline, in \d+:\d\d\./),
-    ).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Seller didn't come" })).not.toBeInTheDocument()
-
-    act(() => townStore.setState((s) => ({ town: { ...s.town, block: 1201 } })))
-    fireEvent.click(await screen.findByRole("button", { name: "Seller didn't come" }))
-    expect(await screen.findByRole("status")).toHaveTextContent("Reported. The seller has until block 1260 to answer.")
-    expect(sent).toEqual({ buyerId: BUYER, lotId: "12", tokenAmount: MOCK_LOT12_UNITS })
-  })
-
   it("asks the seller to answer a reported no-show with a photo", async () => {
     seed({ ...run([S["noshow.reported"]], bergen()), block: 1400 })
     wrap(<SellPage />)

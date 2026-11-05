@@ -57,7 +57,7 @@ function Confirm({ ticket, lot, receiver }: { ticket: TicketJson; lot: LotState;
           Report a problem
         </button>
       </section>
-      {reporting && <ReportProblem ticket={ticket} />}
+      {reporting && <ReportProblem buyerId={ticket.buyer} lotId={ticket.lotId} tokenAmount={ticket.tokenAmount} />}
     </div>
   )
 }

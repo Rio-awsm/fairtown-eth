@@ -1,89 +1,51 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { z } from "zod"
-import { countdown } from "../game/market/slots"
-import type { AgentState, LotState } from "../game/reducer"
-import { handoverParties, noShowReportable } from "../handover/model"
-import { STATUS_WORDS } from "../hud/model"
+import { AgentDetail } from "../buy/AgentDetail"
+import { CreateBuyer } from "../buy/CreateBuyer"
 import { api } from "../net/api"
 import { useTown } from "../state/townStore"
 
-const Winners = z.array(z.object({ buyer: z.string(), tokenAmount: z.string().regex(/^\d+$/) }))
+const BUYER_ROLES = new Set(["BUYER", "SOCIETY", "HUMAN"])
 
-function NoShow({ lot, buyer }: { lot: LotState; buyer: AgentState }) {
-  const block = useTown((s) => s.town.block)
-  const view = useQuery({ queryKey: ["lot", lot.lotId], queryFn: () => api.lot({ params: { lotId: lot.lotId } }) })
-  const winners = Winners.safeParse((view.data as { winners?: unknown } | undefined)?.winners).data
-  const mine = view.isPending
-    ? undefined
-    : handoverParties(lot, winners).find((p) => p.buyer.toLowerCase() === buyer.agentId.toLowerCase())
-  const report = useMutation({
-    mutationFn: () =>
-      api.noshowReport({ body: { buyerId: buyer.agentId, lotId: lot.lotId, tokenAmount: mine!.tokenAmount } }),
-  })
-  if (report.isSuccess)
-    return <p role="status">Reported. The seller has until block {report.data.contestEnds} to answer.</p>
-  if (report.isError) return <p role="alert">We could not send the report. Please try again.</p>
-  if (lot.deadlineBlock === undefined || !mine) return null
-  if (!noShowReportable(lot, block))
-    return (
-      <p className="text-sm text-slate-300">
-        You can report a no-show after the pickup deadline, in {countdown(lot.deadlineBlock, block)}.
-      </p>
-    )
-  return (
-    <button
-      className="rounded bg-red-700 px-4 py-2 font-bold"
-      disabled={report.isPending}
-      onClick={() => report.mutate()}
-    >
-      Seller didn't come
-    </button>
-  )
-}
-
-/** Buyer console. S3 2.2 adds the no-show report; S3 3.1 builds the rest. */
+/** Buyer console (S3 3.1): agents from the API and the town, create, and one agent's detail. */
 export function BuyPage() {
-  const agents = useTown((s) => s.town.agents)
-  const lots = useTown((s) => s.town.lots)
-  const [buyer, setBuyer] = useState<AgentState | null>(null)
-  const buyers = Object.values(agents).filter((a) => a.role === "BUYER" || a.role === "SOCIETY" || a.role === "HUMAN")
-  const mine = buyer
-    ? Object.values(lots).filter(
-        (l) => l.settlement && l.bidLog.some((b) => b.agentId.toLowerCase() === buyer.agentId.toLowerCase()),
-      )
-    : []
+  const townAgents = useTown((s) => s.town.agents)
+  const list = useQuery({ queryKey: ["agents"], queryFn: () => api.agents() })
+  const [selected, setSelected] = useState<string | "new" | null>(null)
+  const merged = new Map<string, { agentId: string; name: string; role: string; paused?: boolean }>()
+  for (const a of list.data ?? [])
+    if (BUYER_ROLES.has(a.role)) merged.set(a.agentId.toLowerCase(), { ...a, paused: a.paused === true })
+  for (const a of Object.values(townAgents))
+    if (BUYER_ROLES.has(a.role) && !merged.has(a.agentId.toLowerCase())) merged.set(a.agentId.toLowerCase(), a)
   return (
-    <section className="mx-auto max-w-2xl space-y-3 p-4">
+    <section className="mx-auto max-w-6xl space-y-3 p-4">
       <h1 className="text-2xl font-bold">Buyer console</h1>
-      {!buyer ? (
-        <div className="space-y-2">
-          <p className="text-slate-300">Which buyer are you?</p>
-          {buyers.map((a) => (
+      <div className="grid gap-4 md:grid-cols-[18rem_1fr]">
+        <nav aria-label="Buyers" className="space-y-2">
+          <button className="w-full rounded bg-emerald-700 py-2 font-bold" onClick={() => setSelected("new")}>
+            New buyer
+          </button>
+          {list.isError && <p role="alert">We could not load the buyer list.</p>}
+          {[...merged.values()].map((a) => (
             <button
               key={a.agentId}
-              className="block w-full rounded bg-slate-800 p-3 text-left"
-              onClick={() => setBuyer(a)}
+              className={`block w-full rounded p-3 text-left ${selected === a.agentId ? "bg-slate-700" : "bg-slate-800"}`}
+              onClick={() => setSelected(a.agentId)}
             >
-              {a.ensName ?? a.name}
+              <span className="block font-bold">{a.name}</span>
+              <span className="text-sm text-slate-300">
+                {a.role === "SOCIETY" ? "Housing society" : a.role === "HUMAN" ? "Visitor" : "Business"}
+                {a.paused ? " · paused" : ""}
+              </span>
             </button>
           ))}
+        </nav>
+        <div>
+          {selected === "new" && <CreateBuyer onCreated={setSelected} />}
+          {selected && selected !== "new" && <AgentDetail key={selected} agentId={selected} />}
+          {!selected && <p className="text-slate-300">Pick a buyer, or create one.</p>}
         </div>
-      ) : (
-        <section aria-label="Your purchases" className="space-y-2">
-          <p className="text-sm text-slate-300">Buying as {buyer.ensName ?? buyer.name}</p>
-          {mine.length === 0 && <p>No purchases yet.</p>}
-          {mine.map((l) => (
-            <div key={l.lotId} className="space-y-1 rounded bg-slate-900 p-3">
-              <p>
-                Lot {l.lotId} · {l.qty} {l.unit} {l.commodity} from {l.sellerName} ·{" "}
-                {STATUS_WORDS[l.status] ?? l.status}
-              </p>
-              <NoShow lot={l} buyer={buyer} />
-            </div>
-          ))}
-        </section>
-      )}
+      </div>
     </section>
   )
 }

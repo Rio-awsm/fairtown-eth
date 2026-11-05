@@ -1,4 +1,3 @@
-import type { TicketJson } from "@fairtown/shared/handover"
 import { useMutation } from "@tanstack/react-query"
 import { useState } from "react"
 import { api } from "../net/api"
@@ -6,14 +5,19 @@ import { CameraCapture, type CapturedPhoto } from "../sell/CameraCapture"
 import { newLotCode } from "../sell/model"
 
 /** Refuse the goods and open a dispute with photos (POST /api/disputes). The held money waits for the check. */
-export function ReportProblem({ ticket }: { ticket: TicketJson }) {
+export function ReportProblem({
+  buyerId,
+  lotId,
+  tokenAmount,
+}: {
+  buyerId: string
+  lotId: string
+  tokenAmount: string
+}) {
   const [photos, setPhotos] = useState<CapturedPhoto[]>([])
   const [lotCode] = useState(() => newLotCode())
   const send = useMutation({
-    mutationFn: () =>
-      api.openDispute({
-        body: { buyerId: ticket.buyer, lotId: ticket.lotId, tokenAmount: ticket.tokenAmount, photos },
-      }),
+    mutationFn: () => api.openDispute({ body: { buyerId, lotId, tokenAmount, photos } }),
   })
   if (send.isSuccess)
     return (
