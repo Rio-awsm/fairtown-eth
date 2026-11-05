@@ -47,6 +47,9 @@ importers:
 
   packages/shared:
     dependencies:
+      '@arkiv-network/sdk':
+        specifier: 1.0.1
+        version: 1.0.1(typescript@5.9.3)(viem@2.57.16(typescript@5.9.3)(zod@4.6.7))
       viem:
         specifier: 'catalog:'
         version: 2.57.16(typescript@5.9.3)(zod@4.6.7)
@@ -88,6 +91,9 @@ importers:
       '@ai-sdk/openai-compatible':
         specifier: ^3.0.85
         version: 3.0.85(zod@4.6.7)
+      '@arkiv-network/sdk':
+        specifier: 1.0.1
+        version: 1.0.1(typescript@5.9.3)(viem@2.57.16(typescript@5.9.3)(zod@4.6.7))
       '@fairtown/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -177,6 +183,16 @@ packages:
   '@ai-sdk/provider@4.0.36':
     resolution: {integrity: sha512-GqvWZSZdBelCGughlBdOoupT258rgM3YMbaLAS9WSZJ0vlt8c9vm3My+ZT31mYhiReMCMCF2qF2axnGbILpk1A==}
     engines: {node: '>=22'}
+
+  '@arkiv-network/sdk@1.0.1':
+    resolution: {integrity: sha512-DCOFdGunn4I5nYrvIV/YIkMCkLZM7EQNSyNPtqpmQkP2JzTEfRLBJleBSB2rokWMa833/9P8DMiwsEXACr3CUQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      typescript: '>=5.0.0'
+      viem: ^2.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@cacheable/memory@2.2.0':
     resolution: {integrity: sha512-CTLKqLItRCEixEAewD3/j9DB3/o96gpTPD4eJ1v+DGOlxZRZncRQkGYqqnAGCscYd6RNeXfGeiuCphsPtqyIfQ==}
@@ -1454,6 +1470,12 @@ snapshots:
   '@ai-sdk/provider@4.0.36':
     dependencies:
       json-schema: 0.4.0
+
+  '@arkiv-network/sdk@1.0.1(typescript@5.9.3)(viem@2.57.16(typescript@5.9.3)(zod@4.6.7))':
+    dependencies:
+      viem: 2.57.16(typescript@5.9.3)(zod@4.6.7)
+    optionalDependencies:
+      typescript: 5.9.3
 
   '@cacheable/memory@2.2.0':
     dependencies:

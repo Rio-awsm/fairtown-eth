@@ -87,6 +87,6 @@ describe("createAdapters", () => {
   })
   it("refuses modes that are not built yet", () => {
     expect(() => createAdapters(parseConfig({ CHAIN_MODE: "anvil" }))).toThrow(/S2 3.1/)
-    expect(() => createAdapters(parseConfig({ ARKIV_MODE: "live" }))).toThrow(/S2 2.1/)
+    expect(() => createAdapters(parseConfig({ ARKIV_MODE: "live" }))).toThrow(/ARKIV_ACCESS_KEY/)
   })
 })

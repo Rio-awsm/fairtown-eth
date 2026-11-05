@@ -31,7 +31,16 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     } catch (e) {
       chain = { ok: false, detail: e instanceof Error ? e.message : "unreachable" }
     }
-    const arkiv = { ok: true, detail: deps.arkiv.mode }
+    let arkiv: { ok: boolean; detail: string } = { ok: true, detail: deps.arkiv.mode }
+    const live = deps.arkiv as { checkChain?: () => Promise<{ chainId: number; writer: string }> }
+    if (live.checkChain) {
+      try {
+        const c = await live.checkChain()
+        arkiv = { ok: true, detail: `live, Rabdi ${c.chainId}, writer ${c.writer}` }
+      } catch {
+        arkiv = { ok: false, detail: "Arkiv RPC unreachable" }
+      }
+    }
     const ai = await deps.ai.health()
     return HealthResponse.parse({ ok: chain.ok && arkiv.ok && ai.ok, chain, arkiv, ai, addons: {} })
   })

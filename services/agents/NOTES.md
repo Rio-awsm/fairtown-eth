@@ -45,3 +45,11 @@
 **LotDraft has no field for photo checks.** Photo flags travel as `gradeReport.defects` entries prefixed "Photo check:" and in lot metadata `photoChecks`. A minor ICR could add a field.
 
 **Live golden run.** 19 of 20 messages through `gemini-3.5-flash-lite` before the home-place default; m10 ("about half a tonne of roses") had no place. The rule parser alone reads all 18 non-hard messages.
+
+## 2026-11-06, S2 2.1
+
+**Writer owns everything for now.** Agents have no wallets until S2 3.1, so `LiveArkivStore` falls back to the writer key for any owner without a signer and counts it in `fallbacks`. Walk-in bids always go through the writer (they have no Arkiv funds).
+
+**Bid price on Arkiv is the on-chain price.** `bid.maxPerUnit` comes from `BidSubmitted.priceQ96`, which is the bid rounded up to the auction tick, so a 9.10 bid shows about 9.15.
+
+**Live end-to-end check.** Agents service with `ARKIV_MODE=live`: listing lot 1 wrote a `fairtown.v1.lot` entity (`0xd78bd814404cf7c0c0dd39c37ebdf3f676b02a753748c2ecd53a313f7c251c6f`) and patched it to `unsold` when the 5-block auction closed with no bids.

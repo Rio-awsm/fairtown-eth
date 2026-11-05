@@ -29,6 +29,8 @@ export const AgentsConfig = z.object({
   PICKUP_WINDOW_STORAGE: blocks.default(150n),
   PICKUP_WINDOW_COMPUTE: blocks.default(60n),
   RELIST_STEP_BPS: bps.default(1500),
+  ARKIV_ACCESS_KEY: z.string().optional(),
+  ARKIV_PRIVATE_KEY: z.string().optional(),
   STORAGE_DIR: z.string().default("./.data"),
   PUBLIC_BASE_URL: z.string().url().default("http://localhost:8787"),
   TREASURY_ADDRESS: z

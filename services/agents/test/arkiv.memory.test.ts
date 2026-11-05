@@ -41,7 +41,7 @@ describe("MemoryArkivStore", () => {
     expect(await errCode(s.query(lot, { grade: "a" }))).toBe("NotIndexed")
     expect(await errCode(s.query(lot, {}, { orderBy: { field: "grade", dir: "asc" } }))).toBe("NotIndexed")
     expect(await errCode(s.query(lot, {}, { limit: 101 }))).toBe("LimitTooHigh")
-    expect(await errCode(s.put(lot, {}, { owner, expiresInSeconds: 1, payload: new Uint8Array(100 * 1024 + 1) }))).toBe(
+    expect(await errCode(s.put(lot, { details: new Uint8Array(100 * 1024 + 1) }, { owner, expiresInSeconds: 1 }))).toBe(
       "PayloadTooLarge",
     )
   })
@@ -61,6 +61,7 @@ describe("MemoryArkivStore", () => {
     const a = await s.put(lot, { status: "open" }, { owner, expiresInSeconds: 10 })
     await s.put(lot, { status: "open" }, { owner, expiresInSeconds: 10 })
     await s.extend(a.key, 30)
+    expect(await errCode(s.extend(a.key, 5))).toBe("ExpiryEarlier")
     tick(11)
     const left = await s.query(lot, { status: "open" })
     expect(left.entities.map((e) => e.key)).toEqual([a.key])
