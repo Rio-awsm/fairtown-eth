@@ -4,8 +4,9 @@ import { lotMoney, lotPerUnit, STATUS_WORDS } from "../hud/model"
 import { countdown } from "../game/market/slots"
 import type { LotState } from "../game/reducer"
 import { useTown } from "../state/townStore"
+import { SoldLot } from "./SoldLots"
 
-function PayoutCard({ lot }: { lot: LotState }) {
+function PayoutCard({ lot, sellerId }: { lot: LotState; sellerId: string }) {
   const s = lot.settlement!
   return (
     <section aria-label="Payout" className="space-y-2 rounded bg-emerald-950 p-3">
@@ -17,25 +18,18 @@ function PayoutCard({ lot }: { lot: LotState }) {
       <a className="text-sky-300 underline" href={explorerTx(s.tx)} target="_blank" rel="noreferrer">
         Receipt
       </a>
-      {/* The handover code view arrives in S3 2.2. */}
-      <button
-        className="mt-2 w-full rounded bg-amber-400 py-3 font-bold text-black"
-        disabled
-        title="Ready in the next update"
-      >
-        Show handover code
-      </button>
+      {!lot.handoverTx && <SoldLot lot={lot} sellerId={sellerId} />}
       <TestMoneyBadge />
     </section>
   )
 }
 
 /** The seller's lot after Confirm: bids, price and countdown, then the money received. */
-export function LiveStatus({ lotId }: { lotId: string }) {
+export function LiveStatus({ lotId, sellerId }: { lotId: string; sellerId: string }) {
   const lot = useTown((s) => s.town.lots[lotId])
   const block = useTown((s) => s.town.block)
   if (!lot) return <p className="rounded bg-slate-900 p-3">Opening your stall for Lot {lotId}…</p>
-  if (lot.settlement) return <PayoutCard lot={lot} />
+  if (lot.settlement) return <PayoutCard lot={lot} sellerId={sellerId} />
   const price = lot.clearingPerUnit
     ? `now ${lotPerUnit(lot, lot.clearingPerUnit)}`
     : `floor ${lotPerUnit(lot, lot.floorPerUnit)}`

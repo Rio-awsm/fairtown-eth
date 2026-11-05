@@ -1,6 +1,17 @@
 import { http, HttpResponse, type HttpHandler } from "msw"
 import { API_ROUTES, type Route, type RouteKey } from "../net/routes"
 import { MOCK_RESPONSES } from "./responses"
+import { mockFallbackUrl, mockQrText, mockTicket } from "./ticket"
+
+/** Routes whose mock answer depends on the request. Everything else returns MOCK_RESPONSES. */
+const DYNAMIC: Partial<Record<RouteKey, (body: unknown) => unknown>> = {
+  handoverTicket: (body) => {
+    const { lotId, buyer, tokenAmount } = body as { lotId: string; buyer: string; tokenAmount: string }
+    const ticket = mockTicket(lotId, buyer, tokenAmount)
+    const qrText = mockQrText(ticket)
+    return { ticket, qrText, fallbackUrl: mockFallbackUrl(qrText) }
+  },
+}
 
 const badRequest = (message: string) => HttpResponse.json({ error: { code: "bad_request", message } }, { status: 400 })
 
@@ -16,6 +27,8 @@ function handlerFor(key: RouteKey, route: Route): HttpHandler {
       }
       const parsed = route.req.safeParse(body)
       if (!parsed.success) return badRequest(parsed.error.issues[0]?.message ?? "invalid body")
+      const dynamic = DYNAMIC[key]
+      if (dynamic) return HttpResponse.json(dynamic(parsed.data) as object)
     }
     return HttpResponse.json(MOCK_RESPONSES[key] as object)
   })

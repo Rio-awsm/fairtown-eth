@@ -14,8 +14,12 @@ export type LotState = LotListedEvent & {
   /** History for the lot panel (S3 1.4). */
   bidLog: BidEntry[]
   priceLog: { block: number; perUnit: string }[]
-  settlement?: { sellerPaid: string; held: string; fee: string; advanceBps: number; tx: string }
+  settlement?: { sellerPaid: string; held: string; fee: string; advanceBps: number; soldUnits: string; tx: string }
   handoverTx?: string
+  /** Truck assigned to carry the lot (carrier.assigned): it may receive the seller's handover code. */
+  carrier?: string
+  /** Buyer who reported a no-show, so the seller can contest it. */
+  noShowBuyer?: string
   relistedAs?: string
   /** Furthest of the five steps reached (0 to 5), kept through refunds. */
   progress: number
@@ -242,6 +246,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
             held: event.held,
             fee: event.fee,
             advanceBps: event.advanceBps,
+            soldUnits: event.soldUnits,
             tx: event.tx,
           },
         }),
@@ -283,7 +288,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
         ? [{ kind: "driveTruck", lotId: event.lotId, from: "freight_yard", to: lot.building }]
         : []
       commands.push(setStatus(event.lotId, "truck_booked"))
-      return { state: patchLot(state, event.lotId, { status: "truck_booked" }), commands }
+      return { state: patchLot(state, event.lotId, { status: "truck_booked", carrier: event.carrier }), commands }
     }
     case "handover.confirmed": {
       const rest = lot && money(event.releasedToSeller, lot.currency)
@@ -314,7 +319,11 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       }
     case "noshow.reported":
       return {
-        state: patchLot(state, event.lotId, { status: "no_show_reported", deadlineBlock: event.contestEnds }),
+        state: patchLot(state, event.lotId, {
+          status: "no_show_reported",
+          deadlineBlock: event.contestEnds,
+          noShowBuyer: event.buyer,
+        }),
         commands: [
           setStatus(event.lotId, "no_show_reported", event.contestEnds),
           { kind: "toast", text: `Buyer reported a no-show on Lot ${event.lotId}`, tone: "warn" },

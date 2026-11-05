@@ -438,6 +438,7 @@ describe("history for panels (S3 1.4)", () => {
       held: "2702700000",
       fee: "54600000",
       advanceBps: 5000,
+      soldUnits: "600",
       tx: S["lot.settled"].tx,
     })
     expect(lot.handoverTx).toBe(S["handover.confirmed"].tx)
@@ -451,5 +452,15 @@ describe("history for panels (S3 1.4)", () => {
     const intents = Array.from({ length: 7 }, (_, i) => ({ ...S["agent.intent"], reason: `reason ${i}` }))
     const s = run([S["agent.spawned"], ...intents])
     expect(s.agents[BUYER]?.reasons).toEqual(["reason 2", "reason 3", "reason 4", "reason 5", "reason 6"])
+  })
+})
+
+describe("handover facts (S3 2.2)", () => {
+  it("remembers the carrier, the sold units and who reported a no-show", () => {
+    const s = run([S["lot.listed"], S["lot.settled"], S["carrier.assigned"], S["noshow.reported"]])
+    const lot = s.lots["12"]!
+    expect(lot.carrier).toBe(TRUCK)
+    expect(lot.settlement?.soldUnits).toBe("600")
+    expect(lot.noShowBuyer).toBe(BUYER)
   })
 })

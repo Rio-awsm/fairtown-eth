@@ -1,9 +1,9 @@
 import type { z } from "zod"
 import type { ApiRoutes, RouteKey } from "../net/routes"
+import { MOCK_HANSE, MOCK_LOT12_UNITS, mockFallbackUrl, mockQrText, mockTicket } from "./ticket"
 
 const addr = (n: number) => `0x${n.toString(16).padStart(40, "0")}`
 const TX = `0x${"ab".repeat(32)}`
-const SIG = `0x${"cd".repeat(65)}`
 const HANSE = addr(0x102)
 
 /** Mock bodies for every contract 11 route, Bergen cod values. Typed against the shared schemas. */
@@ -45,6 +45,7 @@ export const MOCK_RESPONSES: { [K in RouteKey]: z.input<ApiRoutes[K]["res"]> } =
     clearing: "8100000",
     bids: [],
     gradeReport: { grade: "fresh_a", defects: [], confidence: 0.92, standard: "EU fish freshness", tee_verified: true },
+    winners: [{ buyer: MOCK_HANSE, tokenAmount: MOCK_LOT12_UNITS }],
   },
   lotTimeline: {
     steps: [
@@ -84,9 +85,9 @@ export const MOCK_RESPONSES: { [K in RouteKey]: z.input<ApiRoutes[K]["res"]> } =
   walkin: { agentId: addr(0x10f), address: addr(0x10f), token: "walkin-mock-session" },
   walkinBid: { bidId: "1", tx: TX },
   handoverTicket: {
-    ticket: { lotId: "12", buyer: HANSE, tokenAmount: "600000000000000000000", expiryBlock: "1200", sig: SIG },
-    qrText: "mock-handover-code",
-    fallbackUrl: "http://localhost:8080/scan?code=mock-handover-code",
+    ticket: mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS),
+    qrText: mockQrText(mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS)),
+    fallbackUrl: mockFallbackUrl(mockQrText(mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS))),
   },
   handoverConfirm: { tx: TX, releasedToSeller: "2702700000" },
   noshowReport: { tx: TX, contestEnds: 1500 },

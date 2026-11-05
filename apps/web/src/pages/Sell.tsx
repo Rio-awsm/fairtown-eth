@@ -9,6 +9,7 @@ import { DraftCard } from "../sell/DraftCard"
 import { History } from "../sell/History"
 import { LiveStatus } from "../sell/LiveStatus"
 import { MicButton } from "../sell/MicButton"
+import { SoldLots } from "../sell/SoldLots"
 import { DEMO_SELLERS, DURATION_BLOCKS, newLotCode, type DemoSeller } from "../sell/model"
 
 type Draft = z.infer<typeof LotDraft>
@@ -73,7 +74,7 @@ function Seller({ seller }: { seller: DemoSeller }) {
         ))}
       </div>
       {tab === "history" && <History sellerId={seller.id} />}
-      {tab === "sell" && lotId && <LiveStatus lotId={lotId} />}
+      {tab === "sell" && lotId && <LiveStatus lotId={lotId} sellerId={seller.id} />}
       {tab === "sell" && !lotId && draft && (
         <DraftCard
           draft={draft}
@@ -85,6 +86,7 @@ function Seller({ seller }: { seller: DemoSeller }) {
           onConfirm={(floor) => confirming.mutate(floor)}
         />
       )}
+      {tab === "sell" && !lotId && !draft && <SoldLots sellerName={seller.name} sellerId={seller.id} />}
       {tab === "sell" && !lotId && !draft && (
         <div className="space-y-3">
           <label className="block">

@@ -121,8 +121,23 @@
 
 **Phones over the tunnel.** Vite 6 answers "Blocked request. This host is not allowed" for any host it does not know, so a phone on `https://<name>.trycloudflare.com` saw an error page. `vite.config.ts` now allows `.trycloudflare.com` for `dev` and `preview`; other hosts still get 403. Hot reload does not work through the tunnel (the page still does).
 
+## 2026-11-06, S3 2.2
+
+**Handover code.** `ShowCode` asks `POST /api/handover/ticket` for one buyer (D-38) and draws `qrText` as an SVG QR. It waits for `GET /api/lots/:lotId` before choosing the buyer: deciding earlier picked the single-bidder fallback before `winners` arrived (caught by a test). Expired code: "This code has expired." and a New code button.
+
+**Scanning.** Nothing is sent on scan. `/scan` reads raw ticket JSON or the fallback link (`/scan?code=`), then checks expiry against the relay block, that the lot is `sold` or `truck_booked`, and that the receiver is the ticket's buyer or the lot's assigned carrier. Only Confirm calls `POST /api/handover/confirm`.
+
+**QR decoder.** `@yudiel/react-qr-scanner` uses zxing-wasm, which by default downloads `zxing_reader.wasm` from fastly.jsdelivr.net. `QrScanner.tsx` serves our own copy (`zxing-wasm/reader/zxing_reader.wasm?url`, 947 kB, lazy), so scanning works offline on venue Wi-Fi.
+
+**Camera constraints.** The library's default demands at least 640 px of height, so 480p webcams and Chromium's fake camera failed with `OverconstrainedError`, and our message wrongly said "blocked". Now: ideal values only, and `cameraProblem()` says "blocked" only for a permission error.
+
+**Two-phone e2e.** `playwright.config.ts` writes `e2e/.generated/lot12-code.y4m`, a video of the exact Lot 12 QR, and the `scan` project feeds it to Chromium's fake camera. Replays stop with `?until=<carrier.assigned for Lot 12>` so the lot is still waiting for its handover.
+
+**Assumed API field (S2, minor ICR).** `GET /api/lots/:lotId` → `winners: [{ buyer, tokenAmount }]` (D-38).
+
 ## Open questions
 
 - S2: confirm the `LotView.gradeReport` and `AgentView` fields above, or add them to `@fairtown/shared/api`.
+- S2: add `winners: [{ buyer, tokenAmount }]` to `LotView` (D-38), so lots with several buyers get handover codes.
 
 - Should S2 add `AgentList` and `LotMeta` schemas to `@fairtown/shared/api` (minor ICR)?

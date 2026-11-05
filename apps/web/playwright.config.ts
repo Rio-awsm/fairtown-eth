@@ -1,4 +1,11 @@
+import { fileURLToPath } from "node:url"
 import { defineConfig, devices } from "@playwright/test"
+import { writeQrVideo } from "./e2e/qr-video"
+import { MOCK_HANSE, MOCK_LOT12_UNITS, mockQrText, mockTicket } from "./src/mocks/ticket"
+
+// The scanner phone's fake camera films the exact code the seller phone shows for Lot 12.
+const QR_VIDEO = fileURLToPath(new URL("./e2e/.generated/lot12-code.y4m", import.meta.url))
+writeQrVideo(mockQrText(mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS)), QR_VIDEO)
 
 const MOCKS = { VITE_RELAY_URL: "mock", VITE_API_URL: "mock" }
 const viewport = { width: 1920, height: 1080 }
@@ -25,8 +32,26 @@ export default defineConfig({
       },
     },
     {
+      // Two phones in one browser: the camera is a fake video of the seller's QR code.
+      name: "scan",
+      testMatch: /handover\.spec\.ts/,
+      use: {
+        ...devices["iPhone 13"],
+        browserName: "chromium",
+        baseURL: "http://localhost:8081",
+        permissions: ["camera"],
+        launchOptions: {
+          args: [
+            "--use-fake-ui-for-media-stream",
+            "--use-fake-device-for-media-stream",
+            `--use-file-for-fake-video-capture=${QR_VIDEO}`,
+          ],
+        },
+      },
+    },
+    {
       name: "dev",
-      testIgnore: /(prod|sell)\.spec\.ts/,
+      testIgnore: /(prod|sell|handover)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081" },
     },
     {

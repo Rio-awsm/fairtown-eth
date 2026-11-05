@@ -19,6 +19,7 @@ export type DemoSeller = { id: string; name: string; place: string; what: string
 export const DEMO_SELLERS: readonly DemoSeller[] = [
   { id: "ingrid", name: "Ingrid Solheim", place: "Bergen", what: "Fish boat" },
   { id: "maya", name: "Maya Torres", place: "Dallas", what: "Truck space" },
+  { id: "lars", name: "Lars", place: "Bergen", what: "Reefer truck" },
   { id: "ganesh", name: "Ganesh Pawar", place: "Pune", what: "Marigolds" },
   { id: "northlight", name: "Northlight Compute", place: "Data centre", what: "GPU hours" },
   { id: "wanjiru", name: "Wanjiru Kamau", place: "Naivasha", what: "Roses" },

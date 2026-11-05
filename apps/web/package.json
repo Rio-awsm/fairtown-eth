@@ -21,15 +21,18 @@
   "dependencies": {
     "@fairtown/shared": "workspace:*",
     "@tanstack/react-query": "^5.106.1",
+    "@yudiel/react-qr-scanner": "2.6.0",
     "easystarjs": "0.4.4",
     "phaser": "4.2.1",
+    "qrcode": "1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router": "^7.18.5",
     "uplot": "^1.6.32",
     "viem": "catalog:",
     "zod": "catalog:",
-    "zustand": "^5.0.16"
+    "zustand": "^5.0.16",
+    "zxing-wasm": "3.1.6"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
@@ -40,6 +43,7 @@
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
     "@types/node": "catalog:",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.2.0",
