@@ -50,6 +50,8 @@ describe("exposeTown", () => {
     expect(target.__TOWN__?.agents).toEqual({ active: 0, agents: [], trucks: [] })
     expect(target.__TOWN__?.effectsSeen).toEqual({})
     expect(target.__TOWN__?.stallsOnScreen).toEqual([])
+    expect(target.__TOWN__?.fps).toBe(0)
+    expect(target.__TOWN__?.ui).toMatchObject({ qr: true })
     expect(() => {
       ;(target.__TOWN__!.map.problems as string[]).push("x")
     }).toThrow(TypeError)

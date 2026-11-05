@@ -1,4 +1,5 @@
 import type { LotStatus } from "@fairtown/shared/keys"
+import { fs } from "../textScale"
 import { GameObjects, type Scene } from "phaser"
 import type { TownCommand } from "../commands"
 import { countdown } from "./slots"
@@ -67,19 +68,19 @@ export class StallView extends GameObjects.Container {
     this.glow = scene.add.rectangle(0, 0, 16, 14, 0xfde047).setAlpha(0)
     this.box = scene.add.rectangle(0, 0, 12, 10, c.slot === null ? 0x475569 : 0x0f766e).setStrokeStyle(1, 0x0f172a)
     const iconBox = scene.add.rectangle(0, 0, 6, 6, icon.colour)
-    const glyph = scene.add.text(0, 0, icon.glyph, { ...TEXT, fontSize: "5px", strokeThickness: 1 }).setOrigin(0.5)
+    const glyph = scene.add.text(0, 0, icon.glyph, { ...TEXT, fontSize: fs(5), strokeThickness: 1 }).setOrigin(0.5)
     const dir = above ? -1 : 1
     const oy = (n: number) => dir * (7 + n * 5)
     const origin = above ? 1 : 0
     this.title = scene.add
-      .text(0, oy(0), `${c.qty} ${c.unit} ${c.commodity}`, { ...TEXT, fontSize: "4px" })
+      .text(0, oy(0), `${c.qty} ${c.unit} ${c.commodity}`, { ...TEXT, fontSize: fs(4) })
       .setOrigin(0.5, origin)
     this.price = scene.add
-      .text(0, oy(1), c.floorLabel, { ...TEXT, fontSize: "4px", color: "#a7f3d0" })
+      .text(0, oy(1), c.floorLabel, { ...TEXT, fontSize: fs(4), color: "#a7f3d0" })
       .setOrigin(0.5, origin)
-    this.status = scene.add.text(0, oy(2), "Open", { ...TEXT, fontSize: "4px" }).setOrigin(0.5, origin)
-    this.timer = scene.add.text(0, oy(3), "", { ...TEXT, fontSize: "4px", color: "#fde68a" }).setOrigin(0.5, origin)
-    this.badge = scene.add.text(8, -8, "", { ...TEXT, fontSize: "4px", backgroundColor: "#334155" }).setOrigin(0, 1)
+    this.status = scene.add.text(0, oy(2), "Open", { ...TEXT, fontSize: fs(4) }).setOrigin(0.5, origin)
+    this.timer = scene.add.text(0, oy(3), "", { ...TEXT, fontSize: fs(4), color: "#fde68a" }).setOrigin(0.5, origin)
+    this.badge = scene.add.text(8, -8, "", { ...TEXT, fontSize: fs(4), backgroundColor: "#334155" }).setOrigin(0, 1)
     this.add([this.glow, this.box, iconBox, glyph, this.title, this.price, this.status, this.timer, this.badge])
     scene.add.existing(this)
   }

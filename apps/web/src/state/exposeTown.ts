@@ -3,7 +3,7 @@ import type { MapStatus, SceneProbe } from "../game/EventBus"
 import type { TownCommand } from "../game/commands"
 import type { TownState } from "../game/reducer"
 import type { RelayStatus } from "../net/relayClient"
-import type { TownMode, TownStoreState } from "./townStore"
+import type { TownMode, TownStoreState, TownUi } from "./townStore"
 
 /** Read-only test hook (golden rule 4). Every getter returns a frozen copy. */
 export type TownDebug = {
@@ -18,6 +18,8 @@ export type TownDebug = {
   readonly agents: Pick<SceneProbe, "active" | "agents" | "trucks">
   readonly effectsSeen: Readonly<Record<string, number>>
   readonly stallsOnScreen: SceneProbe["stalls"]
+  readonly fps: number
+  readonly ui: TownUi
   readonly lastEventId: string | undefined
 }
 
@@ -68,6 +70,12 @@ export function exposeTown(target: object, store: StoreApi<TownStoreState>, enab
     get agents() {
       const { active, agents, trucks } = s().probe()
       return frozen({ active, agents, trucks })
+    },
+    get fps() {
+      return s().fps
+    },
+    get ui() {
+      return frozen(s().ui)
     },
     get stallsOnScreen() {
       return frozen(s().probe().stalls)

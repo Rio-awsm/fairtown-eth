@@ -1,4 +1,5 @@
 import type { Role } from "@fairtown/shared/keys"
+import { fs } from "../textScale"
 import { GameObjects, type Scene } from "phaser"
 import { BUBBLE_MAX } from "../commands"
 import type { Point } from "../map/anchors"
@@ -65,8 +66,8 @@ export class AgentSprite extends GameObjects.Container {
   constructor(scene: Scene, onSelect?: (agentId: string) => void) {
     super(scene, 0, 0)
     this.figure = scene.add.image(0, 0, "agent:NONE:down")
-    this.badge = scene.add.text(6, -8, "", { ...TEXT, fontSize: "5px" }).setOrigin(0.5, 1)
-    this.nameTag = scene.add.text(0, 7, "", { ...TEXT, fontSize: "5px" }).setOrigin(0.5, 0)
+    this.badge = scene.add.text(6, -8, "", { ...TEXT, fontSize: fs(5) }).setOrigin(0.5, 1)
+    this.nameTag = scene.add.text(0, 7, "", { ...TEXT, fontSize: fs(5) }).setOrigin(0.5, 0)
     this.add([this.figure, this.badge, this.nameTag])
     if (onSelect) this.figure.setInteractive({ useHandCursor: true }).on("pointerdown", () => onSelect(this.agentId))
     scene.add.existing(this)
@@ -124,7 +125,7 @@ export class AgentSprite extends GameObjects.Container {
     this.clearBubble()
     const capped = text.length > BUBBLE_MAX ? `${text.slice(0, BUBBLE_MAX - 1)}…` : text
     this.bubble = this.scene.add
-      .text(0, -12, capped, { ...TEXT, fontSize: "5px", backgroundColor: "#1e293b", wordWrap: { width: 90 } })
+      .text(0, -12, capped, { ...TEXT, fontSize: fs(5), backgroundColor: "#1e293b", wordWrap: { width: 90 } })
       .setOrigin(0.5, 1)
     this.add(this.bubble)
     // Bubbles last 2.5 s at 1× and shrink with the replay speed, like every other effect.

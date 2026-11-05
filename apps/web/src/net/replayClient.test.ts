@@ -58,6 +58,18 @@ describe("createReplayClient", () => {
     expect(t.statuses).toEqual(["replay", "replay_done"])
   })
 
+  it("changes pace while replaying", async () => {
+    const t = setup(jsonl(at("a", 0), at("b", 1000), at("c", 2000)), 1)
+    t.client.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(t.delivered).toEqual(["a"])
+    t.client.setSpeed?.(100)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(t.delivered).toEqual(["a", "b"])
+    await vi.advanceTimersByTimeAsync(10)
+    expect(t.delivered).toEqual(["a", "b", "c"])
+  })
+
   it("delivers a duplicate id once", async () => {
     const t = setup(jsonl(at("a", 0), at("a", 10), at("b", 20)), 1)
     t.client.start()

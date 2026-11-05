@@ -1,4 +1,6 @@
 import { useTown } from "../state/townStore"
+import { saveMuted } from "../sound/prefs"
+import { unlockAudio } from "../sound/sfx"
 import { ModeBadge, TestMoneyBadge } from "./ModeBadge"
 
 /** Block, active signals, relay status, LIVE or REPLAY and TEST MONEY. */
@@ -6,6 +8,8 @@ export function TopBar() {
   const block = useTown((s) => s.town.block)
   const signals = useTown((s) => s.town.signals)
   const status = useTown((s) => s.status)
+  const muted = useTown((s) => s.ui.muted)
+  const setUi = useTown((s) => s.setUi)
   const active = Object.values(signals).filter((sig) => sig.expiresAtBlock > block)
   return (
     <div className="flex items-center gap-3 rounded bg-slate-900/85 px-3 py-1.5 text-sm">
@@ -15,6 +19,17 @@ export function TopBar() {
       <span className="text-slate-400" title="Relay connection">
         {status}
       </span>
+      <button
+        aria-pressed={!muted}
+        className="rounded bg-slate-800 px-2 py-0.5 text-xs"
+        onClick={() => {
+          if (muted) unlockAudio()
+          saveMuted(!muted)
+          setUi({ muted: !muted })
+        }}
+      >
+        {muted ? "Sound off" : "Sound on"}
+      </button>
       <ul className="flex gap-2">
         {active.map((sig) => (
           <li

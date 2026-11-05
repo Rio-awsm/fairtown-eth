@@ -177,6 +177,20 @@
 
 **Bundle.** `/board` loads lazily, so the Arkiv SDK never reaches the phone pages (main chunk 590 kB, not 920 kB).
 
+## 2026-11-06, S3 5.1
+
+**Frame rate.** `/town?stress=1` (dev only) adds 60 walking agents and 18 stalls; `__TOWN__.fps` is Phaser's smoothed `actualFps`. Headless Chromium uses software WebGL (SwiftShader) and holds about 51 to 55 fps at 1920 × 1080; the same test fell to about 32 fps while five other browsers ran in parallel, so it now runs alone in the `perf` Playwright project after all the others. Margin is thin in headless; a real GPU should sit at the display rate. Lowering agent text resolution made no measurable difference and was reverted. Manual check: full script on the projector laptop.
+
+**Camera director** follows new stalls, sales, handovers, no-shows and walk-ins, holds 4 s, then returns home. On by default only with `?demo=1` (screenshots and click tests stay still); `D` toggles it.
+
+**Sound** is synthesised with Web Audio (no files to license); muted by default because browsers need a click first; `M` or the top bar button; the choice is remembered (localStorage, try/catch).
+
+**/control → /town** uses a BroadcastChannel (`fairtown-control`), so it works between windows on one computer. A phone remote would need a relay message from S2. Scenarios always go through `POST /api/director/scenario`. Replay speed changes live in mock mode only.
+
+**Demo mode** (`?demo=1`) raises the root font size (HUD, pages) and town text 1.6×; badges stay (e2e checks `/town`, `/board`, `/sell`).
+
+**Bundle watch.** `/control` importing `KEY_BUILDINGS` from `HudLayer` pulled the HUD and the Arkiv SDK into the main chunk (935 kB). The list now lives in `src/hud/keys.ts` (main chunk 597 kB).
+
 ## Open questions
 
 - S2: confirm the `LotView.gradeReport` and `AgentView` fields above, or add them to `@fairtown/shared/api`.
@@ -184,5 +198,6 @@
 - S2: add `budget` to `WalkinResponse`, or confirm the 100.00 demo default.
 - S2: publish `@fairtown/shared/arkiv` and `arkiv/queries.md`; confirm `seller` type (`str` or `addr`) in `fairtown.v1.reputation`.
 - Combine: add `VITE_ARKIV` and `VITE_ARKIV_ACCESS_KEY` to `.env.example` (contract 4).
+- S2: a relay message for presenter controls, if a phone remote for /control is wanted.
 
 - Should S2 add `AgentList` and `LotMeta` schemas to `@fairtown/shared/api` (minor ICR)?

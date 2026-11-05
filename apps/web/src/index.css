@@ -6,3 +6,8 @@ body {
   background-color: #020617;
   color: #f1f5f9;
 }
+
+/* ?demo=1 (S3 5.1): everything sized in rem grows for a projector. */
+html.demo {
+  font-size: 20px;
+}

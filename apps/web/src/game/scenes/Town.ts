@@ -1,4 +1,9 @@
 import type { Building } from "@fairtown/shared/keys"
+import { fs, setTextScale } from "../textScale"
+import { env } from "../../config"
+import { townStore } from "../../state/townStore"
+import { focusFor } from "../director"
+import { stressCommands, stressWalk } from "../stress"
 import { GameObjects, Scene, Tilemaps } from "phaser"
 import { EventBus, type AgentProbe, type SceneProbe } from "../EventBus"
 import { AgentSprite, ensurePlaceholderTextures, STEP_MS } from "../agents/AgentSprite"
@@ -54,6 +59,10 @@ export class Town extends Scene {
   private block = 0
   private toast!: GameObjects.Text
   private speed = 1
+  private baseZoom = 1
+  private readonly lotBuilding = new Map<string, Building>()
+  private focusUntil = 0
+  private focusTimer: Phaser.Time.TimerEvent | undefined
   private unsubscribe: (() => void) | undefined
 
   constructor() {
@@ -67,7 +76,10 @@ export class Town extends Scene {
 
   create() {
     this.cameras.main.setBackgroundColor("#0b1220")
-    this.speed = Math.max(1, Number(new URLSearchParams(window.location.search).get("speed")) || 1)
+    const params = new URLSearchParams(window.location.search)
+    this.speed = Math.max(1, Number(params.get("speed")) || 1)
+    // ?demo=1: bigger town text for a projector (S3 5.1).
+    setTextScale(params.get("demo") === "1" ? 1.6 : 1)
     ensurePlaceholderTextures(this)
     const raw = (this.cache.tilemap.get(MAP_KEY) as { data?: unknown } | undefined)?.data
     if (raw === undefined) return this.fallback([`could not load ${MAP_URL}`])
@@ -121,7 +133,7 @@ export class Town extends Scene {
     }
     this.begin(stub.value, stubRaw, problems)
     this.add
-      .text(8, stub.value.heightPx - 8, problems.slice(0, 6).join("\n"), { ...TEXT, fontSize: "7px", color: "#fca5a5" })
+      .text(8, stub.value.heightPx - 8, problems.slice(0, 6).join("\n"), { ...TEXT, fontSize: fs(7), color: "#fca5a5" })
       .setOrigin(0, 1)
       .setDepth(DEPTH.toast)
   }
@@ -135,11 +147,12 @@ export class Town extends Scene {
     this.roads = createPathfinder(this.roadGrid)
 
     const zoom = Math.min(VIEW.width / town.widthPx, VIEW.height / town.heightPx)
+    this.baseZoom = zoom
     this.cameras.main.setZoom(zoom).centerOn(town.widthPx / 2, town.heightPx / 2)
     for (const b of MARKET_BUILDINGS) {
       const { label } = town.anchors.buildings[b]
       this.add
-        .text(label.x, label.y, BUILDING_SIGNS[b], { ...TEXT, fontSize: "8px" })
+        .text(label.x, label.y, BUILDING_SIGNS[b], { ...TEXT, fontSize: fs(8) })
         .setOrigin(0.5, 1)
         .setDepth(DEPTH.text)
         .setInteractive({ useHandCursor: true })
@@ -147,11 +160,11 @@ export class Town extends Scene {
     }
     const gate = town.anchors.gateSpawn
     this.add
-      .text(gate.x, gate.y - 10, BUILDING_SIGNS.town_gate, { ...TEXT, fontSize: "8px" })
+      .text(gate.x, gate.y - 10, BUILDING_SIGNS.town_gate, { ...TEXT, fontSize: fs(8) })
       .setOrigin(0.5, 1)
       .setDepth(DEPTH.text)
     this.toast = this.add
-      .text(town.widthPx / 2, 6, "", { ...TEXT, fontSize: "10px" })
+      .text(town.widthPx / 2, 6, "", { ...TEXT, fontSize: fs(10) })
       .setOrigin(0.5, 0)
       .setDepth(DEPTH.toast)
 
@@ -168,9 +181,22 @@ export class Town extends Scene {
           }),
       )
     })
+    const offJump = EventBus.on("camera:jump", (b) => this.focus(b as Building, 6000, true))
+    // Turning the director off sends the camera straight home.
+    const offDirector = townStore.subscribe((s, prev) => {
+      if (prev.ui.director && !s.ui.director) this.home()
+    })
+    const fps = this.time.addEvent({
+      delay: 500,
+      loop: true,
+      callback: () => EventBus.emit("scene:fps", Math.round(this.game.loop.actualFps * 10) / 10),
+    })
     const stop = () => {
       this.unsubscribe?.()
       offWeather()
+      offJump()
+      offDirector()
+      fps.remove()
     }
     this.events.once("shutdown", stop)
     this.events.once("destroy", stop)
@@ -181,11 +207,44 @@ export class Town extends Scene {
       problems,
     })
     EventBus.emit("scene:ready", undefined)
+    if (env.exposeTown && new URLSearchParams(window.location.search).get("stress") === "1") this.startStress()
+  }
+
+  /** Stress mode (dev only): 60 agents and 18 stalls, with ten agents walking every second. */
+  private startStress() {
+    this.apply(stressCommands())
+    let tick = 0
+    this.time.addEvent({ delay: 1000, loop: true, callback: () => this.apply(stressWalk(tick++)) })
+  }
+
+  /** Camera director (S3 5.1): ease to a building, hold, then back to the whole town. */
+  private focus(building: Building, holdMs: number, force = false) {
+    const now = this.time.now
+    if (!force && now < this.focusUntil - holdMs / 2) return
+    const at = anchorFor(this.town.anchors, building)
+    const cam = this.cameras.main
+    cam.pan(at.x, at.y, 600, "Sine.easeInOut", true)
+    cam.zoomTo(this.baseZoom * 1.6, 600, "Sine.easeInOut", true)
+    this.focusUntil = now + holdMs
+    this.focusTimer?.remove()
+    this.focusTimer = this.time.delayedCall(holdMs, () => this.home())
+  }
+
+  private home() {
+    this.focusTimer?.remove()
+    this.focusUntil = 0
+    const cam = this.cameras.main
+    cam.pan(this.town.widthPx / 2, this.town.heightPx / 2, 600, "Sine.easeInOut", true)
+    cam.zoomTo(this.baseZoom, 600, "Sine.easeInOut", true)
   }
 
   private apply(commands: TownCommand[]) {
     for (const c of commands) this.applyOne(c)
     EventBus.emit("scene:applied", commands.length)
+    if (!townStore.getState().ui.director) return
+    const targets = commands.map((c) => focusFor(c, (lotId) => this.lotBuilding.get(lotId))).filter((b) => b !== null)
+    const target = targets[targets.length - 1]
+    if (target) this.focus(target, 4000)
   }
 
   /** Tile centre nearest to a point that people can stand on. */
@@ -313,6 +372,7 @@ export class Town extends Scene {
     const tier = this.sellerTier.get(c.seller)
     if (tier) stall.setTier(tier)
     this.stalls.set(c.lotId, stall)
+    this.lotBuilding.set(c.lotId, c.building)
   }
 
   private applyOne(c: TownCommand) {

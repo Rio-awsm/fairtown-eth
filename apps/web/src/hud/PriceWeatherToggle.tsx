@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { ledger as defaultLedger } from "../arkiv/client"
 import type { LedgerClient } from "../arkiv/ledger"
 import type { PriceRow } from "../arkiv/mockLedger"
@@ -6,12 +6,14 @@ import { allClears } from "../arkiv/queries"
 import { useLedgerQuery } from "../arkiv/useLedgerQuery"
 import { BAND_COLOUR, BAND_WORDS, marketWeather, type Band } from "../arkiv/weather"
 import { EventBus } from "../game/EventBus"
+import { useTown } from "../state/townStore"
 
 const hex = (n: number) => `#${n.toString(16).padStart(6, "0")}`
 
 /** Town toggle: tints each building by its price against its own 30-day average (S3 4.1). */
 export function PriceWeatherToggle({ client = defaultLedger }: { client?: LedgerClient }) {
-  const [on, setOn] = useState(false)
+  const on = useTown((s) => s.ui.priceWeather)
+  const setUi = useTown((s) => s.setUi)
   const q = useLedgerQuery(client, allClears(100))
   const rows = (q.data ?? []) as PriceRow[]
   useEffect(() => {
@@ -30,7 +32,7 @@ export function PriceWeatherToggle({ client = defaultLedger }: { client?: Ledger
       <button
         aria-pressed={on}
         className={`rounded px-3 py-1 text-sm ${on ? "bg-sky-700" : "bg-slate-900/85"}`}
-        onClick={() => setOn(!on)}
+        onClick={() => setUi({ priceWeather: !on })}
       >
         Price weather
       </button>

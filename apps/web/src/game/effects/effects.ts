@@ -1,4 +1,5 @@
 import { GameObjects, type Scene } from "phaser"
+import { fs } from "../textScale"
 import type { Point } from "../map/anchors"
 
 /** Scene effects for S3 1.3. Durations divide by the replay speed. Weather and lights are static, so baselines are stable. */
@@ -74,7 +75,7 @@ export function magnifier(scene: Scene, at: Point, speed: number): void {
 
 export function floatText(scene: Scene, at: Point, text: string, colour: string, speed: number): void {
   const t = scene.add
-    .text(at.x, at.y - 10, text, { ...TEXT, fontSize: "5px", color: colour })
+    .text(at.x, at.y - 10, text, { ...TEXT, fontSize: fs(5), color: colour })
     .setOrigin(0.5, 1)
     .setDepth(DEPTH.effect)
   scene.tweens.add({ targets: t, y: at.y - 22, alpha: 0, duration: 1200 / speed, onComplete: () => t.destroy() })
@@ -101,7 +102,7 @@ export class Sky {
       c.add(this.scene.add.circle(dx, dy, r, 0x64748b).setAlpha(0.9))
     for (let i = 0; i < 9; i++)
       c.add(this.scene.add.line(0, 0, -18 + i * 4, 8, -21 + i * 4, 16, 0x93c5fd).setLineWidth(1))
-    c.add(this.scene.add.text(0, -12, label, { ...TEXT, fontSize: "4px" }).setOrigin(0.5, 1))
+    c.add(this.scene.add.text(0, -12, label, { ...TEXT, fontSize: fs(4) }).setOrigin(0.5, 1))
     this.weather.set(key, c)
   }
 
@@ -109,7 +110,7 @@ export class Sky {
     this.weather.get(key)?.destroy()
     const c = this.scene.add.container(at.x, at.y - 40).setDepth(DEPTH.effect)
     c.add(this.scene.add.rectangle(0, 20, 120, 60, 0x0f172a).setAlpha(0.35))
-    c.add(this.scene.add.text(0, -4, label, { ...TEXT, fontSize: "4px", color: "#cbd5e1" }).setOrigin(0.5, 1))
+    c.add(this.scene.add.text(0, -4, label, { ...TEXT, fontSize: fs(4), color: "#cbd5e1" }).setOrigin(0.5, 1))
     this.weather.set(key, c)
   }
 
@@ -119,7 +120,7 @@ export class Sky {
     const colours = [0xfacc15, 0xf97316, 0xec4899, 0x22c55e, 0x38bdf8]
     for (let i = 0; i < 15; i++)
       c.add(this.scene.add.circle(-56 + i * 8, Math.sin(i / 2) * 2, 1.5, colours[i % colours.length]!))
-    c.add(this.scene.add.text(0, -4, label, { ...TEXT, fontSize: "4px", color: "#fde68a" }).setOrigin(0.5, 1))
+    c.add(this.scene.add.text(0, -4, label, { ...TEXT, fontSize: fs(4), color: "#fde68a" }).setOrigin(0.5, 1))
     this.lights.set(key, c)
   }
 
@@ -145,7 +146,7 @@ export class Sky {
     const t = this.scene.add
       .text(at.x, at.y + 2, text, {
         ...TEXT,
-        fontSize: "4px",
+        fontSize: fs(4),
         color: "#0f172a",
         stroke: "#fef3c7",
         backgroundColor: "#fde68a",

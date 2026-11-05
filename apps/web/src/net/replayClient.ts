@@ -14,7 +14,7 @@ const EMPTY_SNAPSHOT: TownSnapshot = { block: 0, lots: [], agents: [], signals: 
 
 /** `VITE_RELAY_URL=mock` (contract 13): replays day.jsonl in the browser at the recorded pace divided by speed. */
 export function createReplayClient({ jsonl, speed, handlers, until }: ReplayClientOptions): RelayClient {
-  const pace = speed > 0 ? speed : 1
+  let pace = speed > 0 ? speed : 1
   const dedupe = new Deduper()
   let started = false
   let stopped = false
@@ -45,6 +45,10 @@ export function createReplayClient({ jsonl, speed, handlers, until }: ReplayClie
     stop() {
       stopped = true
       clearTimeout(timer)
+    },
+    /** Applies from the next envelope on (presenter speed control, S3 5.1). */
+    setSpeed(next: number) {
+      if (next > 0) pace = next
     },
   }
 }

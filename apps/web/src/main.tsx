@@ -6,6 +6,7 @@ import { env } from "./config"
 import { connectTown } from "./state/connectTown"
 import { exposeTown } from "./state/exposeTown"
 import { townStore } from "./state/townStore"
+import { setActiveRelay } from "./state/activeRelay"
 import "./index.css"
 
 async function startMockApi() {
@@ -28,7 +29,13 @@ async function boot(root: HTMLElement) {
   const relayOff = env.exposeTown && params.get("relay") === "off"
   // ?until=<envelope id> (outside production) stops the replay there, for the effect baselines.
   const until = (env.exposeTown && params.get("until")) || undefined
-  if (!relayOff) connectTown(env, townStore, { speed, ...(until ? { until } : {}) }).start()
+  if (!relayOff) {
+    const client = connectTown(env, townStore, { speed, ...(until ? { until } : {}) })
+    setActiveRelay(client, speed)
+    client.start()
+  }
+  // ?demo=1: larger type for a projector; badges stay (S3 5.1 key rule).
+  if (params.get("demo") === "1") document.documentElement.classList.add("demo")
   exposeTown(window, townStore, env.exposeTown)
   createRoot(root).render(
     <StrictMode>

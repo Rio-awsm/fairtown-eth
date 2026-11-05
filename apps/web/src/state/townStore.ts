@@ -5,6 +5,7 @@ import { EventBus, type EventBusApi, type MapStatus, type SceneProbe, type Selec
 import type { TownCommand } from "../game/commands"
 import { commandsForState, hydrate, initialTownState, reduceEnvelope, type TownState } from "../game/reducer"
 import { tickerLine } from "../hud/model"
+import { loadMuted } from "../sound/prefs"
 import { appendLedger, emptyLedger, type Ledger } from "../arkiv/mockLedger"
 import type { RelayStatus } from "../net/relayClient"
 
@@ -12,6 +13,10 @@ export const COMMAND_LOG_MAX = 200
 export const TICKER_MAX = 20
 
 export type TickerLine = { id: string; text: string }
+
+/** Town controls the presenter can change from /control or the keyboard (S3 5.1). */
+export type TownUi = { director: boolean; priceWeather: boolean; qr: boolean; clockFocus: boolean; muted: boolean }
+const isDemo = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "1"
 
 export type TownMode = "live" | "replay"
 
@@ -34,6 +39,10 @@ export type TownStoreState = {
   ledger: Ledger
   selection: Selection
   select(selection: Selection): void
+  ui: TownUi
+  setUi(patch: Partial<TownUi>): void
+  /** Frames per second the scene reports (S3 5.1 target: 50+). */
+  fps: number
   setMode(mode: TownMode): void
   setStatus(status: RelayStatus): void
   applySnapshot(snapshot: TownSnapshot): void
@@ -61,6 +70,10 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
     ledger: emptyLedger(),
     selection: null,
     select: (selection) => set({ selection }),
+    // The camera director is on by default only in demo mode, so tests and screenshots stay still.
+    ui: { director: isDemo(), priceWeather: false, qr: true, clockFocus: false, muted: loadMuted() },
+    setUi: (patch) => set((s) => ({ ui: { ...s.ui, ...patch } })),
+    fps: 0,
     setMode: (mode) => set({ mode }),
     setStatus: (status) => set({ status }),
     applySnapshot(snapshot) {
@@ -90,6 +103,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
   bus.on("map:status", (map) => store.setState({ map }))
   bus.on("scene:probe", (probe) => store.setState({ probe }))
   bus.on("select", (selection) => store.setState({ selection }))
+  bus.on("scene:fps", (fps) => store.setState({ fps }))
   bus.on("scene:applied", (n) => store.setState((s) => ({ sceneCommandsApplied: s.sceneCommandsApplied + n })))
   return store
 }

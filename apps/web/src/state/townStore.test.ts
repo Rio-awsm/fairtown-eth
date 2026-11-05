@@ -64,6 +64,15 @@ describe("townStore", () => {
     expect(store.getState().ledger.reputation).toHaveLength(1)
   })
 
+  it("holds the presenter's town controls and the frame rate", () => {
+    const { store, bus } = setup()
+    expect(store.getState().ui).toMatchObject({ priceWeather: false, qr: true, clockFocus: false })
+    store.getState().setUi({ director: true, clockFocus: true })
+    expect(store.getState().ui).toMatchObject({ director: true, clockFocus: true, qr: true })
+    bus.emit("scene:fps", 58.6)
+    expect(store.getState().fps).toBe(58.6)
+  })
+
   it("keeps only the last 200 commands in the log", () => {
     const { store } = setup()
     for (let i = 0; i < 250; i++) store.getState().applyEnvelope(envelope(S["fx.updated"]))

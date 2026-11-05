@@ -10,7 +10,8 @@ export type RelayHandlers = {
   onReject(reason: string): void
 }
 
-export type RelayClient = { start(): void; stop(): void }
+/** `setSpeed` exists on the replay client only (the live relay runs at real time). */
+export type RelayClient = { start(): void; stop(): void; setSpeed?(speed: number): void }
 
 export type RelayClientOptions = {
   wsUrl: string

@@ -62,8 +62,15 @@ export default defineConfig({
       },
     },
     {
+      // FPS probe alone, after everything else, at the projector size.
+      name: "perf",
+      testMatch: /perf\.spec\.ts/,
+      dependencies: ["dev", "mobile", "scan", "buy", "prod"],
+      use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081" },
+    },
+    {
       name: "dev",
-      testIgnore: /(prod|sell|handover|buy|walkin)\.spec\.ts/,
+      testIgnore: /(prod|sell|handover|buy|walkin|perf)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081" },
     },
     {
