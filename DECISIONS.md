@@ -14,7 +14,7 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-09 | Fee and advance tiers | S1 1.3 | 1%, new 50%, proven 90%, truck 10% | Default: 1%, new 50%, proven 90%, truck 10% | maxspxtr | 2026-11-06 |
 | D-10 | Arkiv | S2 2.1 | **Closed:** Rabdi, SDK 1.0.x | Rabdi, SDK 1.0.x | Planning docs | 2026-11-05 |
 | D-11 | REST framework | S2 0.1 | Fastify |  |  |  |
-| D-12 | Durations and pickup windows | S1 1.2 | Source of truth section 14 |  |  |  |
+| D-12 | Durations and pickup windows | S1 1.2 | Source of truth section 14 | SoT 14 table: auction/pickup blocks fish 45/300, flowers 60/300, produce 90/450, truck 30/300, storage 30/150, compute 30/60; contest 60, report 300. Per lot via `LotSpec`, not constants | maxspxtr | 2026-11-06 |
 | D-13 | Weather | S1 4.3 | Open-Meteo |  |  |  |
 | D-14 | Calendar | S1 4.3, S2 6.1 | Static JSON by market |  |  |  |
 | D-15 | Checkpoint cadence | S1 2.1 | Every 2 blocks while an auction has bids |  |  |  |
@@ -42,3 +42,5 @@ Open questions D-02 to D-27 come from `03_00_START_HERE.md`. Add rows; never del
 | D-37 | Permit2, OZ, forge-std source (S1) | S1 0.1 | Guide: separate submodules | Remap to CCA v2.1.0's pinned copies (OZ 5.3.0 `e4f7021`, Permit2 `cc56ad0`, forge-std v1.9.7). One copy each, no extra submodules | maxspxtr | 2026-11-06 |
 | D-38 | `AgentRegistry.setRole` event | S1 1.1 | Contract 7.2 lists only `AgentRegistered` | `setRole` re-emits `AgentRegistered(agent, newRole, name)`; role 0 revokes. No new event, so no ICR | Claude during S1 1.1, needs review | 2026-11-06 |
 | D-39 | `LotToken` resolver address | S1 1.1 | Guide: escrow by settlement and resolver | Immutable constructor arg, `address(0)` until DisputeResolver (S1 4.1); zero grants nothing. v2 redeploy in 4.1 sets it | Claude during S1 1.1, needs review | 2026-11-06 |
+| D-40 | `LAST_BLOCK_SHARE_BPS` default | S1 1.2 | 5000 (`.env.example`, SoT 8.2) | 7500. Spread test at 5000: 10.7%; at 7500: 4.5% (target 5%). More end weight invites sniping; mentor to confirm. ICR-002 | maxspxtr | 2026-11-06 |
+| D-41 | LotFactory and settlement wiring | S1 1.2 | Unspecified | Both immutable. Deploy script predicts settlement's CREATE address for the LotFactory constructor (S1 1.4). No setter, no ICR | maxspxtr | 2026-11-06 |

@@ -58,6 +58,36 @@ Gotchas, doc vs source mismatches and open questions. These feed `FEEDBACK.md`.
 
 **Price vectors.** `forge test` rewrites `packages/shared/fixtures/price-vectors.json` (ICR-001). The file is deterministic, so a rerun shows no diff unless `PriceMath` changes. Prettier ignores it.
 
+## 2026-11-06, S1 1.2
+
+**Price spread (the guide's target is within 5%).** In `test_spreadTable`, an early bidder (first block) and a late bidder (last block) bid the same max (€10.00, ticked to €10.05) and the same amount, with a crowd's demand rising across 600 kg of cod at €7.50 over 45 blocks:
+
+| Last-block share | Avg early €/kg | Avg late €/kg | Spread |
+| --- | --- | --- | --- |
+| 0 | 7.925 | 10.050 | 26.8% |
+| 2500 | 8.272 | 10.050 | 21.5% |
+| 5000 | 8.602 | 9.525 | 10.7% |
+| 7500 | 8.687 | 9.075 | 4.5% |
+| 9000 | 8.916 | 9.075 | 1.8% |
+
+The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depends on how demand arrives. Mentor question: sniping risk at 75% in the last block.
+
+**Fills are per block (contract 8.1, confirmed).** Each bid's tokens come from `cumulativeMpsPerPrice` over the blocks it was live, so the same max price yields different averages. A late bid only sees the last steps' supply, at the higher clearing price.
+
+**Exit hints.** Walk the checkpoint list back from `lastCheckpointedBlock()` through `prev`: `outbidBlock` is the earliest checkpoint whose clearing price is above `maxPrice` (0 if the final clearing price equals `maxPrice`), and `lastFullyFilledCheckpointBlock` is the latest checkpoint below `maxPrice`. **Checkpoint the end block first** (`checkpoint()` or a sweep): before that, `lastCheckpointedBlock` is stale and the hints are wrong (`CannotExitBid`). `exitBid` is only for `maxPrice > finalClearing`. `claimTokens` needs the bid exited and `block >= claimBlock`.
+
+**Order inside `submitBid`.** Permit2 pull (`SafeTransferLib.permit2TransferFrom`, which reverts `TransferFromFailed()` = `0x7939f424`), then `_submitBid` (hook, sold-out check, above-clearing check). A missing Permit2 allowance fails before the hook runs.
+
+**Local Permit2.** Permit2 pins `pragma solidity 0.8.17`, so it can't compile with our 0.8.26. Tests `vm.etch` the runtime code from `test/fixtures/permit2.runtime.hex`, fetched with `cast code` from Base Sepolia over the public RPC. `test_fork_permit2FixtureIsCanonical` proves it's byte-identical. Permit2 recomputes its EIP-712 domain separator on other chain IDs, so the etched copy works on chain 31337.
+
+**`vm.prank` gotcha.** `vm.prank(x); a.submitBid(_priceQ96(a, p), ...)`: the external view call inside the argument list (`a.tickSpacing()`) uses up the prank, so `submitBid` comes from the test contract. Compute arguments before `vm.prank`.
+
+**Gas.** `createLot` costs about 4.89M (it deploys the ~20 KB auction and the LotToken), 12,572 B runtime. CCA's own snapshots: `submitBid` 154k to 361k, `checkpoint` about 170k, `exitBid` about 84k, `claimTokens` about 67k. A full 3-buyer auction: €5,320.58 raised, final clearing €9.075/kg, outbid buyer refunded €4,679.42, token dust 3 wei.
+
+**CCA event names (contract 7.9) match v2.1.0 source exactly:** `BidSubmitted`, `CheckpointUpdated`, `ClearingPriceUpdated`, `BidExited`, `TokensClaimed`, `TokensReceived` (`IContinuousClearingAuction.sol` lines 96 to 127).
+
+**Lot status.** `Lot.status` stays 0 (OPEN) in 1.2. Contract 7.4 has no function for settlement to update it. Decide in 1.3: read status from settlement views (contract 7.4 says "detailed status lives in settlement views"), or add a minor ICR.
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.
