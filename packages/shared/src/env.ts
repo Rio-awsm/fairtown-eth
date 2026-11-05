@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs"
 import { parseEnv } from "node:util"
-import type { Env } from "./core"
+export type Env = Record<string, string | undefined>
 
 const REF = /\$\{([A-Za-z0-9_]+)\}/g
 const MAX_PASSES = 8

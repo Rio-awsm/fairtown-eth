@@ -9,7 +9,8 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "@fairtown/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

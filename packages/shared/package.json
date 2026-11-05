@@ -11,7 +11,9 @@
     "./api": "./src/api.ts",
     "./handover": "./src/handover.ts",
     "./addresses": "./src/addresses.ts",
-    "./abi": "./src/abi/generated.ts"
+    "./abi": "./src/abi/generated.ts",
+    "./env": "./src/env.ts",
+    "./fixtures": "./src/fixtures.ts"
   },
   "scripts": {
     "test": "vitest run",
