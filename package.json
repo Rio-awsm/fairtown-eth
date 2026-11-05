@@ -1,0 +1,33 @@
+{
+  "name": "fairtown",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22.10.0"
+  },
+  "scripts": {
+    "test": "pnpm -r --if-present test",
+    "test:contracts": "forge test --root contracts",
+    "test:cre": "bun test --cwd cre",
+    "test:all": "pnpm test && pnpm test:contracts && pnpm test:cre",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "doctor": "pnpm -F scripts run doctor",
+    "tunnel": "cloudflared tunnel --url http://localhost:8080",
+    "gen:abi": "node scripts/pending.mjs gen:abi \"S1 1.4\"",
+    "chain:fork": "node scripts/pending.mjs chain:fork \"S1 0.1\"",
+    "deploy:anvil": "node scripts/pending.mjs deploy:anvil \"S1 1.4\"",
+    "deploy:base-sepolia": "node scripts/pending.mjs deploy:base-sepolia \"S1 1.4\"",
+    "dev:all": "node scripts/pending.mjs dev:all \"C 1.2\"",
+    "e2e:day": "node scripts/pending.mjs e2e:day \"C 2.3\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "prettier": "^3.9.10",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.72.1"
+  }
+}
