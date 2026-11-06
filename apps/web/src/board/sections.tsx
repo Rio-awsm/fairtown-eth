@@ -31,8 +31,8 @@ export const sellerName = (town: TownState, address: string) =>
   town.agents[address]?.name ??
   shortAddress(address)
 const Card = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <section aria-label={label} className="rpg-window space-y-2 p-4">
-    <h2 className="text-lg font-bold">{label}</h2>
+  <section aria-label={label} className="ft-section">
+    <h2 className="ft-section-title">{label}</h2>
     {children}
   </section>
 )
@@ -43,13 +43,17 @@ export function LiveAuctions() {
   const open = Object.values(lots).filter((l) => l.status === "open" && l.endBlock > block)
   return (
     <Card label="Live auctions">
-      {open.length === 0 && <p className="text-ink-soft">No auctions open right now.</p>}
-      <ul className="space-y-1">
+      {open.length === 0 && <p className="ft-empty">No auctions open right now.</p>}
+      <ul className="ft-auctions">
         {open.map((l) => (
           <li key={l.lotId}>
-            Lot {l.lotId} · {l.qty} {l.unit} {l.commodity} · {l.place} ·{" "}
-            {lotPerUnit(l, l.clearingPerUnit ?? l.floorPerUnit)} · {l.bids} bids · ends in{" "}
-            {countdown(l.endBlock, block)}
+            <span className="ft-auction-what">
+              Lot {l.lotId} · {l.qty} {l.unit} {l.commodity} · {l.place}
+            </span>
+            <span className="ft-auction-now">
+              {lotPerUnit(l, l.clearingPerUnit ?? l.floorPerUnit)} · {l.bids} bids · ends in{" "}
+              {countdown(l.endBlock, block)}
+            </span>
           </li>
         ))}
       </ul>
@@ -63,9 +67,9 @@ export function LatestClears({ client }: { client: LedgerClient }) {
   return (
     <Card label="Latest clears">
       {q.isError && <p role="alert">{UNREACHABLE}</p>}
-      <table aria-label="Latest clears" className="w-full text-sm [&_td]:py-1 [&_td]:pr-3 [&_th]:pr-3">
+      <table aria-label="Latest clears" className="ft-table">
         <thead>
-          <tr className="text-left text-ink-soft">
+          <tr>
             <th>Lot</th>
             <th>What</th>
             <th>Final</th>
@@ -82,7 +86,7 @@ export function LatestClears({ client }: { client: LedgerClient }) {
               </td>
               <td title="price.finalClearingPerUnit">{money(r.finalClearingPerUnit, r.currency)}</td>
               <td title="price.avgPerUnit">{money(r.avgPerUnit, r.currency)}</td>
-              <td>{r.tx.startsWith("0x") && r.tx.length === 66 ? <TxLink tx={r.tx} /> : "—"}</td>
+              <td>{r.tx.startsWith("0x") && r.tx.length === 66 ? <TxLink tx={r.tx} className="ft-tx" /> : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -98,9 +102,9 @@ export function SellerRecords({ client }: { client: LedgerClient }) {
   return (
     <Card label="Seller records">
       {q.isError && <p role="alert">{UNREACHABLE}</p>}
-      <table aria-label="Seller records" className="w-full text-sm [&_td]:py-1 [&_td]:pr-3 [&_th]:pr-3">
+      <table aria-label="Seller records" className="ft-table">
         <thead>
-          <tr className="text-left text-ink-soft">
+          <tr>
             <th>Seller</th>
             <th>Tier</th>
             <th>Clean lots</th>
@@ -109,7 +113,7 @@ export function SellerRecords({ client }: { client: LedgerClient }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.seller} className={r.noShows > 0n ? "text-brick" : ""}>
+            <tr key={r.seller} className={r.noShows > 0n ? "ft-row-bad" : ""}>
               <td>{sellerName(town, r.seller)}</td>
               <td>{r.tier === "proven" ? "Proven" : "New"}</td>
               <td>{r.cleanLots.toString()}</td>
@@ -130,19 +134,25 @@ export function PriceWeather({ client }: { client: LedgerClient }) {
   return (
     <Card label="Price weather">
       {q.isError && <p role="alert">{UNREACHABLE}</p>}
-      {weather.length === 0 && <p className="text-ink-soft">No clears in the last 30 days.</p>}
-      <ul className="space-y-2">
+      {weather.length === 0 && <p className="ft-empty">No clears in the last 30 days.</p>}
+      <ul className="ft-weather">
         {weather.map((w) => (
-          <li key={`${w.market}|${w.commodity}|${w.currency}`} className="flex items-center gap-3">
-            <span className="w-80">
+          <li key={`${w.market}|${w.commodity}|${w.currency}`} data-band={w.band}>
+            <span className="ft-weather-where">
               {BUILDING_SIGNS[w.market as Building] ?? w.market} · {w.commodity}
             </span>
-            <span className="w-48 text-sm">{BAND_WORDS[w.band]}</span>
-            <span className="text-sm text-ink-soft">
+            <span className="ft-weather-band">{BAND_WORDS[w.band]}</span>
+            <span className="ft-weather-figures">
               {money(w.latest, w.currency)} vs 30-day {money(w.average, w.currency)}
             </span>
-            <svg width="100" height="20" aria-hidden className="text-moss-ink">
-              <polyline points={sparkPoints(w.series, 100, 20)} fill="none" stroke="currentColor" strokeWidth="2" />
+            <svg className="ft-weather-spark" viewBox="0 0 160 36" preserveAspectRatio="none" aria-hidden>
+              <polyline
+                points={sparkPoints(w.series, 160, 36)}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+              />
             </svg>
           </li>
         ))}
@@ -168,11 +178,11 @@ export function QueryBox({ client }: { client: LedgerClient }) {
     setQuery(clearsFor({ ...(c ? { commodity: c } : {}), ...(p ? { place: p } : {}) }))
   return (
     <Card label="Query the ledger">
-      <div className="flex flex-wrap items-end gap-3 text-sm">
+      <div className="ft-query-controls">
         <label>
           Commodity
           <select
-            className="rpg-input ml-2 min-h-0 p-1"
+            className="ft-select"
             value={commodity}
             onChange={(e) => {
               setCommodity(e.target.value)
@@ -188,7 +198,7 @@ export function QueryBox({ client }: { client: LedgerClient }) {
         <label>
           Place
           <select
-            className="rpg-input ml-2 min-h-0 p-1"
+            className="ft-select"
             value={place}
             onChange={(e) => {
               setPlace(e.target.value)
@@ -202,39 +212,37 @@ export function QueryBox({ client }: { client: LedgerClient }) {
           </select>
         </label>
         {noShowSeller && (
-          <button className="rpg-btn rpg-btn-quiet rpg-btn-sm" onClick={() => setQuery(sellerRecord(noShowSeller))}>
+          <button className="ft-chip-btn" onClick={() => setQuery(sellerRecord(noShowSeller))}>
             {sellerName(town, noShowSeller)}'s record
           </button>
         )}
       </div>
       {/* Focusable so keyboard users can scroll a long query (axe: scrollable-region-focusable). */}
-      <pre
-        tabIndex={0}
-        aria-label="Query text"
-        className="rpg-well overflow-x-auto bg-ink p-3 text-xs text-meadow-tint"
-      >
+      <pre tabIndex={0} aria-label="Query text" className="ft-code">
         {queryText(query)}
       </pre>
       {q.isError && <p role="alert">{UNREACHABLE}</p>}
-      <table aria-label="Query results" className="w-full font-mono text-xs [&_td]:pr-4 [&_th]:pr-4">
-        <thead>
-          <tr className="text-left text-ink-soft">
-            {columns.map((c) => (
-              <th key={c}>{c}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={String(r.$key ?? i)}>
+      <div className="ft-table-scroll" tabIndex={0} role="region" aria-label="Query results, scrollable">
+        <table aria-label="Query results" className="ft-table ft-table-raw">
+          <thead>
+            <tr>
               {columns.map((c) => (
-                <td key={c}>{String(r[c])}</td>
+                <th key={c}>{c}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="text-xs text-ink-soft">Raw values as stored: money in base units (6 decimals), days since 1970.</p>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={String(r.$key ?? i)}>
+                {columns.map((c) => (
+                  <td key={c}>{String(r[c])}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="ft-footnote">Raw values as stored: money in base units (6 decimals), days since 1970.</p>
     </Card>
   )
 }

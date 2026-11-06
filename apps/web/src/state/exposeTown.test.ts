@@ -22,9 +22,11 @@ describe("exposeTown", () => {
       trucks: [],
       effectsSeen: { coinArc: 2 },
       stalls: [],
+      camera: { zoom: 2, x: 320, y: 160 },
     }
     bus.emit("scene:probe", () => probe)
     expect(target.__TOWN__?.agents).toEqual({ active: 1, agents: probe.agents, trucks: [] })
+    expect(target.__TOWN__?.camera).toEqual({ zoom: 2, x: 320, y: 160 })
     expect(target.__TOWN__?.effectsSeen).toEqual({ coinArc: 2 })
     expect(() => {
       ;(target.__TOWN__!.agents.agents as unknown[]).push({})

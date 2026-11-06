@@ -1,0 +1,427 @@
+@import "../styles/night.css";
+
+/*
+ * The 3D town (D-43) in the landing's language: night #0f1626, Inter Tight, white text at 72% and
+ * 60% (46% fails 4.5:1 at small sizes), white hairlines, lime and cyan accents, pills.
+ * Unlayered on purpose: it overrides the pixel-era utility classes the HUD components still use.
+ */
+.ft-town,
+.ft-hud {
+  --night: #0f1626;
+  --night-2: #131c30;
+  --ink: #f4f6fa;
+  --ink-72: rgb(244 246 250 / 0.72);
+  --ink-60: rgb(244 246 250 / 0.6);
+  --pill: #2a3245;
+  --lime: #c6ff2e;
+  --cyan: #3fd8ff;
+  --gold: #ffc857;
+  --bad: #ff8a7a;
+  --hair: rgb(255 255 255 / 0.22);
+  --line: rgb(255 255 255 / 0.1);
+  --glass: rgb(11 17 32 / 0.82);
+  font-family: "Inter Tight Variable", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.ft-town {
+  background: var(--night);
+}
+
+/* ------------------------------------------------------------ labels pinned in the town */
+
+.ft-tag,
+.ft-bubble,
+.ft-stall,
+.ft-sign,
+.ft-float,
+.ft-weather,
+.ft-plaque {
+  font-family: inherit;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ft-tag {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--glass);
+  border: 1px solid var(--hair);
+  translate: 0 -4px;
+}
+.ft-tag[data-selected="true"] {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+.ft-bubble {
+  position: relative;
+  max-width: 240px;
+  white-space: normal;
+  padding: 7px 11px 8px;
+  border-radius: 12px;
+  background: rgb(11 17 32 / 0.94);
+  border: 1px solid var(--hair);
+  translate: 0 -10px;
+  animation: ft-pop 160ms ease-out;
+}
+.ft-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  background: rgb(11 17 32 / 0.94);
+  border-right: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.ft-bubble-name {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.ft-bubble-text {
+  font-size: 12.5px;
+  line-height: 1.35;
+  font-weight: 500;
+}
+.ft-stall {
+  pointer-events: auto;
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  background: var(--glass);
+  border: 1px solid var(--hair);
+  font-size: 11px;
+  line-height: 1.25;
+  translate: 0 -6px;
+  transition: opacity 0.3s;
+}
+.ft-stall.ft-faded {
+  opacity: 0.55;
+}
+.ft-stall-price {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--lime);
+  font-variant-numeric: tabular-nums;
+}
+.ft-stall-status {
+  font-weight: 600;
+}
+.ft-stall[data-status="sold"] .ft-stall-status,
+.ft-stall[data-status="truck_booked"] .ft-stall-status {
+  color: var(--cyan);
+}
+.ft-stall[data-status="paid_in_full"] .ft-stall-status {
+  color: var(--gold);
+}
+.ft-stall[data-status="no_show_reported"] .ft-stall-status,
+.ft-stall[data-status="refunded"] .ft-stall-status {
+  color: var(--bad);
+}
+.ft-stall-title,
+.ft-stall-timer {
+  color: var(--ink-72);
+  font-variant-numeric: tabular-nums;
+}
+.ft-stall-timer[data-tone="bad"] {
+  color: var(--bad);
+}
+.ft-stall-badge {
+  margin-top: 2px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid rgb(198 255 46 / 0.45);
+  color: var(--lime);
+}
+.ft-stall-badge[data-tone="bad"] {
+  border-color: rgb(255 138 122 / 0.6);
+  color: var(--bad);
+}
+.ft-stall-badge[data-tone="warn"] {
+  border-color: rgb(255 200 87 / 0.6);
+  color: var(--gold);
+}
+.ft-pulse {
+  animation: ft-price 480ms ease-out;
+}
+.ft-sign {
+  pointer-events: auto;
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  padding: 5px 12px 6px;
+  border-radius: 12px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  translate: 0 -6px;
+}
+.ft-sign strong,
+.ft-weather strong,
+.ft-plaque strong {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.ft-sign span,
+.ft-weather span,
+.ft-plaque span {
+  font-size: 10.5px;
+  color: var(--ink-72);
+}
+.ft-sign-gate {
+  cursor: default;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+/* Anchored at the roof: a plaque one row above the sign, weather two. `translate` composes with
+   the transform CSS2DRenderer positions labels by. */
+.ft-weather,
+.ft-plaque {
+  display: grid;
+  justify-items: center;
+  padding: 5px 12px;
+  border-radius: 12px;
+  background: rgb(11 17 32 / 0.92);
+  border: 1px solid var(--hair);
+}
+.ft-plaque {
+  translate: 0 -50px;
+  border-color: rgb(255 200 87 / 0.6);
+}
+.ft-weather {
+  translate: 0 -94px;
+}
+.ft-weather[data-tone="storm"] {
+  border-color: rgb(165 180 252 / 0.7);
+}
+.ft-weather[data-tone="festival"] {
+  border-color: rgb(198 255 46 / 0.6);
+}
+.ft-float {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--hair);
+}
+.ft-float[data-tone="money"] {
+  color: var(--gold);
+}
+.ft-float[data-tone="warn"] {
+  color: #ffd08a;
+}
+.ft-town-toast {
+  position: absolute;
+  top: 88px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 5;
+  max-width: min(640px, 60vw);
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  background: rgb(11 17 32 / 0.88);
+  border: 1px solid var(--hair);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+}
+.ft-town-toast:empty {
+  display: none;
+}
+.ft-town-toast[data-tone="money"] {
+  color: var(--lime);
+}
+.ft-town-toast[data-tone="warn"] {
+  color: var(--bad);
+}
+.ft-town-toast-in {
+  animation: ft-toast 5s ease forwards;
+}
+.ft-town-problems {
+  position: absolute;
+  left: 1rem;
+  bottom: 4.5rem;
+  z-index: 5;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  background: rgb(11 17 32 / 0.9);
+  border: 1px solid rgb(255 138 122 / 0.5);
+  color: #ffb4a8;
+  font-size: 0.8125rem;
+  white-space: pre-line;
+}
+/* Decluttering: a label that would overlap a more important one fades out until there is room. */
+.ft-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+.ft-tag,
+.ft-sign,
+.ft-stall,
+.ft-plaque,
+.ft-weather {
+  transition: opacity 0.2s ease;
+}
+/* From far away a stall card shows only its price and status. */
+.ft-far .ft-stall-title,
+.ft-far .ft-stall-timer {
+  display: none;
+}
+.ft-town-demo .ft-tag,
+.ft-town-demo .ft-stall,
+.ft-town-demo .ft-sign,
+.ft-town-demo .ft-bubble {
+  zoom: 1.5;
+}
+
+@keyframes ft-pop {
+  from {
+    transform: translateY(4px) scale(0.92);
+    opacity: 0;
+  }
+}
+@keyframes ft-price {
+  40% {
+    transform: scale(1.35);
+    color: #fff;
+  }
+}
+@keyframes ft-toast {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  8%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0.85;
+  }
+}
+
+/* ------------------------------------------------------------ the HUD's night skin */
+
+.ft-hud {
+  color: var(--ink);
+}
+.ft-hud .font-display,
+.ft-hud h1,
+.ft-hud h2,
+.ft-hud h3 {
+  font-family: inherit;
+  letter-spacing: -0.01em;
+}
+.ft-hud-bar {
+  position: absolute;
+  inset: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  height: 4.25rem;
+  padding: 0 1.25rem;
+  background: linear-gradient(180deg, rgb(15 22 38 / 0.92), rgb(15 22 38 / 0));
+}
+.ft-hud-bar > .rpg-window {
+  justify-self: start;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.ft-hud-wordmark {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+.ft-hud-pills {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+.ft-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  padding: 0 1.15rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: transform 0.2s;
+}
+.ft-pill:hover {
+  transform: translateY(-1px);
+}
+.ft-pill-grey {
+  background: var(--pill);
+  color: var(--ink);
+}
+.ft-pill-lime {
+  background: var(--lime);
+  color: var(--night);
+}
+.ft-hud-left {
+  position: absolute;
+  top: 4.75rem;
+  left: 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+
+.ft-hud [aria-label="Ticker"] {
+  border-radius: 999px;
+  padding-inline: 1.25rem;
+}
+.ft-hud [aria-label="Ticker"] span[aria-hidden="true"] {
+  border-radius: 999px;
+  box-shadow: none;
+}
+.ft-hud [aria-label="World clock"] li span:nth-child(2) {
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.ft-hud-panel h2,
+.ft-hud-panel h3 {
+  font-weight: 600;
+}
+.ft-hud :focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-bubble,
+  .ft-pulse,
+  .ft-town-toast-in {
+    animation: none;
+  }
+  .ft-town-toast-in {
+    opacity: 1;
+  }
+  .ft-pill,
+  .ft-stall {
+    transition: none;
+  }
+}

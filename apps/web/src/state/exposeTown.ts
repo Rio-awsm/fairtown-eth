@@ -18,6 +18,7 @@ export type TownDebug = {
   readonly agents: Pick<SceneProbe, "active" | "agents" | "trucks">
   readonly effectsSeen: Readonly<Record<string, number>>
   readonly stallsOnScreen: SceneProbe["stalls"]
+  readonly camera: SceneProbe["camera"]
   readonly fps: number
   readonly ui: TownUi
   readonly lastEventId: string | undefined
@@ -79,6 +80,9 @@ export function exposeTown(target: object, store: StoreApi<TownStoreState>, enab
     },
     get stallsOnScreen() {
       return frozen(s().probe().stalls)
+    },
+    get camera() {
+      return frozen(s().probe().camera)
     },
     get effectsSeen() {
       return frozen(s().probe().effectsSeen)

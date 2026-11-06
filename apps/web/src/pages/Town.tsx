@@ -8,7 +8,8 @@ import { attachSound } from "../sound/sfx"
 import { saveMuted } from "../sound/prefs"
 import { replaySpeed, setReplaySpeed } from "../state/activeRelay"
 import { env } from "../config"
-import { PhaserGame } from "../game/PhaserGame"
+import "../town3d/town3d.css"
+import { TownCanvas } from "../town3d/TownCanvas"
 import { DevOverlay } from "../hud/DevOverlay"
 import { HudLayer } from "../hud/HudLayer"
 
@@ -51,7 +52,7 @@ export function TownPage() {
   return (
     <section className="relative h-screen w-full">
       <h1 className="sr-only">Town</h1>
-      <PhaserGame className="h-screen w-full" />
+      <TownCanvas className="h-screen w-full" />
       <div data-hud>
         <HudLayer />
       </div>

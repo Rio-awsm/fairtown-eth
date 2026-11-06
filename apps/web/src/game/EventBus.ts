@@ -14,13 +14,15 @@ export type SceneProbe = {
   effectsSeen: Record<string, number>
   /** Where each stall sits in game pixels (1920 × 1080), so e2e can click it. */
   stalls: { lotId: string; x: number; y: number }[]
+  /** The camera: zoom (1 is the whole town) and the ground point at the view's centre, in map pixels. */
+  camera: { zoom: number; x: number; y: number }
 }
 
 /** What a click in the scene or a panel opens (S3 1.4). */
 export type Selection =
   { kind: "lot"; id: string } | { kind: "agent"; id: string } | { kind: "building"; id: Building } | null
 
-/** Events between React, the store and the Phaser scene. */
+/** Events between React, the store and the 3D town. */
 export type BusEvents = {
   "town:commands": TownCommand[]
   "map:status": MapStatus
@@ -43,7 +45,7 @@ export type EventBusApi = {
 }
 
 /**
- * A small typed emitter instead of Phaser's, so the store and phone pages never import Phaser.
+ * A small typed emitter, so the store and phone pages never import the town renderer.
  * A throwing listener is reported and does not stop the others.
  */
 export function createEventBus(): EventBusApi {

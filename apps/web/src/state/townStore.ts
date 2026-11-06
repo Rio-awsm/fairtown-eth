@@ -64,7 +64,7 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
     commandLog: [],
     sceneCommandsApplied: 0,
     map: { status: "loading", buildings: 0, problems: [] },
-    probe: () => ({ active: 0, agents: [], trucks: [], effectsSeen: {}, stalls: [] }),
+    probe: () => ({ active: 0, agents: [], trucks: [], effectsSeen: {}, stalls: [], camera: { zoom: 1, x: 0, y: 0 } }),
     ts: undefined,
     ticker: [],
     ledger: emptyLedger(),

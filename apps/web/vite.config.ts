@@ -19,14 +19,14 @@ export default defineConfig({
   preview: { allowedHosts: TUNNEL_HOSTS },
   build: {
     rollupOptions: {
-      output: { manualChunks: { phaser: ["phaser"] } },
+      output: { manualChunks: { three: ["three"] } },
       onwarn(warning, warn) {
         // zod 4.6.7 places @__PURE__ comments where Rollup cannot use them. Harmless; see NOTES.md.
         if (warning.code === "INVALID_ANNOTATION" && warning.id?.includes("/zod/")) return
         warn(warning)
       },
     },
-    // Phaser alone is about 1.7 MB minified; it loads only on /town and /board.
+    // three.js is about 700 kB minified; it loads only on /town.
     chunkSizeWarningLimit: 1800,
   },
   test: {

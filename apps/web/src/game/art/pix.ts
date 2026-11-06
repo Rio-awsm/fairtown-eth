@@ -1,6 +1,6 @@
 /**
  * A tiny pixel canvas: RGBA bytes, no DOM. Every Fairtown sprite and tile is painted with it, so
- * the art is our own, deterministic, and testable in Node. `toCanvas` hands it to Phaser.
+ * the art is our own, deterministic, and testable in Node. `toCanvas` hands it to a canvas.
  */
 export type Hex = `#${string}`
 
