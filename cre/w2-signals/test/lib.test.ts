@@ -205,6 +205,37 @@ describe("forced signals (key rule: always labelled)", () => {
   })
 })
 
+describe("forced signals from the director (S1 4.5 bridge shape)", () => {
+  const director = {
+    kind: "weather" as const,
+    place: "bergen",
+    severity: 4,
+    label: "Storm forecast, Bergen (forced)",
+    expiresAtBlock: "55300000",
+  }
+  test("an exact expiresAtBlock is accepted and used as is; past blocks are not sent", () => {
+    const parsed = ConfigSchema.parse({ ...configJson, forceSignals: [director] }).forceSignals[0]!
+    const s = forcedSignal(parsed, NOW_2026_11_06)
+    expect(s.label).toBe("Storm forecast, Bergen (forced)")
+    expect(s.expiresBlock).toBe(55_300_000n)
+    expect(expiresAtBlock(s, 55_200_000n, 0, 5)).toBe(55_300_000n)
+    expect(expiresAtBlock(s, 55_300_000n, 0, 5)).toBeNull()
+  })
+  test("needs exactly one of hours or expiresAtBlock, and a label that fits once (forced) is added", () => {
+    const ok = (f: Record<string, unknown>) => ConfigSchema.safeParse({ ...configJson, forceSignals: [f] }).success
+    expect(ok(director)).toBe(true)
+    expect(ok({ ...director, hours: 2 })).toBe(false)
+    const { expiresAtBlock: _drop, ...noExpiry } = director
+    void _drop
+    expect(ok(noExpiry)).toBe(false)
+    expect(ok({ ...director, expiresAtBlock: "0" })).toBe(false)
+    expect(ok({ ...director, expiresAtBlock: "12.5" })).toBe(false)
+    expect(ok({ ...noExpiry, hours: 1, label: "x".repeat(56) })).toBe(false) // 56 + " (forced)" > 64
+    expect(ok({ ...noExpiry, hours: 1, label: `${"x".repeat(55)} (forced)` })).toBe(true) // exactly 64 with the suffix
+    expect(ok({ ...noExpiry, hours: 1, label: `${"x".repeat(56)} (forced)` })).toBe(false)
+  })
+})
+
 describe("expiry and encoding", () => {
   const sig: Signal = {
     kind: "festival",

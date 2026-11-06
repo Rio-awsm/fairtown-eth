@@ -10,13 +10,15 @@
     "status": "tsx scripts/status.ts",
     "events": "tsx scripts/events.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "cre:bridge": "tsx src/creBridgeMain.ts"
   },
   "dependencies": {
     "@fairtown/shared": "workspace:*",
     "pino": "10.4.0",
     "tsx": "catalog:",
-    "viem": "catalog:"
+    "viem": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

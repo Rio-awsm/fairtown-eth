@@ -17,3 +17,4 @@ contracts/broadcast/
 # CRE WASM build leftovers (cre workflow simulate)
 .cre_build_tmp.*
 cre/**/.workflow-temp-*
+cre/*/.forced-*.json

@@ -20,3 +20,8 @@ pnpm -F keeper test                  # unit tests + integration test on a local 
 ```
 
 Logs are JSON (pino, `LOG_LEVEL`). Quiet ticks log nothing; an `alive` line every 30 s shows head, cursor and queue stats. `tick failed` with `fetch failed` means the RPC was unreachable: the keeper retries each poll and logs `tick recovered`. Keys and the RPC URL are never logged. TEST MONEY only.
+
+## CRE bridge (S1 4.5)
+
+`pnpm -F keeper cre:bridge` runs the CRE workflows through the **simulator** (`cre workflow simulate --broadcast`: real Base Sepolia test transactions through the mock forwarder, not a CRE network). Timers for W1 and W2 (`CRE_BRIDGE_*_MINUTES`, 0 = off), one W3 run per `DisputeOpened`, and `POST :8789/run` with `Authorization: Bearer $CRE_BRIDGE_TOKEN` (contract 11.1). With broadcast on, one run at a time overall (shared `CRE_ETH_PRIVATE_KEY`). Each run's output is saved, redacted, under `cre/logs/bridge/<date>/`. `GET /health` shows what is built, running and queued. Needs internet and `cre login`: the CLI checks the login online on every run.
+

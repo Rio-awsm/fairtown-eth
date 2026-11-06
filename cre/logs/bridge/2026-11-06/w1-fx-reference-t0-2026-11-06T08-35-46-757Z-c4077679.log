@@ -1,0 +1,29 @@
+# w1-fx-reference trigger 0 (timer W1 FX), SIMULATION
+# cre workflow simulate ./w1-fx-reference --target local-simulation --non-interactive --trigger-index 0 --broadcast
+# exit 0
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: 24bf514ad2d99a424d702f7dbf7643c6df8f25a1f5a14e579f1cb7b7673b0abc
+  Config hash: 050426b17d7fa94f14e6d40af7473be250a8b8cd6064174d9c59e96a29d7eac7
+2026-11-06T14:05:36Z [SIMULATION] Simulator Initialized
+2026-11-06T14:05:36Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T14:05:36Z [USER LOG] W1 fx: source https://api.frankfurter.dev/v2/rates?base=USD&quotes=EUR,NOK,INR,KES,NGN dates [EUR=2026-11-06,NOK=2026-11-06,INR=2026-11-06,KES=2026-11-06,NGN=2026-11-06] asOf 1793954136
+2026-11-06T14:05:39Z [USER LOG] W1 fx EUR = 0.88913000 per USD (perUsdE8 88913000): written 0x93735f151b992d3c017f5e510bf88269d1611abe345544f65f3c6c86409a2049
+2026-11-06T14:05:41Z [USER LOG] W1 fx NOK = 9.27740000 per USD (perUsdE8 927740000): written 0xe6c610f18ec0ca2fe1a4b334fd416c29598e1ae840f8dbba867cdf420f3f7ae0
+2026-11-06T14:05:42Z [USER LOG] W1 fx INR = 94.44000000 per USD (perUsdE8 9444000000): written 0x79fe4e22a06be8df174cde72d514d3a93c16e6f03d0d2bac63be4ffaf60140fd
+2026-11-06T14:05:44Z [USER LOG] W1 fx KES = 129.81000000 per USD (perUsdE8 12981000000): written 0x78fada6e9c83b79ae927e1ba99ff69f675448d428b6200994561b2decda99bba
+2026-11-06T14:05:46Z [USER LOG] W1 fx NGN = 1345.41000000 per USD (perUsdE8 134541000000): written 0x547dde03d4b2ee873c525f166f8ea07a71f46b8f2e317a890ab7680ad0999267
+✓ Workflow Simulation Result:
+"W1 fx: 5 written, 0 unconfirmed, 0 failed, 0 skipped"
+2026-11-06T14:05:46Z [SIMULATION] Execution finished signal received
+2026-11-06T14:05:46Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯

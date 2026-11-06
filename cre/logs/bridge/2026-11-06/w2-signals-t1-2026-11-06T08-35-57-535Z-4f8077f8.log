@@ -1,0 +1,27 @@
+# w2-signals trigger 1 (timer W2 calendar), SIMULATION
+# cre workflow simulate ./w2-signals --target local-simulation --non-interactive --trigger-index 1 --broadcast
+# exit 0
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: d7dfd54fb49a6cf195eb31ff2df3baa0154e55388857139ddac1dc83c22b4437
+  Config hash: 547063792bd5774a79ed66b8ffc723af27841c43b791a2cfeb9375f9c7e84378
+2026-11-06T14:05:44Z [SIMULATION] Simulator Initialized
+2026-11-06T14:05:44Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T14:05:44Z [USER LOG] W2 calendar: 2 within 7 days of 2026-11-06, 1 forced
+2026-11-06T14:05:49Z [USER LOG] W2 signal festival mumbai sev 4 "Diwali in 2 days" expires block 56302658 (2026-11-09T00:00:00.000Z), source Diwali (Lakshmi Puja) 2026-11-08 https://www.timeanddate.com/holidays/india/diwali: written 0x9a1eb064ec623ae10b591bf2d5d2dffe63731cbc35272f1652cd53744b9ccb6a
+2026-11-06T14:05:53Z [USER LOG] W2 signal festival pune sev 4 "Diwali in 2 days" expires block 56302658 (2026-11-09T00:00:00.000Z), source Diwali (Lakshmi Puja) 2026-11-08 https://www.timeanddate.com/holidays/india/diwali: written 0x080cdecc9ef1e6d6377051a0e26b7fa0291ef204219fecb58eecf5428f074189
+2026-11-06T14:05:57Z [USER LOG] W2 signal festival nairobi sev 4 "Valentine's cargo cutoff (forced)" expires block 55269378 (2026-11-06T14:35:44.000Z) FORCED, source forceSignals (demo): written 0x3d2903ba057de257cbfad5e02009d062bdcf5b46a8eb39b7d3256de1427e4d4a
+✓ Workflow Simulation Result:
+"W2 calendar: 3 written, 0 unconfirmed, 0 failed, 0 not sent"
+2026-11-06T14:05:57Z [SIMULATION] Execution finished signal received
+2026-11-06T14:05:57Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯
