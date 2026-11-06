@@ -1,0 +1,25 @@
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: d41633710f5ed0d89e5f2b81dc3a852a2ba8e9824dd62d23af179f54b335de63
+  Config hash: 050426b17d7fa94f14e6d40af7473be250a8b8cd6064174d9c59e96a29d7eac7
+2026-11-06T13:28:16Z [SIMULATION] Simulator Initialized
+2026-11-06T13:28:16Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T13:28:19Z [USER LOG] W1 ref cod@bergen = 8300000 EUR base units, dated 2026-11-05, source "illustrative: scene value; replace with the Rafisklaget minimum price before the demo" https://www.rafisklaget.no/minstepriser: written 0x0f66be912e3550582cc08047319ca6259512455b8041c78d3431fe9bc389d595
+2026-11-06T13:28:21Z [USER LOG] W1 ref tomato@lagos = 380000 USD base units, dated 2026-11-05, source "illustrative" : written 0x2e24d230fb17ccf918f69cbf4fa080b2d0bd467ee22442954ff74334a27ef079
+2026-11-06T13:28:22Z [USER LOG] W1 ref marigold@mumbai = 950000 USD base units, dated 2026-11-05, source "illustrative" : written 0xc7ed7e149a34be9653bda273ae1b830d0c350dfb55ba578d82d51c556139a805
+2026-11-06T13:28:24Z [USER LOG] W1 ref gpu_hour@any_dc = 2000000 USD base units, dated 2026-11-05, source "illustrative" : written 0x0ca3099657c4f015306e02e41c44ed2150e22c872602c47e81d3b4f4ac038b4c
+2026-11-06T13:28:26Z [USER LOG] W1 ref truck_capacity@dallas = 55000 USD base units, dated 2026-11-05, source "illustrative" : written 0x72dd17c15671a9db4f15e6996570f3858edaf8a7ac138153fc8d24747d8b03b1
+✓ Workflow Simulation Result:
+"W1 ref: 5 written, 0 unconfirmed, 0 failed, 0 skipped"
+2026-11-06T13:28:26Z [SIMULATION] Execution finished signal received
+2026-11-06T13:28:26Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯

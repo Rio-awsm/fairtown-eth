@@ -1,0 +1,19 @@
+FAIL fx EUR                       0xcc838f5ca93016f3bda39923671cab89bbde98696405324e741e9986c9144016 no SignalOracle event (the receiver call reverted inside the forwarder)
+FAIL fx NOK                       0x3368875c55566c8e4bfbbd032096eb1e18fab1e0460825158508ef2f6013fbee no SignalOracle event (the receiver call reverted inside the forwarder)
+FAIL fx INR                       0xfd3cb37129c3ef143361260411fd842a0361aef4d46b5114ae16c32ca1075bb2 no SignalOracle event (the receiver call reverted inside the forwarder)
+FAIL fx KES                       0xf799c521265fe5f9a7df86e25688052d140bdac517f13f6a9c48e3dbd310e629 no SignalOracle event (the receiver call reverted inside the forwarder)
+FAIL fx NGN                       0xe59d44b26f1f5a9a1aac6291a328168af489a09f6eefb7b8b59443ed4e1ced5f no SignalOracle event (the receiver call reverted inside the forwarder)
+
+SignalOracle now:
+  fxRate(EUR) = 88915000 perUsdE8, updatedAt 1793951878
+  fxRate(NOK) = 927570000 perUsdE8, updatedAt 1793951878
+  fxRate(INR) = 9445000000 perUsdE8, updatedAt 1793951878
+  fxRate(KES) = 12981000000 perUsdE8, updatedAt 1793951878
+  fxRate(NGN) = 134612000000 perUsdE8, updatedAt 1793951878
+  referencePrice(cod, bergen) = 8300000, updatedAt 1793951896
+  referencePrice(tomato, lagos) = 380000, updatedAt 1793951896
+  referencePrice(marigold, mumbai) = 950000, updatedAt 1793951896
+  referencePrice(gpu_hour, any_dc) = 2000000, updatedAt 1793951896
+  referencePrice(truck_capacity, dallas) = 55000, updatedAt 1793951896
+
+0 of 5 broadcast values landed

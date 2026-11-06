@@ -1,0 +1,17 @@
+{
+  "fxSchedule": "0 0 * * * *",
+  "referenceSchedule": "0 30 * * * *",
+  "fxBaseUrl": "https://api.frankfurter.dev/v2/rates",
+  "fxQuotes": ["EUR", "NOK", "INR", "KES", "NGN"],
+  "referenceUrl": "http://localhost:8787/api/reference",
+  "pairs": [
+    { "commodity": "cod", "market": "bergen" },
+    { "commodity": "tomato", "market": "lagos" },
+    { "commodity": "marigold", "market": "mumbai" },
+    { "commodity": "gpu_hour", "market": "any_dc" },
+    { "commodity": "truck_capacity", "market": "dallas" }
+  ],
+  "chainSelectorName": "ethereum-testnet-sepolia-base-1",
+  "signalOracle": "0x8B0eE1395ee575D234ae5dDE927062B646A685B2",
+  "gasLimit": "400000"
+}

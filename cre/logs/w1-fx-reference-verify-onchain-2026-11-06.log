@@ -1,0 +1,24 @@
+ok   fx EUR                       0xc2082a7263a97516eb7b65ec8c812ede9ef261ea3b050e6d372c141b15cb22ca event in block 55150056
+ok   fx NOK                       0x31aeb9fcf9b8439d4b41ccf85eda8383aed56878dda1b6e7dd0a45680825d06b event in block 55150068
+ok   fx INR                       0x661d1b95f66ed4c96624504ce4e52604fdec93b6e912e7761573450fe6336c48 event in block 55150080
+ok   fx KES                       0x9dfafa940ba2513206c8258312ca84fc9f74b89cf332fc2206a39a7f087d6d4b event in block 55150088
+ok   fx NGN                       0xd37247043d2b5fb2ddcf10e697eb7d551c1e9206e9fcf5cd7dd20e9bc606cc53 event in block 55150101
+ok   ref cod@bergen               0x0f66be912e3550582cc08047319ca6259512455b8041c78d3431fe9bc389d595 event in block 55150148
+ok   ref tomato@lagos             0x2e24d230fb17ccf918f69cbf4fa080b2d0bd467ee22442954ff74334a27ef079 event in block 55150161
+ok   ref marigold@mumbai          0xc7ed7e149a34be9653bda273ae1b830d0c350dfb55ba578d82d51c556139a805 event in block 55150169
+ok   ref gpu_hour@any_dc          0x0ca3099657c4f015306e02e41c44ed2150e22c872602c47e81d3b4f4ac038b4c event in block 55150178
+ok   ref truck_capacity@dallas    0x72dd17c15671a9db4f15e6996570f3858edaf8a7ac138153fc8d24747d8b03b1 event in block 55150189
+
+SignalOracle now:
+  fxRate(EUR) = 88915000 perUsdE8, updatedAt 1793951878
+  fxRate(NOK) = 927570000 perUsdE8, updatedAt 1793951878
+  fxRate(INR) = 9445000000 perUsdE8, updatedAt 1793951878
+  fxRate(KES) = 12981000000 perUsdE8, updatedAt 1793951878
+  fxRate(NGN) = 134612000000 perUsdE8, updatedAt 1793951878
+  referencePrice(cod, bergen) = 8300000, updatedAt 1793951896
+  referencePrice(tomato, lagos) = 380000, updatedAt 1793951896
+  referencePrice(marigold, mumbai) = 950000, updatedAt 1793951896
+  referencePrice(gpu_hour, any_dc) = 2000000, updatedAt 1793951896
+  referencePrice(truck_capacity, dallas) = 55000, updatedAt 1793951896
+
+10 of 10 broadcast values landed
