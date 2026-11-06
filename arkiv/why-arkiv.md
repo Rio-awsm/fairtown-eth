@@ -14,7 +14,7 @@ Fairtown is a market for goods that expire: a boat's morning cod, a truck's empt
 | Kept off | Where it lives | Why |
 |---|---|---|
 | Money: payouts, held shares, refunds | Base Sepolia contracts (CCA plus `MarketSettlement`) | Money needs the chain's guarantees and atomic settlement; Arkiv is the public record of it, never the source of truth |
-| Photos | Agents service disk; only SHA-256 hashes go in `lot.details` | Too large (Arkiv payloads are capped at 100 KiB) and personal; the hash still proves which photo was graded |
+| Photo bytes | Agents service disk, and with `ADDON_SWARM=1` also Swarm; `lot.details` holds each SHA-256 hash and plain Swarm reference (`swarm.md`) | Too large for Arkiv (payloads are capped at 100 KiB); the hash proves which photo was graded, the reference says where to fetch it |
 | Handover codes (signed EIP-712 tickets) | Shown as a QR, verified by the contract | A ticket is a bearer secret until used |
 | Session tokens, PINs, keys | Agents service memory and `.env` | Secrets |
 | Seller chat and voice | Not stored | Private, and not needed for the record |

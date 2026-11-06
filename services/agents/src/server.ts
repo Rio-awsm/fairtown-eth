@@ -29,6 +29,7 @@ const ExtendedHealth = HealthResponse.extend({
   runtime: Dep.optional(),
   llm: Dep.optional(),
   vision: Dep.optional(),
+  swarm: Dep.optional(),
 })
 
 export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]

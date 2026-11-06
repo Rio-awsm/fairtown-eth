@@ -5,7 +5,7 @@ import type { AgentRuntime } from "./runtime/runtime"
 import type { SectorEngine } from "./sectors/engine"
 
 export type Dep = { ok: boolean; detail: string }
-export type HealthExtras = { relay: Dep; ledger: Dep; feed: Dep; runtime: Dep; llm: Dep; vision: Dep }
+export type HealthExtras = { relay: Dep; ledger: Dep; feed: Dep; runtime: Dep; llm: Dep; vision: Dep; swarm?: Dep }
 
 // Everything /api/health reports beyond contract 11's chain, arkiv and ai. Each part says how it degrades.
 export function healthExtras(d: {
@@ -16,6 +16,7 @@ export function healthExtras(d: {
   runtime?: Pick<AgentRuntime, "agents">
   ai?: Pick<AiGateway, "stats" | "visionStatus">
   visionModel?: string
+  swarm?: { health(): Promise<Dep> }
   llmOn: boolean
   fetch?: typeof fetch
 }): () => Promise<HealthExtras> {
@@ -55,6 +56,6 @@ export function healthExtras(d: {
       : vs?.pausedUntil
         ? { ok: false, detail: `${d.visionModel ?? "primary"} paused until ${vs.pausedUntil} (${vs.pauseReason}); grading on fallback ${vs.fallback}` }
         : { ok: true, detail: `${d.visionModel ?? "primary"}${vs?.fallback ? `, fallback ${vs.fallback}` : ", no fallback"}; ${vc?.calls ?? 0} grades, ${vc?.switched ?? 0} on fallback` }
-    return { relay, ledger, feed, runtime, llm, vision }
+    return { relay, ledger, feed, runtime, llm, vision, ...(d.swarm ? { swarm: await d.swarm.health() } : {}) }
   }
 }

@@ -22,6 +22,7 @@ import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
 import { SectorEngine } from "./sectors/engine"
 import { MarketState, moveOnSignal } from "./market/state"
 import { SessionStore } from "./handover/sessions"
+import { SwarmStore } from "./addons/swarm/store"
 import { DEFAULT_POLICY, hederaClient, IntelBuyer, intelLine, mirrorBalances } from "./addons/hedera/buyer"
 import { intelServer } from "./addons/hedera/intel"
 import { EnsAgents } from "./addons/ens/agents"
@@ -57,6 +58,9 @@ const stopFeed = feed?.start() ?? (() => {})
 const sellers = new SellerDirectory(PERSONAS, (p) => wallets.address(PERSONAS.indexOf(p)))
 
 const drafts = new DraftStore()
+// ADDON_SWARM: lot photos also go to Swarm (S2 8.5); local disk stays the primary copy, so a missing node changes nothing.
+const swarm = config.ADDON_SWARM ? new SwarmStore({ beeUrl: config.SWARM_BEE_URL, ...(config.SWARM_BATCH_ID ? { batchId: config.SWARM_BATCH_ID } : {}), gateway: config.SWARM_GATEWAY }) : undefined
+
 // Floors use the last clears on the Arkiv ledger; if Arkiv is down the floor falls back to the reference.
 const recentPrices = async (commodity: string, place: string) => {
   try {
@@ -66,7 +70,7 @@ const recentPrices = async (commodity: string, place: string) => {
     return []
   }
 }
-const listing = { ai, sellers, photos: new PhotoStore(resolve(root, config.STORAGE_DIR)), drafts, references: loadReferences(), recentPrices }
+const listing = { ai, sellers, photos: new PhotoStore(resolve(root, config.STORAGE_DIR)), drafts, references: loadReferences(), recentPrices, ...(swarm ? { swarm } : {}) }
 let log: (msg: string, extra?: object) => void = () => {}
 
 const ledger = new LedgerWriter({
@@ -82,6 +86,8 @@ const ledger = new LedgerWriter({
       grade: d.grade.grade,
       gradeReport: d.grade,
       photos: d.photos.map((p) => p.hash),
+      // Plain Swarm references only (an encrypted one would carry its key); readable at https://bzz.limo/bzz/<ref>/
+      ...(d.photos.some((p) => p.swarmRef) ? { swarm: d.photos.filter((p) => p.swarmRef).map((p) => ({ hash: p.hash, ref: p.swarmRef })) } : {}),
       requestId: d.trace?.requestId,
       provider: d.trace?.provider,
       teeVerified: d.trace?.teeVerified,
@@ -228,7 +234,7 @@ const app = buildApp({
   humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config, ...(ensAgents ? { onJoined: (a) => void ensAgents!.register(a) } : {}) },
   director,
   ...(hedera ? { intel: { server: intelServer(config.X402_FACILITATOR_URL), payTo: config.HEDERA_ACCOUNT_ID!, arkiv, market, block: () => chain.blockNumber(), onSettled: (tx: string) => log("intel payment settled", { tx }) } } : {}),
-  health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI, ...(aiConfig.VISION_MODEL ? { visionModel: aiConfig.VISION_MODEL } : {}) }),
+  health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI, ...(swarm ? { swarm } : {}), ...(aiConfig.VISION_MODEL ? { visionModel: aiConfig.VISION_MODEL } : {}) }),
 })
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)
 await app.listen({ port: config.AGENTS_PORT, host: "0.0.0.0" })

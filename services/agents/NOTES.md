@@ -125,3 +125,11 @@
 - The first live payment failed preflight ("payer holds 0 of 0.0.429274"): the buyer now reads its balance from the mirror node and only offers what it can pay.
 - Settled: `0.0.9185802@1793948661.406575988`, 0.05 HBAR agent to merchant, `SUCCESS`, fee paid by the facilitator, about 3 s end to end.
 - The DER-encoded ECDSA key from portal.hedera.com loads with `PrivateKey.fromStringDer`.
+
+## 2026-11-06, S2 8.5 Swarm photos (Bee light node)
+
+**Built:** `src/addons/swarm/store.ts`, listing upload in parallel with grading, `photos[].swarm` in lot metadata, `details.swarm` on the Arkiv lot, Swarm read fallback in `/api/photos/:hash`, `swarm` in health, `pnpm -F agents swarm:node`, `swarm:fund`, `swarm:check`, `test/swarm.test.ts`, `arkiv/swarm.md`. Node: `~/.fairtown/bin/bee` (2.8.3), config `~/.fairtown/bee.yaml`, data `~/.fairtown/bee-data` (keep it: it holds the node wallet and batch).
+
+**Live:** node wallet `0x4c8Bf00b3D382b723dB58372048c00D4E5981BB4`, batch `426f447f...6fef6` (1.25 xBZZ, about 27 days, 8.75 xBZZ left), proof upload `a7337bff...cd68` readable on bzz.limo, Arkiv entity `0x86e0f000...32a1`.
+
+**Gotchas:** Homebrew formula broken (`File.exists?`); a light node shuts down if not funded in time; uploads return in milliseconds (Bee pushes chunks in the background), and bzz.limo served the file at once.

@@ -57,6 +57,10 @@ export const AgentsConfig = z.object({
   HEDERA_AGENT_ACCOUNT_ID: z.string().regex(/^0\.0\.\d+$/).optional(),
   HEDERA_AGENT_PRIVATE_KEY: z.string().optional(),
   X402_FACILITATOR_URL: z.string().url().default("https://x402.org/facilitator"),
+  ADDON_SWARM: z.enum(["0", "1"]).default("0").transform((v) => v === "1"),
+  SWARM_BEE_URL: z.string().url().default("http://127.0.0.1:1633"),
+  SWARM_BATCH_ID: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+  SWARM_GATEWAY: z.string().url().default("https://bzz.limo"),
   CHAIN_BACKFILL_BLOCKS: blocks.default(9000n), // restart lookback: longest auction + pickup + report + contest windows
   TREASURY_ADDRESS: z
     .string()

@@ -20,7 +20,10 @@
     "ens:setup": "tsx scripts/ens-setup.ts",
     "ens:agents": "tsx scripts/ens-agents.ts",
     "hedera:setup": "tsx scripts/hedera-setup.ts",
-    "hedera:pay": "tsx scripts/hedera-pay.ts"
+    "hedera:pay": "tsx scripts/hedera-pay.ts",
+    "swarm:fund": "tsx scripts/swarm-fund.ts",
+    "swarm:check": "tsx scripts/swarm-check.ts",
+    "swarm:node": "sh scripts/bee-start.sh"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.85",

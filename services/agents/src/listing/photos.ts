@@ -13,6 +13,7 @@ export type StoredPhoto = {
   capturedAt: string
   gps?: { lat: number; lon: number }
   dataUrl: string
+  swarmRef?: string // ADDON_SWARM: plain 64-hex reference of the same bytes on Swarm
 }
 export type PhotoCheck = { photos: StoredPhoto[]; flags: string[] }
 

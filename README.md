@@ -99,6 +99,10 @@ Reproduce: `pnpm -F agents ens:setup` (idempotent), `pnpm -F agents ens:agents` 
 
 Spending controls (`services/agents/src/addons/hedera/buyer.ts`): per-agent budget per asset (0.20 USDC, 1 HBAR per run), per-call cap, merchant host and pay-to allowlist, plus the x402 client's own $0.10 per-payment cap; paid intel is cached 5 minutes so agents don't pay every tick. Reproduce: `pnpm -F agents hedera:setup`, then `pnpm -F agents hedera:pay cod`.
 
+## Swarm: lot photos
+
+With `ADDON_SWARM=1`, listing photos are also stored on Swarm through our own Bee light node, and each lot's Arkiv entity holds the photo hash and plain Swarm reference (`details.swarm`). The local disk stays the primary copy, so listing works with the node down. Example: Arkiv entity `0x86e0f000e218b880e15c98601d973914f11a3a1bec6f9e16be395220630332a1` holds reference `a7337bff060ca8052b299752151d1f453bda67dd5fcc7a71488873332d41cd68`, readable at https://bzz.limo/bzz/a7337bff060ca8052b299752151d1f453bda67dd5fcc7a71488873332d41cd68/. Batch, wallets, node and steps: [`arkiv/swarm.md`](arkiv/swarm.md).
+
 ## Licence
 
 MIT. See `LICENSE`.

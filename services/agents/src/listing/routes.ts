@@ -1,9 +1,10 @@
 import { ConfirmRequest, ConfirmResponse, DisputeEvidence, DraftRequest, LotDraft, LotView, SellerProfile, TimelineResponse } from "@fairtown/shared/api"
 import type { LotStatus } from "@fairtown/shared"
 import type { FastifyInstance } from "fastify"
-import { createReadStream, existsSync } from "node:fs"
+import { createReadStream, existsSync, readFileSync } from "node:fs"
 import type { z } from "zod"
 import type { AiGateway } from "../ai/gateway"
+import type { SwarmStore } from "../addons/swarm/store"
 import { verificationOf } from "../ai/verification"
 import type { ChainAdapter, LotState } from "../chain/types"
 import { pickupWindowFor, type AgentsConfig } from "../config"
@@ -35,6 +36,7 @@ export type ListingDeps = {
   drafts: DraftStore
   references: ReferenceRow[]
   recentPrices?: (commodity: string, place: string) => Promise<bigint[]>
+  swarm?: SwarmStore // ADDON_SWARM: copy photos to Swarm; local disk stays the primary copy
 }
 
 export const parse = <T>(schema: z.ZodType<T>, body: unknown): T => {
@@ -101,6 +103,7 @@ export function lotMetadata(d: Draft, base: string) {
       lotCode: p.lotCode,
       capturedAt: p.capturedAt,
       ...(p.gps ? { gps: p.gps } : {}),
+      ...(p.swarmRef ? { swarm: { reference: p.swarmRef, url: `https://bzz.limo/bzz/${p.swarmRef}/` } } : {}),
     })),
     ...(d.trace
       ? {
@@ -172,7 +175,18 @@ export function registerListingRoutes(app: FastifyInstance, deps: ListingDeps) {
     const parsed = await parseListing(text, deps.ai, seller.persona.place)
     if (!parsed) throw new HttpError(422, "unreadable", "Couldn't read that. Try something like: 600 kg cod, Bergen")
     const photos = body.photos?.length ? deps.photos.check(body.photos) : { photos: [], flags: [] }
+    // Swarm copies upload while the grader works; a failed upload just leaves the photo local-only.
+    const swarmed = deps.swarm
+      ? Promise.all(
+          photos.photos.map(async (p) => {
+            if (p.swarmRef) return
+            const ref = await deps.swarm!.upload(readFileSync(p.file), p.mediaType, `${p.hash.slice(2)}.${p.mediaType.split("/")[1] ?? "jpg"}`)
+            if (ref) p.swarmRef = ref
+          }),
+        )
+      : Promise.resolve()
     const graded = await gradeLot(parsed.sector, parsed.commodity, photos.photos, deps.ai)
+    await swarmed
     const reference = findReference(deps.references, parsed.commodity, parsed.place)
     const recent = (await deps.recentPrices?.(parsed.commodity, parsed.place)) ?? []
     // An untrusted grade (TEE check failed) can't lift or cut the floor: price it as ungraded.
@@ -308,6 +322,11 @@ export function registerListingRoutes(app: FastifyInstance, deps: ListingDeps) {
   app.get<{ Params: { hash: string } }>("/api/photos/:hash", async (req, reply) => {
     if (!/^0x[0-9a-f]{64}$/.test(req.params.hash)) throw new HttpError(400, "bad_request", "Bad photo hash")
     const p = deps.drafts.photo(req.params.hash)
+    if (p && !existsSync(p.file) && p.swarmRef && deps.swarm) {
+      // Local copy gone (e.g. a fresh deployment): serve it back from Swarm.
+      const got = await deps.swarm.read(p.swarmRef)
+      if (got) return reply.type(got.mediaType).send(Buffer.from(got.bytes))
+    }
     if (!p || !existsSync(p.file)) throw new HttpError(404, "unknown_photo", "No such photo")
     return reply.type(p.mediaType).send(createReadStream(p.file))
   })
