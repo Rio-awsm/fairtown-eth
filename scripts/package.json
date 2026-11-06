@@ -13,7 +13,8 @@
     "e2e:town-live": "tsx e2e/town-live.ts",
     "dev:all": "tsx dev-all.ts",
     "e2e:first-lot": "tsx e2e/first-lot.ts",
-    "e2e:trust": "tsx e2e/trust.ts"
+    "e2e:trust": "tsx e2e/trust.ts",
+    "e2e:chainlink": "tsx e2e/chainlink.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "1.0.1",

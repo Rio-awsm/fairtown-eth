@@ -313,9 +313,12 @@ export class ViemChain implements ChainAdapter {
     const [ev] = parseEventLogs({ abi: marketSettlementAbi, logs: r.logs, eventName: "NoShowContested" })
     return { tx: r.transactionHash, disputeId: ev?.args.disputeId ?? 0n }
   }
-  async openDispute(_from: Address, _lotId: bigint, _tokenAmount: bigint, _evidenceHash: Hex, _evidenceURI: string): Promise<Tx & { disputeId: bigint }> {
-    // D-48: DisputeResolver is a reverting stub until S1 4.1.
-    throw new ChainError("NotImplemented", "Disputes go live with S1 4.1 (DisputeResolver is a stub in v1)")
+  // Quality dispute (contract 7.8, live since S1 4.1): the buyer opens it on the resolver, which escrows their tokens.
+  async openDispute(from: Address, lotId: bigint, tokenAmount: bigint, evidenceHash: Hex, evidenceURI: string): Promise<Tx & { disputeId: bigint }> {
+    const r = await this.send(this.account(from), { address: this.c.DisputeResolver as Address, abi: disputeResolverAbi, functionName: "openDispute", args: [lotId, tokenAmount, evidenceHash, evidenceURI] })
+    const [ev] = parseEventLogs({ abi: disputeResolverAbi, logs: r.logs, eventName: "DisputeOpened" })
+    if (!ev) throw new ChainError("BadSpec", "openDispute emitted no DisputeOpened")
+    return { tx: r.transactionHash, disputeId: ev.args.disputeId }
   }
   async requestStorage(from: Address, lotId: bigint, qty: bigint, days: number): Promise<Tx> {
     const r = await this.send(this.account(from), { address: this.c.ChainTrigger as Address, abi: chainTriggerAbi, functionName: "requestStorage", args: [lotId, qty, days] })

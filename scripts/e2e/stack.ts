@@ -21,6 +21,8 @@ export const AGENTS_PORT = Number(env.AGENTS_PORT ?? 8787)
 export const RELAY_PORT = Number(env.RELAY_PORT ?? 8788)
 export const WEB_PORT = Number(env.WEB_PORT ?? 8080)
 export const API = `http://127.0.0.1:${AGENTS_PORT}`
+export const CRE_BRIDGE_PORT = Number(env.CRE_BRIDGE_PORT ?? 8789)
+export const CRE_BRIDGE_URL = `http://127.0.0.1:${CRE_BRIDGE_PORT}`
 /** 27 personas (wallet index = persona order) plus room for walk-in buyers. */
 const AGENT_WALLETS = 40
 
@@ -155,7 +157,7 @@ export type Stack = { pub: PublicClient; logsClient: PublicClient }
  */
 export async function startStack(
   run: Run,
-  opts: { relay?: boolean; web?: boolean; baseSpeed?: boolean; env?: Record<string, string> } = {},
+  opts: { relay?: boolean; web?: boolean; baseSpeed?: boolean; cre?: boolean; env?: Record<string, string> } = {},
 ): Promise<Stack> {
   const network = run.network
   const ports = [
@@ -163,6 +165,7 @@ export async function startStack(
     AGENTS_PORT,
     ...(opts.relay ? [RELAY_PORT] : []),
     ...(opts.web ? [WEB_PORT] : []),
+    ...(opts.cre ? [CRE_BRIDGE_PORT] : []),
   ]
   for (const p of ports) if (await portBusy(p)) throw new Error(`port ${p} is in use; stop the running service first`)
 
@@ -196,7 +199,7 @@ export async function startStack(
     run.start("anvil", "anvil", [...anvilArgs(env).args, "--silent"], {})
     await run.until("anvil", 60_000, async () => ((await pub.getChainId()) === baseSepolia.id ? true : undefined), 500)
     const test = createTestClient({ chain: baseSepolia, mode: "anvil", transport: http(ANVIL_URL) })
-    for (const k of ["OPERATOR_PRIVATE_KEY", "KEEPER_PRIVATE_KEY"]) {
+    for (const k of ["OPERATOR_PRIVATE_KEY", "KEEPER_PRIVATE_KEY", ...(opts.cre ? ["CRE_ETH_PRIVATE_KEY"] : [])]) {
       const key = env[k]
       if (!key) throw new Error(`${k} is unset`)
       await test.setBalance({ address: privateKeyToAccount(key as Hash).address, value: 10n ** 19n })
@@ -216,6 +219,13 @@ export async function startStack(
     await run.until("relay", 60_000, async () => ((await portBusy(RELAY_PORT)) ? true : undefined), 1_000)
   }
   run.start("keeper", "pnpm", ["-s", "-F", "keeper", "exec", "tsx", "src/index.ts", network], services)
+  if (opts.cre) {
+    // The CRE simulator writes through project.yaml's ${RPC_URL}: the fork here (C 2.1). Timers and W3 off; runs on demand.
+    const creEnv = { CRE_BRIDGE_W1_MINUTES: "0", CRE_BRIDGE_WEATHER_MINUTES: "0", CRE_BRIDGE_CALENDAR_MINUTES: "0", CRE_BRIDGE_W3: "0", CRE_BRIDGE_BROADCAST: "1" }
+    run.start("cre-bridge", "pnpm", ["-s", "-F", "keeper", "exec", "tsx", "src/creBridgeMain.ts"], { ...services, ...creEnv })
+    await run.until("CRE bridge", 60_000, async () => ((await fetch(`${CRE_BRIDGE_URL}/health`)).ok ? true : undefined), 1_000)
+    run.say(`ok  CRE bridge up on :${CRE_BRIDGE_PORT} (simulation, broadcasting to ${network === "anvil" ? "the fork" : "Base Sepolia"})`)
+  }
   run.start("agents", "pnpm", ["-s", "-F", "agents", "exec", "tsx", "src/index.ts"], services)
   const health = await run.until(
     "agents /api/health",

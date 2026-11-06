@@ -28,7 +28,8 @@
     "e2e:lot": "pnpm -s -F scripts run e2e:lot",
     "e2e:town-live": "pnpm -s -F scripts run e2e:town-live",
     "e2e:first-lot": "pnpm -s -F scripts run e2e:first-lot",
-    "e2e:trust": "pnpm -s -F scripts run e2e:trust"
+    "e2e:trust": "pnpm -s -F scripts run e2e:trust",
+    "e2e:chainlink": "pnpm -s -F scripts run e2e:chainlink"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
