@@ -8,18 +8,21 @@ access, and CRE network deployment is in the backlog. Receivers: `SignalOracle` 
 | Workflow | Triggers | Writes |
 | --- | --- | --- |
 | `w1-fx-reference` (S1 4.2) | 0: FX cron, 1: reference cron | kind 3 per quote, kind 1 per D-16 pair |
+| `w2-signals` (S1 4.3) | 0: weather cron (Open-Meteo), 1: calendar cron + forced signals | kind 2 per signal |
 
 ## Run
 
 ```bash
-bun install --cwd cre/w1-fx-reference          # once
+bun install --cwd cre/w1-fx-reference          # once per workflow
+bun install --cwd cre/w2-signals
 bun test --cwd cre                              # pnpm test:cre
 # Simulate from the repo root; with-env loads .env and redacts keys and RPC URLs from the output.
 pnpm -s -F scripts run with-env --cwd cre -- cre workflow simulate ./w1-fx-reference \
   --target local-simulation --non-interactive --trigger-index 0            # add --broadcast to write
-# Trigger 1 reads GET /api/reference from the agents service (services/agents, port 8787).
+# W1 trigger 1 reads GET /api/reference from the agents service (services/agents, port 8787).
+# W2 needs no service: Open-Meteo and the calendar in config.json.
 # After a broadcast, prove it landed (the simulator's "written" is not proof, D-69):
-cd cre/w1-fx-reference && bun scripts/verify-onchain.ts ../logs/<broadcast log>...
+cd cre/<workflow> && bun scripts/verify-onchain.ts ../logs/<broadcast log>...
 ```
 
 `--broadcast` needs `CRE_ETH_PRIVATE_KEY` funded on Base Sepolia (`pnpm run doctor`, row `cre-wallet`). Logs of every

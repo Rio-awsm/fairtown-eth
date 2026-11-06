@@ -1,0 +1,26 @@
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: 985d8b0c17826a91e4d2fb21e6c19836d85777aed2ec7e5ee8413635377aceb9
+  Config hash: 547063792bd5774a79ed66b8ffc723af27841c43b791a2cfeb9375f9c7e84378
+2026-11-06T13:46:13Z [SIMULATION] Simulator Initialized
+2026-11-06T13:46:13Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T13:46:15Z [USER LOG] W2 weather: source https://api.open-meteo.com/v1/forecast?latitude=60.39,32.78,19.08,-1.29,6.52&longitude=5.32,-96.8,72.88,36.82,3.38&daily=precipitation_sum,wind_gusts_10m_max&timezone=GMT&forecast_days=2 status ok
+2026-11-06T13:46:15Z [USER LOG] W2 weather bergen: calm, no signal
+2026-11-06T13:46:15Z [USER LOG] W2 weather dallas: calm, no signal
+2026-11-06T13:46:15Z [USER LOG] W2 weather mumbai: calm, no signal
+2026-11-06T13:46:15Z [USER LOG] W2 weather nairobi: calm, no signal
+2026-11-06T13:46:15Z [USER LOG] W2 weather lagos: calm, no signal
+✓ Workflow Simulation Result:
+"W2 weather: 0 signals"
+2026-11-06T13:46:15Z [SIMULATION] Execution finished signal received
+2026-11-06T13:46:15Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯

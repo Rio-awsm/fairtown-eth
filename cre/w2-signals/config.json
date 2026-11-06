@@ -1,0 +1,131 @@
+{
+  "weatherSchedule": "0 0 */3 * * *",
+  "calendarSchedule": "0 0 6 * * *",
+  "weatherBaseUrl": "https://api.open-meteo.com/v1/forecast",
+  "forecastDays": 2,
+  "places": [
+    {
+      "place": "bergen",
+      "name": "Bergen",
+      "lat": 60.39,
+      "lon": 5.32
+    },
+    {
+      "place": "dallas",
+      "name": "Dallas",
+      "lat": 32.78,
+      "lon": -96.8
+    },
+    {
+      "place": "mumbai",
+      "name": "Mumbai",
+      "lat": 19.08,
+      "lon": 72.88
+    },
+    {
+      "place": "nairobi",
+      "name": "Nairobi",
+      "lat": -1.29,
+      "lon": 36.82
+    },
+    {
+      "place": "lagos",
+      "name": "Lagos",
+      "lat": 6.52,
+      "lon": 3.38
+    }
+  ],
+  "gustKmh": [
+    [50, 2],
+    [65, 3],
+    [80, 4],
+    [100, 5]
+  ],
+  "rainMm": [
+    [20, 2],
+    [40, 3],
+    [70, 4]
+  ],
+  "calendar": [
+    {
+      "name": "Diwali (Lakshmi Puja)",
+      "date": "2026-11-08",
+      "market": "mumbai",
+      "source": "https://www.timeanddate.com/holidays/india/diwali"
+    },
+    {
+      "name": "Diwali (Lakshmi Puja)",
+      "date": "2026-11-08",
+      "market": "pune",
+      "source": "https://www.timeanddate.com/holidays/india/diwali"
+    },
+    {
+      "name": "Thanksgiving",
+      "date": "2026-11-26",
+      "market": "dallas",
+      "source": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+    },
+    {
+      "name": "Thanksgiving",
+      "date": "2026-11-26",
+      "market": "houston",
+      "source": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"
+    },
+    {
+      "name": "Christmas",
+      "date": "2026-12-25",
+      "market": "bergen",
+      "source": "https://www.timeanddate.com/holidays/norway/christmas-day"
+    },
+    {
+      "name": "Christmas",
+      "date": "2026-12-25",
+      "market": "oslo",
+      "source": "https://www.timeanddate.com/holidays/norway/christmas-day"
+    },
+    {
+      "name": "Christmas",
+      "date": "2026-12-25",
+      "market": "hamburg",
+      "source": "https://www.timeanddate.com/holidays/germany/christmas-day"
+    },
+    {
+      "name": "Lunar New Year",
+      "date": "2027-02-06",
+      "market": "houston",
+      "source": "https://www.timeanddate.com/holidays/china/spring-festival"
+    },
+    {
+      "name": "Ramadan begins (estimated, moon sighting)",
+      "date": "2027-02-08",
+      "market": "lagos",
+      "source": "https://www.timeanddate.com/holidays/nigeria/ramadan-begins"
+    },
+    {
+      "name": "Valentine's Day",
+      "date": "2027-02-14",
+      "market": "amsterdam",
+      "source": "https://www.timeanddate.com/holidays/netherlands/valentine-day"
+    },
+    {
+      "name": "Valentine's Day",
+      "date": "2027-02-14",
+      "market": "nairobi",
+      "source": "https://www.timeanddate.com/holidays/kenya/valentine-day"
+    }
+  ],
+  "calendarWindowDays": 7,
+  "forceSignals": [
+    {
+      "kind": "festival",
+      "place": "nairobi",
+      "severity": 4,
+      "label": "Valentine's cargo cutoff",
+      "hours": 6
+    }
+  ],
+  "blocksPerSecond": 5,
+  "chainSelectorName": "ethereum-testnet-sepolia-base-1",
+  "signalOracle": "0x8B0eE1395ee575D234ae5dDE927062B646A685B2",
+  "gasLimit": "400000"
+}

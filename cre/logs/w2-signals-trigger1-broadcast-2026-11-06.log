@@ -1,0 +1,24 @@
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: 985d8b0c17826a91e4d2fb21e6c19836d85777aed2ec7e5ee8413635377aceb9
+  Config hash: 547063792bd5774a79ed66b8ffc723af27841c43b791a2cfeb9375f9c7e84378
+2026-11-06T13:47:15Z [SIMULATION] Simulator Initialized
+2026-11-06T13:47:15Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T13:47:15Z [USER LOG] W2 calendar: 2 within 7 days of 2026-11-06, 1 forced
+2026-11-06T13:47:19Z [USER LOG] W2 signal festival mumbai sev 4 "Diwali in 2 days" expires block 56302656 (2026-11-09T00:00:00.000Z), source Diwali (Lakshmi Puja) 2026-11-08 https://www.timeanddate.com/holidays/india/diwali: written 0x776bdb660f6e6984f48c44843609fda919a89067e303809898359137e6bf6b04
+2026-11-06T13:47:22Z [USER LOG] W2 signal festival pune sev 4 "Diwali in 2 days" expires block 56302656 (2026-11-09T00:00:00.000Z), source Diwali (Lakshmi Puja) 2026-11-08 https://www.timeanddate.com/holidays/india/diwali: written 0xe4da91fb089cb23e728ec7759c7b53e17b6bba4097263e244fb5011ee45356b4
+2026-11-06T13:47:24Z [USER LOG] W2 signal festival nairobi sev 4 "Valentine's cargo cutoff (forced)" expires block 55263831 (2026-11-06T14:17:15.000Z) FORCED, source config forceSignals (demo): written 0xc891f5eb9a9ba9ad3ef1f4fa8666a8a3e15efc872fefb093ef162b380d4cf5af
+✓ Workflow Simulation Result:
+"W2 calendar: 3 written, 0 unconfirmed, 0 failed, 0 not sent"
+2026-11-06T13:47:24Z [SIMULATION] Execution finished signal received
+2026-11-06T13:47:24Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯
