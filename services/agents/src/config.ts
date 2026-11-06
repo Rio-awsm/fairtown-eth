@@ -42,6 +42,7 @@ export const AgentsConfig = z.object({
   STORAGE_DIR: z.string().default("./.data"),
   PUBLIC_BASE_URL: z.string().url().default("http://localhost:8787"),
   PUBLIC_WEB_URL: z.string().url().default("http://localhost:8080"),
+  CORS_ORIGINS: z.string().optional(), // extra browser origins, comma separated (the web app's own origin is always allowed)
   SELLER_PIN: z.string().min(4).optional(), // one disclosed demo PIN; unset disables seller sessions
   TRUST_PROXY: z.string().optional(), // IP/CIDR of the tunnel (e.g. 127.0.0.1), never "true"
   WALKIN_BUDGET: z.string().regex(/^\d+(\.\d{1,6})?$/).default("500"),

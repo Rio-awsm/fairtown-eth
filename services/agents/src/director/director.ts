@@ -88,7 +88,7 @@ export class Director {
   }
 
   begin(tickMs = 1000) {
-    this.timer = setInterval(() => void this.step(), tickMs)
+    this.timer = setInterval(() => void this.step().catch((e) => this.log.push({ block: "?", scenario: "-", step: "tick", ok: false, error: String(e instanceof Error ? e.message : e).replace(/https?:\/\/\S+/g, "<url>").slice(0, 200) })), tickMs)
     this.timer.unref?.()
     return () => this.timer && clearInterval(this.timer)
   }

@@ -4,7 +4,7 @@ import type { Address, Hex } from "viem"
 import type { ChainAdapter, ChainEvent, EventArgs } from "../chain/types"
 import type { ArkivStore } from "./ArkivStore"
 
-const BLOCK_SECONDS = 2
+const BLOCK_SECONDS = 2 // fake-mode default; Base Sepolia passes 0.2 (ICR-003)
 const DAY = 86_400
 const lc = (a: string) => a.toLowerCase() as Address
 const json = (o: unknown) => new TextEncoder().encode(JSON.stringify(o))
@@ -21,6 +21,7 @@ export type LedgerWriterOptions = {
   onError?: (e: unknown, event: string) => void
   now?: () => Date
   retryDelaysMs?: number[] // Arkiv write retries; writes dedupe on their natural key, so a retry never duplicates
+  blockSeconds?: number // chain block time, for expiries counted in blocks
 }
 
 type LotInfo = {
@@ -91,7 +92,7 @@ export class LedgerWriter {
 
   private async secondsUntil(block: bigint, extra: number) {
     const now = await this.o.chain.blockNumber()
-    return Math.max(60, Number(block > now ? block - now : 0n) * BLOCK_SECONDS + extra)
+    return Math.max(60, Math.round(Number(block > now ? block - now : 0n) * (this.o.blockSeconds ?? BLOCK_SECONDS)) + extra)
   }
 
   private async status(lotId: bigint, status: LotStatus) {

@@ -28,6 +28,7 @@ const fakeCurrencies: Record<string, string> = {
 const relay = buildRelay({
   state,
   token: config.RELAY_INTERNAL_TOKEN,
+  corsOrigins: [...new Set(["http://localhost:8080", "http://127.0.0.1:8080", config.PUBLIC_WEB_URL, ...(config.CORS_ORIGINS ?? "").split(",")].map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean))],
   ...(fake ? { mapper: new ChainMapper({ currencyOf: (a) => fakeCurrencies[a] ?? a, nameOf: (a) => state.nameOf(a) }) } : {}),
 })
 await relay.app.listen({ port: config.RELAY_PORT, host: "0.0.0.0" })

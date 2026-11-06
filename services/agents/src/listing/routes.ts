@@ -1,5 +1,5 @@
 import { ConfirmRequest, ConfirmResponse, DisputeEvidence, DraftRequest, LotDraft, LotView, SellerProfile, TimelineResponse } from "@fairtown/shared/api"
-import type { LotStatus } from "@fairtown/shared"
+import { UNITS, type LotStatus } from "@fairtown/shared"
 import type { FastifyInstance } from "fastify"
 import { createReadStream, existsSync, readFileSync } from "node:fs"
 import type { z } from "zod"
@@ -37,6 +37,7 @@ export type ListingDeps = {
   references: ReferenceRow[]
   recentPrices?: (commodity: string, place: string) => Promise<bigint[]>
   swarm?: SwarmStore // ADDON_SWARM: copy photos to Swarm; local disk stays the primary copy
+  winnersOf?: (lotId: bigint) => Promise<Array<{ buyer: string; tokenAmount: bigint }>> // buyers still holding lot tokens (D-38)
 }
 
 export const parse = <T>(schema: z.ZodType<T>, body: unknown): T => {
@@ -268,7 +269,15 @@ export function registerListingRoutes(app: FastifyInstance, deps: ListingDeps) {
         bidCount: lot.bidCount,
         auction: lot.auction,
         endBlock: lot.endBlock,
-        ...(d ? { draftId: d.draftId, gradeReport: d.grade, metadataURI: `${base}/api/lots/meta/${d.draftId}` } : {}),
+        ...(lot.settlement && deps.winnersOf ? { winners: await deps.winnersOf(lot.lotId) } : {}),
+        ...(d
+          ? {
+              draftId: d.draftId,
+              // tee_verified is true only when the 0G Router attested the grade (8.1); S3 shows "Verified" on exactly that.
+              gradeReport: { ...d.grade, tee_verified: d.trace?.teeVerified === true, verification: (({ state, label }) => ({ state, label }))(verificationOf(d.trace)) },
+              metadataURI: `${base}/api/lots/meta/${d.draftId}`,
+            }
+          : {}),
       }),
     )
   })
@@ -290,17 +299,15 @@ export function registerListingRoutes(app: FastifyInstance, deps: ListingDeps) {
         address: seller.address,
         tier: record.proven ? "proven" : "new",
         record,
-        lots: lots.map((l) => ({ lotId: l.lotId, commodity: l.spec.commodity, qty: l.spec.qty, status: l.status })),
-        payouts: lots
-          .filter((l) => l.settlement)
-          .map((l) => ({
-            lotId: l.lotId,
-            currency: l.spec.currency,
-            paidNow: l.settlement!.sellerPaid,
-            held: l.settlement!.held,
-            heldRemaining: l.settlement!.heldRemaining,
-            refunded: l.settlement!.refunded,
-          })),
+        lots: lots.map((l) => ({ lotId: l.lotId, commodity: l.spec.commodity, qty: l.spec.qty, unit: UNITS[l.spec.sector], status: l.status })),
+        // One row per money movement to the seller: at sale (advance), at handover (released held share), refunded to buyers.
+        payouts: lots.flatMap((l) => {
+          const s = l.settlement
+          if (!s) return []
+          const released = s.held - s.heldRemaining - s.refunded
+          const row = (kind: string, amount: bigint) => ({ lotId: l.lotId, kind, amount, currency: l.spec.currency })
+          return [row("at_sale", s.sellerPaid), ...(released > 0n ? [row("at_handover", released)] : []), ...(s.refunded > 0n ? [row("refund", s.refunded)] : [])]
+        }),
       }),
     )
   })

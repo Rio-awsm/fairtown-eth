@@ -1,4 +1,6 @@
+import cors from "@fastify/cors"
 import { HealthResponse } from "@fairtown/shared/api"
+import { redact } from "./redact"
 import { z } from "zod"
 import type { HealthExtras } from "./health"
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify"
@@ -29,8 +31,12 @@ const ExtendedHealth = HealthResponse.extend({
   runtime: Dep.optional(),
   llm: Dep.optional(),
   vision: Dep.optional(),
-  swarm: Dep.optional(),
 })
+
+export function corsOrigins(c: { PUBLIC_WEB_URL?: string; CORS_ORIGINS?: string | undefined }): string[] {
+  const list = ["http://localhost:8080", "http://127.0.0.1:8080", ...(c.PUBLIC_WEB_URL ? [c.PUBLIC_WEB_URL] : []), ...(c.CORS_ORIGINS ?? "").split(",")]
+  return [...new Set(list.map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean))]
+}
 
 export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
 
@@ -41,9 +47,12 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     logger: deps.logger === false ? false : { level: "info", redact: { paths: REDACT, censor: "[redacted]" } },
   })
 
-  app.setErrorHandler((err: FastifyError, _req, reply) => {
+  // The web app (S3) calls this API from another origin: allow it explicitly, never by reflecting any origin.
+  void app.register(cors, { origin: corsOrigins(deps.config), allowedHeaders: ["Content-Type", "Authorization", "PAYMENT-SIGNATURE"], exposedHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE"] })
+
+  app.setErrorHandler((err: FastifyError, req, reply) => {
     const status = err.statusCode && err.statusCode >= 400 ? err.statusCode : 500
-    if (status === 500) app.log.error(err)
+    if (status === 500) app.log.error({ err: redact(err), url: req.url.split("?")[0] }, "request failed")
     reply.status(status).send({ error: { code: err.code ?? "internal", message: status === 500 ? "Internal error" : err.message } })
   })
   app.setNotFoundHandler((req, reply) => {
@@ -70,10 +79,11 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     const ai = await deps.ai.health()
     const extras = deps.health ? await deps.health() : undefined
     // Only the chain is fatal: Arkiv, AI, relay and the ledger all degrade (see each detail).
-    const parts: Record<string, { ok: boolean }> = { arkiv, ai, ...(extras ?? {}) }
+    const { addons, ...rest } = extras ?? { addons: {} }
+    const parts: Record<string, { ok: boolean }> = { arkiv, ai, ...rest, ...Object.fromEntries(Object.entries(addons).map(([k, v]) => [`addon:${k}`, v])) }
     const degraded = Object.entries(parts).filter(([, v]) => !v.ok).map(([k]) => k)
     const status = !chain.ok ? "down" : degraded.length ? "degraded" : "ok"
-    return ExtendedHealth.parse({ ok: chain.ok && arkiv.ok && ai.ok, status, degraded, chain, arkiv, ai, addons: {}, ...(extras ?? {}) })
+    return ExtendedHealth.parse({ ok: chain.ok && arkiv.ok && ai.ok, status, degraded, chain, arkiv, ai, ...rest, addons })
   })
 
   if (deps.runtime) registerAgentRoutes(app, deps.runtime)

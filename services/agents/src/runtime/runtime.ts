@@ -30,6 +30,7 @@ export type RuntimeOptions = {
   marketFor?: (lot: LotObservation, block: bigint) => MarketView & { reference?: bigint }
   sellerCheck?: (seller: Address) => Promise<{ name: string; verified: boolean } | undefined>
   ensNameOf?: (agentId: Address) => string | undefined
+  onError?: (what: string, err: unknown) => void // loop errors (e.g. RPC down) are reported here, never thrown
 }
 
 export class AgentRuntime {
@@ -148,7 +149,7 @@ export class AgentRuntime {
   // ---------- loop ----------
   start(tickMs = 3000) {
     this.unwatch = this.o.chain.watch((e) => this.onEvent(e))
-    this.timer = setInterval(() => void this.step(), tickMs)
+    this.timer = setInterval(() => void this.tick(), tickMs)
     this.timer.unref?.()
     return () => this.stop()
   }
@@ -240,6 +241,16 @@ export class AgentRuntime {
       this.stepping = false
     }
     return out
+  }
+
+  // One loop iteration that never rejects: a chain or RPC outage must not take the service down.
+  async tick() {
+    try {
+      return await this.step()
+    } catch (e) {
+      this.o.onError?.("runtime step", e)
+      return []
+    }
   }
 
   // A human's bid (walk-in): same observation, executor and guardrails as an agent's.

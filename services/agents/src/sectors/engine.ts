@@ -100,7 +100,7 @@ export class SectorEngine {
   // ---------- lifecycle ----------
   start(tickMs = 1000) {
     this.unwatch = this.o.chain.watch((e) => this.handle(e))
-    this.timer = setInterval(() => void this.step(), tickMs)
+    this.timer = setInterval(() => void this.step().catch((e) => this.fail("engine step", e)), tickMs)
     this.timer.unref?.()
     return () => this.stop()
   }
@@ -177,6 +177,18 @@ export class SectorEngine {
     const seller = this.addr(personaId)
     if (seller === ZERO) throw new Error(`No persona ${personaId}`)
     return this.list(seller, { ...s, parentLotId: 0n }, reason)
+  }
+
+  // Buyers still holding a lot's tokens (the handover "winners", D-38): tracked from TokensClaimed, checked on chain.
+  async winners(lotId: bigint): Promise<Array<{ buyer: Address; tokenAmount: bigint }>> {
+    const lot = this.lots.get(lotId.toString())
+    if (!lot) return []
+    const out: Array<{ buyer: Address; tokenAmount: bigint }> = []
+    for (const [buyer] of lot.holders) {
+      const tokenAmount = await this.o.chain.tokenBalance(lotId, buyer)
+      if (tokenAmount > 0n) out.push({ buyer, tokenAmount })
+    }
+    return out
   }
 
   // ---------- events ----------

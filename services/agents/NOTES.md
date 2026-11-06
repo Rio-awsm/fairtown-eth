@@ -133,3 +133,11 @@
 **Live:** node wallet `0x4c8Bf00b3D382b723dB58372048c00D4E5981BB4`, batch `426f447f...6fef6` (1.25 xBZZ, about 27 days, 8.75 xBZZ left), proof upload `a7337bff...cd68` readable on bzz.limo, Arkiv entity `0x86e0f000...32a1`.
 
 **Gotchas:** Homebrew formula broken (`File.exists?`); a light node shuts down if not funded in time; uploads return in milliseconds (Bee pushes chunks in the background), and bzz.limo served the file at once.
+
+## 2026-11-06, pre-integration audit and fixes (D-84, ICR-008)
+
+Three read-only audits (build guide, contract, S3 branch) found integration blockers on the S2 side, now fixed: no CORS on agents or relay; `.env.example` `PUBLIC_WEB_URL` placeholder crashed config (also in `.env`, now `http://localhost:8080`); ICR-006 vars missing from `.env.example`; a chain or RPC error in a loop tick could crash the process and print the keyed RPC URL; `LotView` lacked `winners` and `gradeReport.tee_verified`; seller payouts were not in the row shape S3 reads; health `addons` always empty; no `clock` phase events; ledger expiries used 2 s blocks on Base Sepolia; doctor rows out of date.
+
+**Left for S3** (their side, see the audit): seller session PIN step and `Authorization: Bearer` on ticket and contest (ICR-006); read the fallback link as `/scan#t=<base64url>`; use `ARKIV_SDK_SCHEMAS` from `@fairtown/shared/arkiv` (their local copy types `day` as u64 and `seller` as str; S2 writes str and addr). **Left for Combine:** a Vite proxy for `/api`, `/snapshot`, `/ws` behind the tunnel so phones reach the APIs.
+
+**Not done (low):** pHash photo reuse (exact SHA-256 only); cod reference still illustrative; `LotView.bids` empty; bid `reason` and reputation `lastLotId` not filled; relay reconnect test.

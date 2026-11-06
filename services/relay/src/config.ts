@@ -2,6 +2,8 @@ import { z } from "zod"
 
 export const RelayConfig = z.object({
   RELAY_PORT: z.coerce.number().int().min(1).max(65535).default(8788),
+  PUBLIC_WEB_URL: z.string().url().default("http://localhost:8080"),
+  CORS_ORIGINS: z.string().optional(),
   RELAY_INTERNAL_TOKEN: z.string().min(1),
   CHAIN_MODE: z.enum(["fake", "anvil", "base-sepolia"]).default("fake"),
   RPC_URL: z.string().url().optional(),

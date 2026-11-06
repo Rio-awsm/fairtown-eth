@@ -1,4 +1,5 @@
 import { TownEnvelope } from "@fairtown/shared/protocol"
+import cors from "@fastify/cors"
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify"
 import { timingSafeEqual } from "node:crypto"
 import { WebSocket, WebSocketServer } from "ws"
@@ -9,6 +10,7 @@ import type { RelayState } from "./state"
 export type RelayDeps = {
   state: RelayState
   token: string
+  corsOrigins?: string[] // browser origins allowed to read /snapshot and /health (WebSockets need no CORS)
   logger?: boolean
   maxBufferedBytes?: number
   heartbeatMs?: number
@@ -28,6 +30,7 @@ export function buildRelay(deps: RelayDeps): Relay {
   const app = Fastify({
     logger: deps.logger === false ? false : { level: "info", redact: ["req.headers.authorization"] },
   })
+  void app.register(cors, { origin: deps.corsOrigins ?? ["http://localhost:8080", "http://127.0.0.1:8080"], methods: ["GET", "POST"] })
   const wss = new WebSocketServer({ noServer: true })
   const alive = new WeakMap<WebSocket, boolean>()
   const maxBuffered = deps.maxBufferedBytes ?? 1_000_000

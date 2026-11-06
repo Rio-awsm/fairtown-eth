@@ -22,6 +22,7 @@ import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
 import { SectorEngine } from "./sectors/engine"
 import { MarketState, moveOnSignal } from "./market/state"
 import { SessionStore } from "./handover/sessions"
+import { redact } from "./redact"
 import { SwarmStore } from "./addons/swarm/store"
 import { DEFAULT_POLICY, hederaClient, IntelBuyer, intelLine, mirrorBalances } from "./addons/hedera/buyer"
 import { intelServer } from "./addons/hedera/intel"
@@ -39,6 +40,9 @@ import { AUCTION_BLOCKS, AUCTION_BLOCKS_FAKE } from "./sectors/rules"
 import { SECTORS } from "@fairtown/shared"
 import { createLlmStrategy, marketContext } from "./strategies/llm"
 import { ruleStrategy } from "./strategies/rule"
+
+// Last line of defence: an async failure anywhere is logged (redacted) instead of killing the demo.
+process.on("unhandledRejection", (e) => console.error(`unhandled rejection: ${redact(e)}`))
 
 const root = fileURLToPath(new URL("../../../", import.meta.url))
 const { env } = loadEnv(`${root}.env`)
@@ -70,7 +74,7 @@ const recentPrices = async (commodity: string, place: string) => {
     return []
   }
 }
-const listing = { ai, sellers, photos: new PhotoStore(resolve(root, config.STORAGE_DIR)), drafts, references: loadReferences(), recentPrices, ...(swarm ? { swarm } : {}) }
+const listing = { ai, sellers, photos: new PhotoStore(resolve(root, config.STORAGE_DIR)), drafts, references: loadReferences(), recentPrices, ...(swarm ? { swarm } : {}), winnersOf: (id: bigint) => sectors.winners(id) }
 let log: (msg: string, extra?: object) => void = () => {}
 
 const ledger = new LedgerWriter({
@@ -96,7 +100,8 @@ const ledger = new LedgerWriter({
       ...(d.trace?.fallback ? { fallback: d.trace.fallback.reason } : {}),
     }
   },
-  onError: (e, event) => log("arkiv write failed", { event, err: e instanceof Error ? e.message : String(e) }),
+  onError: (e, event) => log("arkiv write failed", { event, err: redact(e) }),
+  blockSeconds: fake ? FAKE_BLOCK_MS / 1000 : 0.2,
 })
 const publisher = new RelayPublisher(`http://localhost:${config.RELAY_PORT}`, config.RELAY_INTERNAL_TOKEN)
 // Live signals, reference and FX (S2 5.3). Shares the reference rows with listing, sectors and the LLM context.
@@ -166,6 +171,7 @@ const runtime = new AgentRuntime({
   publisher,
   strategy,
   marketFor,
+  onError: (what, e) => log("loop step failed", { what, err: redact(e) }),
   ...(ensAgents ? { sellerCheck: (s: Address) => ensAgents!.sellerCheck(s), ensNameOf: (a: Address) => ensAgents!.nameOf(a) } : {}),
   ledger,
   gradeFor: (_id, uri) => drafts.get(uri.split("/").pop() ?? "")?.grade.grade,
@@ -217,6 +223,21 @@ const director = new Director({
   festivals: loadCalendar().events,
 })
 const stopDirector = director.begin()
+
+// Contract 12.4: the agents service publishes clock phase events (the relay's chain clock has no phase).
+const phaseOf = (h: number) => (h < 5 ? "night" : h < 8 ? "dawn" : h < 12 ? "morning" : h < 15 ? "noon" : h < 20 ? "evening" : "night") as "dawn" | "morning" | "noon" | "evening" | "night"
+let lastClock = -1n
+const clockTimer = setInterval(() => {
+  void chain
+    .blockNumber()
+    .then(async (b) => {
+      if (b - lastClock < 25n) return
+      lastClock = b
+      await publisher.publish([{ type: "clock", block: Number(b), phase: phaseOf(new Date().getHours()) }], Number(b))
+    })
+    .catch((e) => log("clock failed", { err: redact(e) }))
+}, 2000)
+clockTimer.unref?.()
 const stopMining = fake ? fake.autoMine(FAKE_BLOCK_MS) : () => {}
 
 // Handover codes live about 5 minutes: 1500 blocks at 200 ms, 150 in fake mode (2 s blocks).
@@ -234,7 +255,10 @@ const app = buildApp({
   humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config, ...(ensAgents ? { onJoined: (a) => void ensAgents!.register(a) } : {}) },
   director,
   ...(hedera ? { intel: { server: intelServer(config.X402_FACILITATOR_URL), payTo: config.HEDERA_ACCOUNT_ID!, arkiv, market, block: () => chain.blockNumber(), onSettled: (tx: string) => log("intel payment settled", { tx }) } } : {}),
-  health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI, ...(swarm ? { swarm } : {}), ...(aiConfig.VISION_MODEL ? { visionModel: aiConfig.VISION_MODEL } : {}) }),
+  health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI, ...(swarm ? { swarm } : {}), addons: () => ({
+    ...(config.ADDON_ENS ? { ens: ensAgents ? { ok: true, detail: `names under ${config.ENS_PARENT_NAME}, ${ensAgents.names.size} registered this run` } : { ok: false, detail: "ADDON_ENS=1 but ENS is not set up (pnpm -F agents ens:setup)" } } : {}),
+    ...(config.ADDON_HEDERA ? { hedera: intelBuyer ? { ok: true, detail: `paid intel on ${config.X402_FACILITATOR_URL}, ${intelBuyer.receipts.length} settled` } : { ok: false, detail: "ADDON_HEDERA=1 but HEDERA_* accounts are missing (pnpm -F agents hedera:setup)" } } : {}),
+  }), ...(aiConfig.VISION_MODEL ? { visionModel: aiConfig.VISION_MODEL } : {}) }),
 })
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)
 await app.listen({ port: config.AGENTS_PORT, host: "0.0.0.0" })
@@ -246,6 +270,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     stopSectors()
     stopMarket()
     stopDirector()
+    clearInterval(clockTimer)
     stopFeed()
     stopLedger()
     await app.close()
