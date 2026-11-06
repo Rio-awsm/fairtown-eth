@@ -359,6 +359,6 @@ describe("account", () => {
     const h = harness()
     await h.text("/help")
     for (const c of ["market", "bid", "sell", "qr", "receive", "noshow", "dispute", "contest", "lots", "profile", "advice"]) expect(h.replies().at(-1)).toContain(`/${c}`)
-    expect(SELL_TEXT.instructions("1")).toContain("1.") // sell texts unchanged by the new flows
+    expect(SELL_TEXT.instructions).toContain("caption")
   })
 })

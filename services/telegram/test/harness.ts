@@ -206,6 +206,12 @@ export function harness(over: Partial<BotDeps> = {}, fail?: (call: Call) => Erro
   const links = new Links(now)
   const market = new Market()
   const qrs: string[] = []
+  const timers: Array<() => void> = []
+  // Runs the album timers the bot set, then lets their replies settle.
+  const flush = async () => {
+    for (const f of timers.splice(0)) f()
+    for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r))
+  }
   let codeN = 0
   const calls: Call[] = []
   const logs: Entry[] = []
@@ -223,6 +229,7 @@ export function harness(over: Partial<BotDeps> = {}, fail?: (call: Call) => Erro
     market,
     files,
     lotCode: () => "4821",
+    later: (f) => void timers.push(f),
     qr: async (t) => {
       qrs.push(t)
       return Buffer.from("png")
@@ -301,5 +308,5 @@ export function harness(over: Partial<BotDeps> = {}, fail?: (call: Call) => Erro
       message: { message_id: updateId, date: DATE, chat: privateChat(from), from, voice: { file_id: "v1", file_unique_id: "v1", duration: 4 } } as NonNullable<Update["message"]>,
     })
   const tick = (ms: number) => (clock += ms)
-  return { bot, calls, logs, dispatch, text, press, photo, voice, sent, replies, privateChat, agents, files, links, market, qrs, tick, DATE }
+  return { bot, calls, logs, dispatch, text, press, photo, voice, sent, replies, privateChat, agents, files, links, market, qrs, tick, flush, timers, DATE }
 }

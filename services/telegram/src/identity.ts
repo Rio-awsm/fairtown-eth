@@ -27,7 +27,8 @@ export const ID_TEXT = {
   linkUsage: "Send /link followed by your seller or truck id, for example /link ingrid",
   badId: "Seller ids are lowercase letters, digits and underscores, for example ingrid or coastal_catch.",
   askPin: (id: string) => `Send the market PIN for ${id} as your next message. I'll delete it straight away. (/cancel to stop)`,
-  signedIn: (l: Link, minutes: number) => `Signed in as ${who(l)}. Your session lasts ${minutes} minutes.`,
+  signedIn: (l: Link, minutes: number) =>
+    `Signed in as ${who(l)}. Your session lasts ${minutes} minutes.${l.role === "HUMAN" ? "" : "\nTo sell, send a photo of your lot with a description as the caption, for example: 600 kg cod, Bergen"}`,
   deleteYourself: "I couldn't delete your PIN message. Please delete it yourself.",
   joined: (l: Link, budget?: string) =>
     `You're in as ${l.name}, a buyer${budget && l.role === "HUMAN" ? ` with ${formatMoney(budget, l.currency)} of test money` : ""}. Your visit lasts 2 hours. See /market to bid.`,

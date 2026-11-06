@@ -142,3 +142,12 @@ Hackathon cut (before the Sat 01:00 freeze): 0.1, 0.2 (rate limits and ownership
   winners, ticket, handover released 403.326 EUR, ticket reuse refused (`TicketUsed`), timeline to Delivered, walk-in
   bid placed, `not_your_agent` for another Telegram user, relay snapshot parsed and a live event received.
 - Not done (TG 4.1): webhook mode, the Mini App scanner, decoding a QR from a photo, an `e2e:telegram` script, voice.
+
+## Simpler selling (after the first live test)
+
+- A signed-in seller or driver sends a photo with the description as its caption, and gets the draft card back. No /sell, no lot code to write down. /sell is kept for text-only listings.
+- One tap on List is still needed: it is the seller's check on the AI's reading of quantity and floor before anything reaches the chain. The 0.001 placeholder floor still can't be listed.
+- Albums: drafted once, 2 s after the last photo arrives (ALBUM_WAIT_MS), from the album's caption. The "Make draft" button is gone.
+- A new captioned photo while a card is open starts a fresh listing; the old card's buttons expire.
+- Photos sent during a bid, /dispute, /contest or /noshow go to that flow, never to a listing.
+- The photos still carry a generated lot code (DraftRequest needs one), so the grader's "Lot code not visible" check is hidden on the card.

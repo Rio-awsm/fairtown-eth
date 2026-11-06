@@ -29,6 +29,7 @@ export type BotDeps = {
   files?: Files // photo downloads; defaults to the Bot API file endpoint
   qr?: QrRender
   lotCode?: () => string
+  later?: (f: () => void, ms: number) => void // album debounce timer; tests run it by hand
   auctionBlocks?: number
   now?: () => number
 }
@@ -38,7 +39,7 @@ export const COMMANDS = [
   { command: "market", description: "Open lots you can bid on" },
   { command: "lot", description: "One lot: price, status and steps" },
   { command: "bid", description: "Bid on a lot (buyers)" },
-  { command: "sell", description: "List a lot (sellers and drivers)" },
+  { command: "sell", description: "List a lot by text (or just send a photo with a caption)" },
   { command: "lots", description: "Your lots, or the lots you bid on" },
   { command: "qr", description: "Show the handover code for a lot you sold" },
   { command: "receive", description: "Confirm a handover with the seller's code" },
@@ -60,7 +61,7 @@ export const TEXT = {
     "Welcome to Fairtown, the open market for anything with an expiry date.",
     "",
     "From this chat you can:",
-    "• Sell: list a lot with photos and a description, and follow it to paid in full",
+    "• Sell: send a photo with a description as the caption, tap List, and follow it to paid in full",
     "• Buy: browse open lots and bid. Every bid passes the market's guardrails",
     "• Drive: offer truck capacity and confirm pickups and drop-offs",
     "",
@@ -137,7 +138,8 @@ export function buildBot(d: BotDeps): Bot {
     return next()
   })
   registerIdentity(bot, { agents: d.agents, links, log: d.log, now, onLogout: endFlows })
-  registerSell(bot, { agents: d.agents, links, sales, files, log: d.log, lotCode, auctionBlocks: d.auctionBlocks ?? 150 })
+  const inOtherFlow = (user: number) => bids.get(user) !== undefined || trust.ev(user) !== undefined || trust.report(user) !== undefined
+  registerSell(bot, { agents: d.agents, links, sales, files, log: d.log, lotCode, auctionBlocks: d.auctionBlocks ?? 150, inOtherFlow, ...(d.later ? { later: d.later } : {}) })
   registerBuy(bot, { agents: d.agents, links, market, bids, log: d.log })
   registerHandover(bot, { agents: d.agents, links, codes, qr: d.qr ?? renderQr, log: d.log })
   registerTrust(bot, { agents: d.agents, links, market, trust, files, log: d.log, lotCode })

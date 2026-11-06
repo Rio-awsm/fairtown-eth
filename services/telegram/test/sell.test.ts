@@ -17,9 +17,7 @@ async function seller(h: H, id = "ingrid") {
 }
 async function toCard(h: H) {
   await seller(h)
-  await h.text("/sell")
-  await h.photo({ id: "a" })
-  await h.text("600 kg cod, landed 04:40, Bergen")
+  await h.photo({ id: "a", caption: "600 kg cod, landed 04:40, Bergen" })
 }
 const drafts = (h: H) => h.agents.calls.filter((c) => c.fn === "draft")
 const confirms = (h: H) => h.agents.calls.filter((c) => c.fn === "confirm")
@@ -42,21 +40,42 @@ describe("who can sell", () => {
   it("lets a driver list truck capacity the same way", async () => {
     const h = harness()
     await seller(h, "lars")
-    await h.text("/sell")
-    expect(h.replies().at(-1)).toBe(SELL_TEXT.instructions("4821"))
+    await h.photo({ id: "a", caption: "One reefer, Bergen to Oslo, 12 pallets" })
+    expect(drafts(h)[0]!.args[1]).toMatchObject({ sellerId: "lars", text: "One reefer, Bergen to Oslo, 12 pallets" })
+  })
+
+  it("tells a seller how to sell when they sign in", async () => {
+    const h = harness()
+    await seller(h)
+    expect(h.replies().at(-1)).toContain("send a photo of your lot with a description as the caption")
+    await h.press("join:USD", MALLORY)
+    expect(h.replies().at(-1)).not.toContain("caption")
+  })
+
+  it("leaves photos from buyers and strangers alone", async () => {
+    const h = harness()
+    await h.photo({ id: "a", caption: "600 kg cod" })
+    await h.press("join:USD", MALLORY)
+    await h.photo({ id: "b", caption: "600 kg cod", from: MALLORY })
+    expect(drafts(h)).toEqual([])
+    expect(h.files.fetched).toEqual([])
+  })
+
+  it("doesn't start a listing from a photo when the seller's session ended", async () => {
+    const h = harness()
+    await seller(h)
+    h.tick(121 * 60_000)
+    await h.photo({ id: "a", caption: "600 kg cod" })
+    expect(drafts(h)).toEqual([])
   })
 })
 
 describe("listing a lot", () => {
-  it("goes from photos and a description to a listed lot", async () => {
+  it("goes from one captioned photo to a listed lot, with no /sell and no lot code", async () => {
     const h = harness()
     await seller(h)
-    await h.text("/sell")
-    expect(h.replies().at(-1)).toContain("Your lot code is 4821")
-    await h.photo({ id: "a" })
-    expect(h.replies().at(-1)).toBe(SELL_TEXT.photoSaved(1))
+    await h.photo({ id: "a", caption: "600 kg cod, landed 04:40, Bergen" })
     expect(h.files.fetched).toEqual(["a-l"]) // the largest size
-    await h.text("600 kg cod, landed 04:40, Bergen")
     const [call] = drafts(h)
     expect(call!.args[0]).toBe(`seller-session-ingrid-${ALICE.id}`)
     expect(call!.args[1]).toEqual({
@@ -80,56 +99,100 @@ describe("listing a lot", () => {
     expect(confirms(h)).toHaveLength(1) // that card is spent
   })
 
-  it("lists with no photos at all", async () => {
+  it("takes a photo first and the description as the next message", async () => {
+    const h = harness()
+    await seller(h)
+    await h.photo({ id: "a" })
+    expect(h.replies().at(-1)).toBe(SELL_TEXT.photoSaved)
+    expect(drafts(h)).toEqual([])
+    await h.text("600 kg cod, Bergen")
+    expect(drafts(h)[0]!.args[1]).toMatchObject({ text: "600 kg cod, Bergen", photos: [expect.objectContaining({ lotCode: "4821" })] })
+  })
+
+  it("lists with no photos at all through /sell", async () => {
     const h = harness()
     await seller(h)
     await h.text("/sell")
+    expect(h.replies().at(-1)).toBe(SELL_TEXT.instructions)
     await h.text("600 kg cod, Bergen")
     expect((drafts(h)[0]!.args[1] as DraftBody).photos).toEqual([])
   })
 
-  it("drafts at once from a single captioned photo", async () => {
+  it("drafts once from a whole album, after its photos stop arriving", async () => {
     const h = harness()
     await seller(h)
-    await h.text("/sell")
-    await h.photo({ id: "a", caption: "600 kg cod, Bergen" })
-    expect((drafts(h)[0]!.args[1] as DraftBody).text).toBe("600 kg cod, Bergen")
-    expect((drafts(h)[0]!.args[1] as DraftBody).photos).toHaveLength(1)
-  })
-
-  it("waits for a whole album before drafting from its caption", async () => {
-    const h = harness()
-    await seller(h)
-    await h.text("/sell")
     const before = h.replies().length
     await h.photo({ id: "a", group: "g1", caption: "600 kg cod, Bergen" })
     await h.photo({ id: "b", group: "g1" })
-    expect(drafts(h)).toEqual([])
-    expect(h.replies().slice(before)).toEqual([SELL_TEXT.albumCaption]) // one answer, not a second "describe the lot"
-    expect(keyboard(h).map((b) => b.callback_data)).toEqual(["sell:make"])
     await h.photo({ id: "c", group: "g1" })
-    await h.press("sell:make")
+    expect(drafts(h)).toEqual([])
+    expect(h.replies().slice(before)).toEqual([]) // nothing until the album is complete
+    await h.flush()
+    expect(drafts(h)).toHaveLength(1)
     expect((drafts(h)[0]!.args[1] as DraftBody).photos).toHaveLength(3)
+    expect(h.replies().slice(before)).toHaveLength(1) // just the card
+    expect(keyboard(h)[0]!.callback_data).toBe(`sell:ok:${ID}`)
   })
 
-  it("answers once per album without a caption, then drafts from the next message", async () => {
+  it("asks once for a description after an album without a caption", async () => {
     const h = harness()
     await seller(h)
-    await h.text("/sell")
     const before = h.replies().length
     await h.photo({ id: "a", group: "g2" })
     await h.photo({ id: "b", group: "g2" })
-    expect(h.replies().slice(before)).toEqual([SELL_TEXT.albumNoCaption])
-    await h.press("sell:make")
-    expect(h.replies().at(-1)).toBe(SELL_TEXT.describeFirst)
+    await h.flush()
+    expect(h.replies().slice(before)).toEqual([SELL_TEXT.photoSaved])
     await h.text("600 kg cod, Bergen")
     expect((drafts(h)[0]!.args[1] as DraftBody).photos).toHaveLength(2)
+  })
+
+  it("drops an album timer once the listing has moved on", async () => {
+    const h = harness()
+    await seller(h)
+    await h.photo({ id: "a", group: "g3", caption: "600 kg cod, Bergen" })
+    await h.text("/cancel")
+    await h.flush()
+    expect(drafts(h)).toEqual([])
+  })
+
+  it("logs instead of crashing when an album draft fails", async () => {
+    const h = harness()
+    await seller(h)
+    await h.photo({ id: "a", group: "g4", caption: "600 kg cod, Bergen" })
+    h.agents.fail.draft = new Error("boom")
+    await h.flush()
+    expect(h.logs.some((l) => l.level === "error")).toBe(true)
+  })
+
+  it("starts a fresh listing when a new captioned photo comes while a card is open", async () => {
+    const h = harness()
+    await toCard(h)
+    await h.photo({ id: "b", caption: "200 kg haddock, Bergen" })
+    expect(h.replies()).toContain(SELL_TEXT.restart)
+    expect(drafts(h)).toHaveLength(2)
+    expect((drafts(h)[1]!.args[1] as DraftBody).text).toBe("200 kg haddock, Bergen")
+  })
+
+  it("keeps photos sent as evidence for a dispute or contest out of listings", async () => {
+    const h = harness()
+    await seller(h)
+    h.market.apply({ id: "e1", ts: 1, event: { type: "noshow.reported", lotId: "12", buyer: "0x" + "c".repeat(40), contestEnds: 900 } } as never)
+    await h.text("/contest 12")
+    await h.photo({ id: "a", caption: "handed over at 05:10" })
+    expect(drafts(h)).toEqual([])
+  })
+
+  it("doesn't show the lot-code check, since sellers aren't asked for one", async () => {
+    const h = harness()
+    h.agents.draftResult = { ...COD_DRAFT, gradeReport: { ...COD_DRAFT.gradeReport, defects: ["Lot code not visible", "Ice melting"] } }
+    await toCard(h)
+    expect(h.replies().at(-1)).toContain("Checks: Ice melting")
+    expect(h.replies().at(-1)).not.toContain("Lot code")
   })
 
   it("keeps at most three photos", async () => {
     const h = harness()
     await seller(h)
-    await h.text("/sell")
     for (const id of ["a", "b", "c", "d"]) await h.photo({ id })
     expect(h.replies().at(-1)).toBe(SELL_TEXT.tooMany)
     await h.text("600 kg cod, Bergen")

@@ -42,7 +42,7 @@ describe("seller and driver sign-in", () => {
     const del = h.calls.find((c) => c.method === "deleteMessage")!
     expect(del.payload).toMatchObject({ chat_id: ALICE.id })
     expect(h.agents.calls[0]).toEqual({ fn: "sellerSession", user: ALICE.id, args: ["ingrid", PIN] })
-    expect(h.replies()[1]).toBe("Signed in as Ingrid Solheim (seller, id ingrid). Your session lasts 120 minutes.")
+    expect(h.replies()[1]).toBe("Signed in as Ingrid Solheim (seller, id ingrid). Your session lasts 120 minutes.\nTo sell, send a photo of your lot with a description as the caption, for example: 600 kg cod, Bergen")
     expect(h.links.session(ALICE.id)).toBe(`seller-session-ingrid-${ALICE.id}`)
     expect(JSON.stringify(h.sent())).not.toContain(PIN)
     expect(JSON.stringify(h.logs)).not.toContain(PIN)
