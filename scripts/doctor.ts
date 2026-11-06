@@ -3,10 +3,11 @@ import { fileURLToPath } from "node:url"
 import { s1Checks } from "./doctor/checks/s1"
 import { s2Checks } from "./doctor/checks/s2"
 import { sharedChecks } from "./doctor/checks/shared"
+import { tgChecks } from "./doctor/checks/tg"
 import { exitCode, formatRows, runChecks, type Check } from "./doctor/core"
 import { loadEnv } from "@fairtown/shared/env"
 
-const checks: Check[] = [...sharedChecks, ...s1Checks, ...s2Checks()]
+const checks: Check[] = [...sharedChecks, ...s1Checks, ...s2Checks(), ...tgChecks()]
 
 const root = fileURLToPath(new URL("../", import.meta.url))
 const { env, found } = loadEnv(`${root}.env`)

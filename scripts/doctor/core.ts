@@ -1,5 +1,5 @@
 export type Status = "ok" | "warn" | "fail"
-export type Owner = "shared" | "S1" | "S2" | "S3"
+export type Owner = "shared" | "S1" | "S2" | "S3" | "TG"
 export type Env = Record<string, string | undefined>
 export type Ctx = { env: Env; envFileFound: boolean; versions: { node: string; pnpm: string | null } }
 export type Result = { status: Status; detail: string }
