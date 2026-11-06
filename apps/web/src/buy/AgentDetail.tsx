@@ -10,7 +10,7 @@ import { ReportProblem } from "../handover/ReportProblem"
 import { AddressLink, TxLink } from "../hud/links"
 import { lotMoney, lotPerUnit, STATUS_WORDS } from "../hud/model"
 import { Timeline } from "../hud/Timeline"
-import { formatMoney, toDecimalString } from "../money/format"
+import { formatMoney, toDecimalString, unitLabel } from "../money/format"
 import { api } from "../net/api"
 import { parseFloorInput } from "../sell/model"
 import { useTown } from "../state/townStore"
@@ -69,7 +69,7 @@ function Purchase({ lot, agentId }: { lot: LotState; agentId: string }) {
   return (
     <li className="rpg-well space-y-2 p-3">
       <p>
-        Lot {lot.lotId} · {lot.qty} {lot.unit} {lot.commodity} from {lot.sellerName} ·{" "}
+        Lot {lot.lotId} · {lot.qty} {unitLabel(lot.unit)} {lot.commodity} from {lot.sellerName} ·{" "}
         {mine ? (STATUS_WORDS[lot.status] ?? lot.status) : "Not won"}
       </p>
       {mine && (

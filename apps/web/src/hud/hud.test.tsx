@@ -14,10 +14,12 @@ import { AgentPanel } from "./AgentPanel"
 import { BuildingPanel } from "./BuildingPanel"
 import { MemoryRouter } from "react-router"
 import { HudLayer } from "./HudLayer"
+import { LotJourney } from "./LotJourney"
 import { LotPanel } from "./LotPanel"
 import { Ticker } from "./Ticker"
 import { Timeline } from "./Timeline"
 import { TopBar } from "./TopBar"
+import { TownLegend } from "./TownLegend"
 import { WorldClock } from "./WorldClock"
 
 vi.mock("./PriceChart", () => ({ PriceChart: () => <div data-testid="price-chart" /> }))
@@ -88,6 +90,85 @@ describe("TopBar", () => {
   })
 })
 
+describe("Day/Night toggle", () => {
+  afterEach(() => {
+    act(() => townStore.getState().setUi({ daylight: "night" }))
+    window.localStorage.removeItem("fairtown.daylight")
+  })
+  it("starts at night, switches to day and back, and remembers the choice", () => {
+    wrap(<TopBar />)
+    const toggle = screen.getByRole("button", { name: "Daylight" })
+    expect(toggle).toHaveAttribute("aria-pressed", "false")
+    expect(toggle).toHaveTextContent("Night")
+    fireEvent.click(toggle)
+    expect(townStore.getState().ui.daylight).toBe("day")
+    expect(toggle).toHaveAttribute("aria-pressed", "true")
+    expect(toggle).toHaveTextContent("Day")
+    expect(window.localStorage.getItem("fairtown.daylight")).toBe("day")
+    fireEvent.click(toggle)
+    expect(townStore.getState().ui.daylight).toBe("night")
+  })
+  it("keeps REPLAY and TEST MONEY on screen by day", () => {
+    wrap(<TopBar />)
+    fireEvent.click(screen.getByRole("button", { name: "Daylight" }))
+    expect(screen.getByText("REPLAY")).toBeInTheDocument()
+    expect(screen.getByText("TEST MONEY")).toBeInTheDocument()
+  })
+  it("N switches too", () => {
+    wrap(<HudLayer />)
+    fireEvent.keyDown(window, { key: "n" })
+    expect(townStore.getState().ui.daylight).toBe("day")
+  })
+})
+
+describe("LotJourney", () => {
+  it("follows the newest live lot with its steps, in words", () => {
+    wrap(<LotJourney />)
+    const strip = screen.getByRole("region", { name: "Lot journey" })
+    // Lot 20 (a truck lot, still open) is newer than sold Lot 12.
+    expect(strip).toHaveTextContent("Lot 20")
+    expect(strip).toHaveTextContent("600 kg moved truck capacity")
+    expect(strip).toHaveTextContent("Freight Yard")
+    expect(within(strip).getByText("Auction").closest("li")).toHaveAttribute("aria-current", "step")
+    fireEvent.click(within(strip).getByRole("button"))
+    expect(townStore.getState().selection).toEqual({ kind: "lot", id: "20" })
+  })
+  it("follows the selected lot instead", () => {
+    act(() => townStore.getState().select({ kind: "lot", id: "12" }))
+    wrap(<LotJourney />)
+    const strip = screen.getByRole("region", { name: "Lot journey" })
+    expect(strip).toHaveTextContent("Lot 12")
+    expect(within(strip).getByText("Truck").closest("li")).toHaveAttribute("data-state", "current")
+  })
+  it("shows nothing before any lot is listed", () => {
+    seed(initialTownState)
+    const { container } = wrap(<LotJourney />)
+    expect(container).toBeEmptyDOMElement()
+  })
+})
+
+describe("TownLegend", () => {
+  it("starts folded, and says what each colour means when opened", () => {
+    wrap(<TownLegend />)
+    const key = screen.getByRole("complementary", { name: "Legend" })
+    const toggle = within(key).getByRole("button", { name: "Key" })
+    // Folded at first, so the town stays clear.
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+    expect(key).not.toHaveTextContent("AI buyer")
+    fireEvent.click(toggle)
+    for (const word of ["AI buyer", "Seller", "Driver", "Walk-in", "Auction open", "Truck route"])
+      expect(key).toHaveTextContent(word)
+    fireEvent.click(toggle)
+    expect(key).not.toHaveTextContent("AI buyer")
+  })
+  it("steps aside while a detail panel is open", () => {
+    act(() => townStore.getState().select({ kind: "building", id: "fish_dock" }))
+    wrap(<HudLayer />)
+    expect(screen.queryByRole("complementary", { name: "Legend" })).toBeNull()
+    act(() => townStore.getState().select(null))
+  })
+})
+
 describe("WorldClock", () => {
   it("shows Bergen, Dallas, Mumbai and the data centre with local time and the next expiry", () => {
     seed({ ...bergen(), lots: { ...bergen().lots, "12": { ...bergen().lots["12"]!, status: "open", endBlock: 1095 } } })
@@ -100,7 +181,8 @@ describe("WorldClock", () => {
       expect.stringContaining("Data centre04:00"),
     ])
     expect(rows[0]).toHaveTextContent("Lot 12 ends in 1:30")
-    expect(rows[1]).toHaveTextContent("nothing open")
+    // A city with nothing open shows only its name and time.
+    expect(rows[1]).toHaveTextContent(/^Dallas22:00$/)
   })
 })
 

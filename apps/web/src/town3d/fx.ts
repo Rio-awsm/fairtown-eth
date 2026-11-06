@@ -132,6 +132,35 @@ export function flare(fx: Fx, at: THREE.Vector3, colour: number, ms = 1600) {
   )
 }
 
+/** A column of light that rises, holds and fades over a place: a vault booked, a lot sold. */
+export function pillar(fx: Fx, at: THREE.Vector3, colour: number, ms = 2600) {
+  const column = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25, 0.7, 10, 20, 1, true).translate(0, 5, 0),
+    new THREE.MeshBasicMaterial({
+      color: colour,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    }),
+  )
+  column.position.copy(at).setY(0)
+  fx.root.add(column)
+  fx.clock.tween(
+    ms / fx.speed,
+    (t) => {
+      column.material.opacity = Math.sin(Math.PI * t) * 0.45
+      column.scale.set(1, 0.3 + Math.min(1, t * 3) * 0.7, 1)
+    },
+    () => {
+      column.geometry.dispose()
+      dispose(column)
+    },
+  )
+}
+
 type Weather = { group: THREE.Group; tick?: (t: number) => void }
 
 /**

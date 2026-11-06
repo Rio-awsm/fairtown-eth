@@ -8,6 +8,7 @@ import { api } from "../net/api"
 import { useTown } from "../state/townStore"
 import { CameraCapture, type CapturedPhoto } from "./CameraCapture"
 import { newLotCode } from "./model"
+import { unitLabel } from "../money/format"
 
 // Until paid in full: other buyers may still collect after the first (status `delivered` / `picked_up`).
 const NEEDS_SELLER = new Set(["sold", "truck_booked", "picked_up", "delivered", "no_show_reported"])
@@ -51,7 +52,7 @@ export function SoldLot({ lot, sellerId }: { lot: LotState; sellerId: string }) 
   return (
     <div className="rpg-window space-y-2 p-4">
       <p>
-        Lot {lot.lotId} · {lot.qty} {lot.unit} {lot.commodity} · {STATUS_WORDS[lot.status] ?? lot.status}
+        Lot {lot.lotId} · {lot.qty} {unitLabel(lot.unit)} {lot.commodity} · {STATUS_WORDS[lot.status] ?? lot.status}
       </p>
       {lot.status === "no_show_reported" ? (
         <NoShowAnswer lot={lot} sellerId={sellerId} />

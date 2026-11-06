@@ -3,12 +3,12 @@ import { HDRLoader } from "three/addons/loaders/HDRLoader.js"
 import { CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js"
 import { ndcToCanvas } from "./coords"
 import { buildPost, type Post } from "./post"
+import { LOOKS, type SceneLook } from "./theme"
 
 /** The camera looks down at this angle, from the south, like a miniature on a table. */
 export const ELEVATION = THREE.MathUtils.degToRad(42)
 export const AZIMUTH = THREE.MathUtils.degToRad(24)
 const FOV = 26
-const NIGHT = 0x0f1626
 const GROUND = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
 /** Backbuffer scale for software WebGL. */
 const LOW_PIXEL_RATIO = 0.5
@@ -77,7 +77,9 @@ export class Stage {
   private readonly resizer: ResizeObserver
   private readonly raycaster = new THREE.Raycaster()
   private readonly hemi: THREE.HemisphereLight
+  private readonly fill: THREE.DirectionalLight
   private readonly moon: THREE.DirectionalLight
+  private look: SceneLook = LOOKS.night
 
   constructor(private readonly host: HTMLElement) {
     // ?quality=low|high overrides the guess (a weak projector laptop, or checking the light mode).
@@ -98,22 +100,24 @@ export class Stage {
     Object.assign(this.labels.domElement.style, { position: "absolute", inset: "0", pointerEvents: "none" })
     host.appendChild(this.labels.domElement)
 
-    this.scene.background = new THREE.Color(NIGHT)
-    this.scene.fog = new THREE.Fog(NIGHT, 90, 220)
-    this.hemi = new THREE.HemisphereLight(0x8aa4e0, 0x0b0e16, 0.9)
+    this.scene.background = new THREE.Color(LOOKS.night.sky)
+    this.scene.fog = new THREE.Fog(LOOKS.night.sky, 90, 220)
+    this.hemi = new THREE.HemisphereLight(LOOKS.night.hemiSky, LOOKS.night.hemiGround, LOOKS.night.hemi)
     this.scene.add(this.hemi)
     // A cool fill from the camera's side, so the faces we look at never go black.
-    const fill = new THREE.DirectionalLight(0x5b78c2, 0.55)
+    const fill = new THREE.DirectionalLight(0x5b78c2, LOOKS.night.fill)
     fill.position.set(30, 40, 80)
     this.scene.add(fill)
-    const moon = new THREE.DirectionalLight(0xc2d3ff, 1.9)
+    this.fill = fill
+    const moon = new THREE.DirectionalLight(LOOKS.night.keyColour, LOOKS.night.key)
     moon.castShadow = this.quality === "high"
     moon.shadow.mapSize.set(2048, 2048)
     moon.shadow.bias = -0.0004
     moon.shadow.normalBias = 0.02
     this.scene.add(moon, moon.target)
     this.moon = moon
-    this.post = buildPost(this.renderer, this.scene, this.camera, this.quality)
+    this.post = buildPost(this.renderer, this.scene, this.camera)
+    this.setLook(LOOKS.night)
     this.resizer = new ResizeObserver(() => this.resize())
     this.resizer.observe(host)
     this.resize()
@@ -139,10 +143,23 @@ export class Stage {
     }
   }
 
-  /** Dusk to deep night is the town's look; "day" lifts the light a little. */
-  setDaylight(day: boolean): void {
-    this.hemi.intensity = day ? 1.7 : 0.9
-    this.renderer.toneMappingExposure = day ? 1.45 : 1.15
+  /** Day or night (D-122): sky, fog, light, exposure, bloom and vignette. */
+  setLook(look: SceneLook): void {
+    this.look = look
+    ;(this.scene.background as THREE.Color).setHex(look.sky)
+    this.scene.fog?.color.setHex(look.sky)
+    this.hemi.color.setHex(look.hemiSky)
+    this.hemi.groundColor.setHex(look.hemiGround)
+    this.hemi.intensity = look.hemi
+    this.fill.intensity = look.fill
+    this.moon.color.setHex(look.keyColour)
+    this.moon.intensity = look.key
+    this.renderer.toneMappingExposure = look.exposure
+    this.post.setLook(look)
+  }
+
+  get currentLook(): SceneLook {
+    return this.look
   }
 
   /** Something that casts a shadow appeared, moved or went: redraw the shadow map once. */

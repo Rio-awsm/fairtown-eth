@@ -22,9 +22,12 @@ export function WorldClock() {
           <span className={`block font-display font-bold tabular-nums ${focus ? "text-6xl" : "text-2xl"}`}>
             {r.time}
           </span>
-          <span className="block text-xs text-gold-ink">
-            {r.nextExpiry ? `Lot ${r.nextExpiry.lotId} ends in ${r.nextExpiry.label}` : "nothing open"}
-          </span>
+          {/* Only a lot that is open says anything: an idle city stays quiet (D-122). */}
+          {r.nextExpiry && (
+            <span className="block text-xs text-gold-ink">
+              Lot {r.nextExpiry.lotId} ends in {r.nextExpiry.label}
+            </span>
+          )}
         </li>
       ))}
     </ul>

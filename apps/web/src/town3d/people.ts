@@ -6,6 +6,9 @@ import type { Point } from "../game/map/anchors"
 import type { Clock } from "./clock"
 import { TILE_PX } from "./coords"
 import type { Models } from "./models"
+import { disposeLine, neonLine } from "./lines"
+import { ROLE_COLOUR, cssHex, type SceneLook } from "./theme"
+import type { Line2 } from "three/addons/lines/Line2.js"
 
 /** Milliseconds per tile at 1× replay. */
 export const STEP_MS = 160
@@ -25,25 +28,22 @@ const ROLE_NAME: Record<Role, string> = {
 /** Sellers, drivers and walk-in visitors are people; every other party is an AI agent. */
 export const isPerson = (role: Role) => role === "SELLER" || role === "TRUCK" || role === "HUMAN"
 
-/** Each AI agent's glow, by role, in the landing's accents. */
-export const AGENT_GLOW: Record<Role, number> = {
-  BUYER: 0x3fd8ff,
-  STORAGE: 0x8ea8ff,
-  SOCIETY: 0xff7ab6,
-  NONE: 0xc6ff2e,
-  SELLER: 0xffb35c,
-  TRUCK: 0xffb35c,
-  HUMAN: 0xffb35c,
-}
+/** Each party's colour, by role (D-122): AI agents by what they do, people by who they are. */
+export const AGENT_GLOW: Record<Role, number> = ROLE_COLOUR
+/** How long a name stays up after a bid or a remark, at 1× replay. */
+export const PING_MS = 4000
 
 export const PEOPLE = ["a", "b", "c", "d"].flatMap((k) => [
   `mini-characters/character-male-${k}`,
   `mini-characters/character-female-${k}`,
 ])
 
-/** Name tags show for highlighted people, on hover, and when the agent is selected; never all at once. */
-export function nameTagShown(s: { highlight: boolean; hover: boolean; selected: boolean }): boolean {
-  return s.highlight || s.hover || s.selected
+/**
+ * Name tags show for highlighted people, on hover, when the agent is selected, and for a while
+ * after it bids (pinged); never all at once.
+ */
+export function nameTagShown(s: { highlight: boolean; hover: boolean; selected: boolean; pinged?: boolean }): boolean {
+  return s.highlight || s.hover || s.selected || s.pinged === true
 }
 
 /** The tag's words: "Name · role", or just the name for a party without a role. */
@@ -80,10 +80,28 @@ export function polyline(points: Point[]): { at(d: number): Point & { heading: n
 
 export type AgentLook = { agentId: string; label: string; role: Role; sprite: string; highlight: boolean }
 
-const ORB = new THREE.SphereGeometry(0.26, 24, 16)
-const SHADOW = new THREE.CircleGeometry(0.26, 20).rotateX(-Math.PI / 2)
+const ORB = new THREE.SphereGeometry(0.42, 24, 16)
+const SHADOW = new THREE.CircleGeometry(0.3, 20).rotateX(-Math.PI / 2)
 const SHADOW_MAT = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false })
-const RING = new THREE.RingGeometry(0.24, 0.3, 32).rotateX(-Math.PI / 2)
+/** Everyone stands in a ring of their colour, so a party reads as a dot of light from far away. */
+const RING = new THREE.RingGeometry(0.42, 0.6, 40).rotateX(-Math.PI / 2)
+/** An AI agent at work (walking, bidding, chosen) sends a beam up; people carry a pin over their head. */
+const BEAM = new THREE.CylinderGeometry(0.04, 0.16, 4, 12, 1, true).translate(0, 3.2, 0)
+const PIN = new THREE.ConeGeometry(0.2, 0.44, 4).rotateX(Math.PI).translate(0, 2, 0)
+const TARGET = new THREE.RingGeometry(0.35, 0.5, 32).rotateX(-Math.PI / 2)
+/** Where a party is walking to sits a little above the ground, so it reads over roads and markings. */
+const TRAIL_Y = 0.12
+
+const marker = (colour: number, opacity: number) =>
+  new THREE.MeshBasicMaterial({
+    color: colour,
+    transparent: true,
+    opacity,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  })
 
 const el = (cls: string, text = "") => {
   const d = document.createElement("div")
@@ -124,6 +142,12 @@ export class Agent3D {
   private stepMs = STEP_MS
   private readonly phase = Math.random() * Math.PI * 2
   private readonly shadow: THREE.Mesh
+  private readonly beam: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  private readonly pin: THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>
+  private additive = true
+  private pinged = false
+  private stopPing: (() => void) | undefined
+  private trail: { line: Line2 | null; target: THREE.Mesh } | undefined
 
   constructor(
     private readonly clock: Clock,
@@ -133,13 +157,12 @@ export class Agent3D {
     const shadow = new THREE.Mesh(SHADOW, SHADOW_MAT)
     shadow.position.y = 0.015
     this.shadow = shadow
-    this.ring = new THREE.Mesh(
-      RING,
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }),
-    )
-    this.ring.position.y = 0.02
+    this.ring = new THREE.Mesh(RING, marker(0xffffff, 0.8))
+    this.ring.position.y = 0.03
+    this.beam = new THREE.Mesh(BEAM, marker(0xffffff, 0.28))
+    this.pin = new THREE.Mesh(PIN, marker(0xffffff, 1))
     this.tag.center.set(0.5, 1)
-    this.group.add(shadow, this.ring, this.tag)
+    this.group.add(shadow, this.ring, this.beam, this.pin, this.tag)
     this.group.visible = false
     this.tag.visible = false
     if (onSelect)
@@ -155,6 +178,11 @@ export class Agent3D {
 
   get walking(): boolean {
     return this.moving
+  }
+
+  /** The party's colour, by role. */
+  get colour(): number {
+    return AGENT_GLOW[this.look?.role ?? "NONE"]
   }
 
   /** Where speech and money start, in world units. */
@@ -187,6 +215,13 @@ export class Agent3D {
     const look = this.look!
     const glow = AGENT_GLOW[look.role]
     this.ring.material.color.setHex(glow)
+    this.beam.material.color.setHex(glow)
+    this.pin.material.color.setHex(glow)
+    this.tagEl.style.setProperty("--role", cssHex(glow))
+    this.tagEl.dataset.role = look.role
+    this.pin.visible = this.person
+    // A walk-in visitor's pin is bigger: a real person in the town is the story.
+    this.pin.scale.setScalar(look.highlight ? 1.5 : 1)
     if (this.person) {
       const key = pick(look.agentId, PEOPLE)
       const body = this.models.make(key, "keep", { h: 1.2 })
@@ -205,18 +240,21 @@ export class Agent3D {
         }
       })
       this.body = body
-      this.tag.position.set(0, 1.5, 0)
+      this.tag.position.set(0, 2.35, 0)
       this.play("idle")
     } else {
       const body = new THREE.Group()
       // A self-lit orb: bloom gives it its glow, so it needs no halo of its own.
-      const orb = new THREE.Mesh(ORB, new THREE.MeshBasicMaterial({ color: new THREE.Color(glow).multiplyScalar(1.6) }))
-      orb.position.y = 0.72
+      const orb = new THREE.Mesh(
+        ORB,
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(glow).multiplyScalar(1.8), toneMapped: false }),
+      )
+      orb.position.y = 0.95
       orb.userData.agentId = look.agentId
       body.add(orb)
       this.hits.push(orb)
       this.body = body
-      this.tag.position.set(0, 1.25, 0)
+      this.tag.position.set(0, 1.6, 0)
     }
     this.group.add(this.body)
   }
@@ -252,16 +290,73 @@ export class Agent3D {
     this.stepMs = STEP_MS / Math.max(1, speed)
   }
 
+  /** Day or night (D-122): markers add light at night and are solid colour by day. */
+  setLook(look: SceneLook): void {
+    this.additive = look.additive
+    for (const m of [this.ring.material, this.beam.material, this.pin.material]) {
+      m.blending = look.additive ? THREE.AdditiveBlending : THREE.NormalBlending
+      m.needsUpdate = true
+    }
+    this.beam.material.opacity = look.additive ? 0.28 : 0.55
+    this.showTag()
+  }
+
+  /** Show the name for a while: the agent just bid or spoke. */
+  ping(): void {
+    this.stopPing?.()
+    this.pinged = true
+    this.showTag()
+    this.stopPing = this.clock.after((PING_MS * this.stepMs) / STEP_MS, () => {
+      this.pinged = false
+      this.stopPing = undefined
+      this.showTag()
+    })
+  }
+
   private showTag() {
     const look = this.look
     if (!look) return
-    const on = !this.bubble && nameTagShown({ highlight: look.highlight, hover: this.hover, selected: this.selected })
+    const on =
+      !this.bubble &&
+      nameTagShown({ highlight: look.highlight, hover: this.hover, selected: this.selected, pinged: this.pinged })
     this.tag.visible = on
     this.tagEl.textContent = tagText(look.label, look.role)
     this.tagEl.dataset.selected = String(this.selected)
-    this.ring.material.opacity = this.selected ? 0.9 : look.highlight || this.hover ? 0.55 : 0
-    // An invisible ring still costs a draw: skip it.
-    this.ring.visible = this.ring.material.opacity > 0
+    this.ring.material.opacity = this.selected || this.hover ? 1 : 0.75
+    this.ring.scale.setScalar(this.selected ? 1.35 : 1)
+    this.showBeam()
+  }
+
+  /** At rest an agent is an orb and a ring; the beam marks the ones doing something now. */
+  private showBeam() {
+    this.beam.visible = !this.person && (this.moving || this.pinged || this.selected || this.hover)
+  }
+
+  private clearTrail() {
+    if (!this.trail) return
+    if (this.trail.line) disposeLine(this.trail.line)
+    // The target ring shares the agent's ring material: only take it out of the scene.
+    this.trail.target.removeFromParent()
+    this.trail = undefined
+  }
+
+  /** Where the party is walking to: a dashed line in its colour and a ring at the end. */
+  private drawTrail(points: Point[]) {
+    const root = this.group.parent
+    const look = this.look
+    if (!root || !look || points.length < 2) return
+    const colour = AGENT_GLOW[look.role]
+    const line = neonLine(
+      points.map((p) => new THREE.Vector3(p.x / TILE_PX, TRAIL_Y, p.y / TILE_PX)),
+      colour,
+      { width: 2.5, dashed: true, opacity: this.additive ? 0.85 : 0.95 },
+    )
+    const target = new THREE.Mesh(TARGET, this.ring.material)
+    const end = points[points.length - 1]!
+    target.position.set(end.x / TILE_PX, 0.04, end.y / TILE_PX)
+    if (line) root.add(line)
+    root.add(target)
+    this.trail = { line, target }
   }
 
   /** Walk along waypoints (map pixels) at the replay's pace; a new walk replaces the current one. */
@@ -269,7 +364,9 @@ export class Agent3D {
     this.stopWalking()
     if (path.length === 0) return onArrive?.()
     const line = polyline([{ x: this.x, y: this.y }, ...path])
+    this.drawTrail([{ x: this.x, y: this.y }, ...path])
     this.moving = true
+    this.showBeam()
     this.play("walk")
     this.stopWalk = this.clock.tween(
       Math.max(1, (line.total / TILE_PX) * this.stepMs),
@@ -281,6 +378,8 @@ export class Agent3D {
       () => {
         this.moving = false
         this.stopWalk = undefined
+        this.clearTrail()
+        this.showBeam()
         this.play("idle")
         onArrive?.()
       },
@@ -319,6 +418,10 @@ export class Agent3D {
   /** Animate, turn and float; called every frame. `still` holds everyone at rest for baselines. */
   tick(t: number, dt: number, still: boolean): void {
     if (!this.group.visible || !this.body) return
+    // The ring breathes and the pin bobs, so the eye finds who is in the town.
+    const k = still ? 1 : 1 + Math.sin(t / 500 + this.phase) * 0.08
+    this.ring.scale.setScalar((this.selected ? 1.35 : 1) * k)
+    if (this.person) this.pin.position.y = still ? 0 : Math.sin(t / 350 + this.phase) * 0.08
     if (this.person) {
       const turn = ((this.heading - this.body.rotation.y + Math.PI * 3) % (Math.PI * 2)) - Math.PI
       this.body.rotation.y += still ? turn : turn * Math.min(1, dt / 80)
@@ -331,6 +434,8 @@ export class Agent3D {
   retire(): void {
     this.stopWalking()
     this.clearBubble()
+    this.stopPing?.()
+    this.pinged = false
     this.agentId = ""
     this.group.visible = false
     this.tag.visible = false
@@ -340,10 +445,13 @@ export class Agent3D {
     this.stopWalk?.()
     this.stopWalk = undefined
     this.moving = false
+    this.clearTrail()
+    this.showBeam()
   }
 
   dispose(): void {
     this.retire()
     this.tagEl.remove()
+    for (const m of [this.ring.material, this.beam.material, this.pin.material]) m.dispose()
   }
 }

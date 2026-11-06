@@ -1,8 +1,8 @@
 @import "../styles/night.css";
 
 /*
- * The 3D town (D-113) in the landing's language: night #0f1626, Inter Tight, white text at 72% and
- * 60% (46% fails 4.5:1 at small sizes), white hairlines, lime and cyan accents, pills.
+ * The 3D town (D-113), neon and minimal pass (D-122): Inter Tight, white text at 72% and 60% (46%
+ * fails 4.5:1 at small sizes), quiet dark glass with hairlines; colour is kept for what happens.
  * Unlayered on purpose: it overrides the pixel-era utility classes the HUD components still use.
  */
 .ft-town,
@@ -13,13 +13,15 @@
   --ink-72: rgb(244 246 250 / 0.72);
   --ink-60: rgb(244 246 250 / 0.6);
   --pill: #2a3245;
-  --lime: #c6ff2e;
-  --cyan: #3fd8ff;
+  --lime: #b6ff3b;
+  --cyan: #00e5ff;
+  --magenta: #ff3cac;
+  --violet: #9d6bff;
   --gold: #ffc857;
   --bad: #ff8a7a;
   --hair: rgb(255 255 255 / 0.22);
   --line: rgb(255 255 255 / 0.1);
-  --glass: rgb(11 17 32 / 0.82);
+  --glass: rgb(8 10 24 / 0.78);
   font-family: "Inter Tight Variable", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -51,9 +53,35 @@
   border: 1px solid var(--hair);
   translate: 0 -4px;
 }
+/* A name in its role's colour: a neon edge and a dot. */
+.ft-tag {
+  border-color: color-mix(in srgb, var(--role, white) 55%, transparent);
+}
+.ft-tag::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: var(--role, var(--ink));
+  vertical-align: 0.05em;
+}
 .ft-tag[data-selected="true"] {
   border-color: var(--lime);
   color: var(--lime);
+}
+.ft-truck {
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #1a1400;
+  background: #ffe14d;
+  box-shadow: 0 0 14px rgb(255 225 77 / 0.6);
+  translate: 0 -6px;
+  white-space: nowrap;
 }
 .ft-bubble {
   position: relative;
@@ -91,42 +119,76 @@
   font-weight: 500;
 }
 .ft-stall {
+  --status: var(--lime);
   pointer-events: auto;
   cursor: pointer;
   display: grid;
   justify-items: center;
-  gap: 1px;
-  padding: 5px 10px;
-  border-radius: 12px;
+  gap: 2px;
+  min-width: 104px;
+  padding: 6px 11px 7px;
+  border-radius: 10px;
   background: var(--glass);
-  border: 1px solid var(--hair);
+  border: 1px solid color-mix(in srgb, var(--status) 60%, transparent);
   font-size: 11px;
   line-height: 1.25;
   translate: 0 -6px;
   transition: opacity 0.3s;
 }
+.ft-stall[data-status="sold"],
+.ft-stall[data-status="truck_booked"] {
+  --status: var(--cyan);
+}
+.ft-stall[data-status="picked_up"],
+.ft-stall[data-status="delivered"] {
+  --status: var(--violet);
+}
+.ft-stall[data-status="paid_in_full"] {
+  --status: var(--gold);
+}
+.ft-stall[data-status="no_show_reported"],
+.ft-stall[data-status="refunded"],
+.ft-stall[data-status="disputed"] {
+  --status: var(--bad);
+}
+.ft-stall[data-status="relisted"] {
+  --status: rgb(148 163 184);
+}
+.ft-stall-bids {
+  font-weight: 650;
+  color: var(--ink);
+}
+.ft-stall-bar {
+  width: 100%;
+  height: 3px;
+  margin-top: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.12);
+}
+.ft-stall-bar-fill {
+  width: calc(var(--left, 1) * 100%);
+  height: 100%;
+  background: var(--status);
+}
 .ft-stall.ft-faded {
   opacity: 0.55;
 }
 .ft-stall-price {
-  font-weight: 700;
-  font-size: 12.5px;
+  font-weight: 750;
+  font-size: 14px;
   color: var(--lime);
   font-variant-numeric: tabular-nums;
 }
 .ft-stall-status {
-  font-weight: 600;
-}
-.ft-stall[data-status="sold"] .ft-stall-status,
-.ft-stall[data-status="truck_booked"] .ft-stall-status {
-  color: var(--cyan);
-}
-.ft-stall[data-status="paid_in_full"] .ft-stall-status {
-  color: var(--gold);
-}
-.ft-stall[data-status="no_show_reported"] .ft-stall-status,
-.ft-stall[data-status="refunded"] .ft-stall-status {
-  color: var(--bad);
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0a0b1e;
+  background: var(--status);
 }
 .ft-stall-title,
 .ft-stall-timer {
@@ -156,16 +218,37 @@
 .ft-pulse {
   animation: ft-price 480ms ease-out;
 }
+/* A market's sign: a quiet pill, its colour in one dot (D-122 minimal pass). */
 .ft-sign {
   pointer-events: auto;
   cursor: pointer;
-  display: grid;
-  justify-items: center;
-  padding: 5px 12px 6px;
-  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
   background: var(--glass);
   border: 1px solid var(--line);
   translate: 0 -6px;
+}
+.ft-sign::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--neon, var(--ink));
+  box-shadow: 0 0 8px var(--neon, transparent);
+}
+.ft-sign strong {
+  font-size: 11.5px !important;
+  font-weight: 650 !important;
+}
+.ft-sign span {
+  color: var(--ink-60) !important;
+}
+.ft-far .ft-sign span {
+  display: none;
 }
 .ft-sign strong,
 .ft-weather strong,
@@ -182,7 +265,7 @@
 }
 .ft-sign-gate {
   cursor: default;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -225,19 +308,20 @@
 .ft-float[data-tone="warn"] {
   color: #ffd08a;
 }
+/* Headlines sit top right, clear of the world clock down the left (D-122). */
 .ft-town-toast {
   position: absolute;
-  top: 88px;
-  left: 50%;
-  translate: -50% 0;
+  top: 80px;
+  right: 1.25rem;
   z-index: 5;
-  max-width: min(640px, 60vw);
-  padding: 0.55rem 1.1rem;
-  border-radius: 999px;
-  background: rgb(11 17 32 / 0.88);
-  border: 1px solid var(--hair);
+  max-width: min(440px, 40vw);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px);
   color: var(--ink);
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   pointer-events: none;
   opacity: 0;
@@ -287,6 +371,7 @@
 .ft-town-demo .ft-tag,
 .ft-town-demo .ft-stall,
 .ft-town-demo .ft-sign,
+.ft-town-demo .ft-truck,
 .ft-town-demo .ft-bubble {
   zoom: 1.5;
 }
@@ -347,11 +432,13 @@
   border: 0;
   box-shadow: none;
   padding: 0;
+  clip-path: none;
+  white-space: nowrap;
 }
 .ft-hud-wordmark {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.32em;
   color: var(--ink);
 }
 .ft-hud-pills {
@@ -411,10 +498,268 @@
   outline-offset: 3px;
 }
 
+/* ------------------------------------------------------------ minimal HUD (D-122) */
+
+/* Every HUD window: dark frosted glass and a hairline. The colour belongs to the town. */
+.ft-hud .rpg-window {
+  background: rgb(8 10 24 / 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px -20px rgb(0 0 0 / 0.9);
+}
+.ft-hud .rpg-badge {
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.ft-hud .rpg-btn {
+  border-radius: 8px;
+}
+/* Quiet buttons sit on the town itself: give them the panels' glass so they read by day too. */
+.ft-hud .rpg-btn-quiet {
+  background: rgb(8 10 24 / 0.7);
+  backdrop-filter: blur(12px);
+}
+.ft-hud-bar .font-display {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ft-daylight {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.75rem;
+  padding: 0 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--hair);
+  background: rgb(255 255 255 / 0.05);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.ft-daylight:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+.ft-daylight-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.ft-hud [aria-label="World clock"] {
+  padding: 0.45rem 0.9rem !important;
+  gap: 0.2rem 1.4rem !important;
+}
+.ft-hud [aria-label="World clock"] li {
+  min-width: 5.5rem;
+}
+.ft-hud [aria-label="World clock"] li span:nth-child(1) {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+.ft-hud [aria-label="World clock"] li span:nth-child(2) {
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+.ft-hud [aria-label="Ticker"] {
+  padding-block: 0.5rem;
+  font-size: 0.875rem;
+}
+.ft-hud [aria-label="Ticker"] span[aria-hidden="true"] {
+  background: var(--cyan);
+}
+
+/* The walk-in QR: small, bottom left. */
+.ft-hud-qr {
+  position: absolute;
+  left: 1rem;
+  bottom: 4.4rem;
+}
+.ft-hud-qr .rpg-window {
+  width: 8.25rem !important;
+  padding: 0.5rem !important;
+  font-size: 0.72rem;
+}
+.ft-hud-qr .rpg-window :is(svg, canvas, img) {
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* The lot journey: bottom middle, above the ticker. */
+.ft-hud-journey {
+  position: absolute;
+  left: 50%;
+  bottom: 4.4rem;
+  translate: -50% 0;
+  width: min(680px, calc(100vw - 26rem));
+}
+.ft-journey {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem 0.6rem;
+}
+.ft-journey-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--ink-72);
+  text-align: left;
+}
+.ft-journey-lot {
+  font-weight: 700;
+  color: var(--ink);
+}
+.ft-journey-place {
+  margin-left: auto;
+  color: var(--ink-60);
+  font-size: 0.72rem;
+}
+.ft-journey-steps {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.ft-journey-steps li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink-60);
+  text-align: center;
+}
+/* The rail between steps. */
+.ft-journey-steps li + li::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: calc(50% + 6px);
+  width: calc(100% - 12px);
+  height: 1px;
+  background: rgb(255 255 255 / 0.16);
+}
+.ft-journey-steps li[data-state="done"]::before,
+.ft-journey-steps li[data-state="current"]::before,
+.ft-journey-steps li[data-state="alert"]::before {
+  background: var(--cyan);
+}
+.ft-journey-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+}
+.ft-journey-steps li[data-state="done"] {
+  color: var(--ink-72);
+}
+.ft-journey-steps li[data-state="done"] .ft-journey-dot {
+  background: var(--cyan);
+  border-color: var(--cyan);
+}
+.ft-journey-steps li[data-state="current"] {
+  color: var(--lime);
+}
+.ft-journey-steps li[data-state="current"] .ft-journey-dot {
+  background: var(--lime);
+  border-color: var(--lime);
+  box-shadow: 0 0 0 4px rgb(182 255 59 / 0.18);
+  animation: ft-beat 1.4s ease-in-out infinite;
+}
+.ft-journey-steps li[data-state="alert"] {
+  color: var(--bad);
+}
+.ft-journey-steps li[data-state="alert"] .ft-journey-dot {
+  background: var(--bad);
+  border-color: var(--bad);
+}
+.ft-journey-note {
+  font-size: 0.62rem;
+}
+
+/* The key: a small pill bottom right; opens upwards. */
+.ft-hud-legend {
+  position: absolute;
+  right: 1rem;
+  bottom: 4.4rem;
+}
+.ft-legend {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.72rem;
+}
+.ft-legend[data-open="true"] {
+  width: 11rem;
+  padding-bottom: 0.6rem;
+}
+.ft-legend-toggle {
+  width: 100%;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--ink-72);
+}
+.ft-legend-toggle::after {
+  content: "+";
+  margin-left: 0.6rem;
+  float: right;
+}
+.ft-legend[data-open="true"] .ft-legend-toggle::after {
+  content: "–";
+}
+.ft-legend h3 {
+  margin: 0.45rem 0 0.15rem;
+  font-size: 0.6rem !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase;
+  color: var(--ink-60);
+}
+.ft-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.55;
+}
+.ft-key-orb,
+.ft-key-pin,
+.ft-key-pool {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  background: var(--c);
+}
+.ft-key-orb {
+  border-radius: 999px;
+}
+.ft-key-pin {
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.ft-key-pool {
+  border-radius: 999px;
+  background: transparent;
+  border: 2px solid var(--c);
+}
+.ft-key-line {
+  flex: none;
+  width: 16px;
+  height: 2px;
+  background: var(--c);
+}
+.ft-key-dash {
+  background: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 7px);
+}
+
+@keyframes ft-beat {
+  50% {
+    box-shadow: 0 0 0 7px rgb(182 255 59 / 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ft-bubble,
   .ft-pulse,
-  .ft-town-toast-in {
+  .ft-town-toast-in,
+  .ft-journey-steps li[data-state="current"] .ft-journey-dot {
     animation: none;
   }
   .ft-town-toast-in {
