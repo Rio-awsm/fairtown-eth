@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { formatApprox, formatBps, formatMoney, formatPerUnit, toDecimalString } from "./format"
+import {
+  commodityLabel,
+  formatApprox,
+  formatBps,
+  formatMoney,
+  formatPerUnit,
+  toDecimalString,
+  unitLabel,
+} from "./format"
 
 // Intl puts no-break and narrow no-break spaces in some locales; compare with plain spaces.
 const plain = (s: string | null) => s?.replace(/[\u00a0\u202f]/g, " ") ?? null
@@ -72,5 +80,24 @@ describe("formatBps", () => {
     expect(formatBps(5000)).toBe("50%")
     expect(formatBps(2500)).toBe("25%")
     expect(formatBps(150)).toBe("1.5%")
+  })
+})
+
+describe("unit and commodity words", () => {
+  it("says protocol units as people do", () => {
+    expect(unitLabel("kg_route")).toBe("kg moved")
+    expect(unitLabel("slot_day")).toBe("slot-day")
+    expect(unitLabel("gpu_hour")).toBe("GPU-hour")
+    expect(unitLabel("kg")).toBe("kg")
+  })
+  it("shows an unknown unit with spaces for underscores, never raw", () => {
+    expect(unitLabel("pallet_week")).toBe("pallet week")
+  })
+  it("prices per unit in words", () => {
+    expect(formatPerUnit(500_000n, "EUR", "kg_route")).toBe("€0.50/kg moved")
+  })
+  it("writes commodity names as words", () => {
+    expect(commodityLabel("truck_capacity")).toBe("truck capacity")
+    expect(commodityLabel("cod")).toBe("cod")
   })
 })

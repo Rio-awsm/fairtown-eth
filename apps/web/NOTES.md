@@ -242,6 +242,30 @@
 
 **Pages.** Every app page sits in `SiteShell` (`src/landing/`): the landing's top bar (none on /town, whose HUD carries the same bar) and one night skin (`src/styles/night.css`). The skin is unlayered CSS, which beats Tailwind 4's layered utilities and our pixel-era component classes, so the markup and its accessible names are unchanged. The pixel people on /sell, /buy and /walkin stay for now. The town's top bar no longer lists signals as chips; they show as weather over the market and in the ticker.
 
+## 2026-11-06, D-122: neon pass and day/night
+
+**Why.** On a projector the D-113 town read as one blue-grey tone: agents were 3 to 5 px dots, people were invisible, and bids showed only in the ticker. The goal is that someone across the room understands in five seconds what is happening, who is bidding on what, where everyone is going, and what each building is.
+
+**Look.** `town3d/theme.ts` holds both looks (`LOOKS.night`, `LOOKS.day`), each market's neon (`MARKET_NEON`) and each role's colour (`ROLE_COLOUR`). `Stage.setLook`, `Models.setLook`, `City.setLook`, `Agent3D.setLook` and `Stall3D.setLook` apply one; the engine calls them when `ui.daylight` changes. Materials keep their base colour in `userData`, so the look scales it rather than stacking. At night markers use additive blending; by day additive light vanishes on a bright ground, so they switch to normal blending. Day water drops the night HDRI reflection (it turned black). The tilt-shift pass is gone; the finishing pass is a vignette and grain.
+
+**Day/Night.** `ui.daylight` is `"night" | "day"`, loaded from and saved to `localStorage` (`fairtown.daylight`, any other value means night). The replay's `setPhase` and `setLights` still count in `effectsSeen` but no longer change the light: the person watching decides.
+
+**Markers.** `lines.ts` draws `Line2` fat lines (a few pixels at any zoom) for bids (`laser`), walks (dashed, cleared on arrival, on a new walk and on retire) and truck routes. Every line and per-effect material is disposed when its effect ends. A bid also pings the bidder's name for `PING_MS` (4 s at 1×). Stall cards now outrank speech in the label declutter.
+
+**Who won.** `lot.settled` names no buyer and a clearing auction can fill several, so `flashClear` glows every agent in the lot's `bidLog` gold and floats SOLD. The town does not pick a winner.
+
+**HUD.** `hud/journey.ts` (pure, tested) builds the strip's seven steps from `status` and `progress`, the same counter the lot panel's timeline uses, and picks the lot to follow: the selected lot, else the newest open auction, else the newest lot still going, else the newest. `storage.needed` is an event, not a status, so cold storage shows in the town (pillar and float) rather than as a step. `TownLegend` hides while a detail panel is open. Toasts moved to the top right, clear of the world clock. Stage insets are now 170 top and 150 bottom, for the clock and for the strip and ticker.
+
+**Units.** `money/format.ts` `unitLabel` and `commodityLabel`: `kg_route` → kg moved, `slot_day` → slot-day, `gpu_hour` → GPU-hour, any other underscore → space. Used wherever a lot's unit or commodity is printed (town, lot panel, ticker, /sell, /buy, /walkin, handover).
+
+**Baselines.** `town-map`, `effects-*` and `demo-storm` screenshots were regenerated for the new look.
+
+**Keyboard zoom.** `+`/`=`/`-` now step from where a running zoom is heading, as the wheel already did. A second press during the 160 ms ease used to land back on the step it was easing to; the heavier scene made `town-zoom.spec` hit it every run.
+
+## 2026-11-06, D-123: minimal pass
+
+The neon pass read as clutter on a full screen. Kept: role colours, bid lasers, walk trails, truck routes and chips, auction beacons and cards, the lot journey, the Day/Night toggle. Removed or quietened: market outlines and plot washes (`neonFrame` is gone; a market's colour is the dot on its sign, `--neon`), the second route colour, most homes, trees and edge towers (thinned with a fixed seed, so the town is the same every run), idle agent beams (`Agent3D.showBeam`: walking, pinged, hovered or selected only), HUD chamfers and glows. The key starts folded, the ticker shows three lines, and a world-clock city with nothing open shows only its time. Building positions come from `town.tmj` and are unchanged; moving them would mean a new map and new anchor, path and queue baselines.
+
 ## Open questions
 
 - iamanirbanbasak: licence for the landing's clip and poster (hotlinked from the NORVA brief, unconfirmed), or a Fairtown clip to replace them.

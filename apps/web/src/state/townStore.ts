@@ -6,6 +6,7 @@ import type { TownCommand } from "../game/commands"
 import { commandsForState, hydrate, initialTownState, reduceEnvelope, type TownState } from "../game/reducer"
 import { tickerLine } from "../hud/model"
 import { loadMuted } from "../sound/prefs"
+import { loadDaylight, type Daylight } from "../town3d/theme"
 import { appendLedger, emptyLedger, type Ledger } from "../arkiv/mockLedger"
 import type { RelayStatus } from "../net/relayClient"
 
@@ -15,7 +16,15 @@ export const TICKER_MAX = 20
 export type TickerLine = { id: string; text: string }
 
 /** Town controls the presenter can change from /control or the keyboard (S3 5.1). */
-export type TownUi = { director: boolean; priceWeather: boolean; qr: boolean; clockFocus: boolean; muted: boolean }
+export type TownUi = {
+  director: boolean
+  priceWeather: boolean
+  qr: boolean
+  clockFocus: boolean
+  muted: boolean
+  /** The town's look, picked with the Day/Night toggle (D-122). */
+  daylight: Daylight
+}
 const isDemo = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "1"
 
 export type TownMode = "live" | "replay"
@@ -71,7 +80,14 @@ export function createTownStore(bus: EventBusApi): StoreApi<TownStoreState> {
     selection: null,
     select: (selection) => set({ selection }),
     // The camera director is on by default only in demo mode, so tests and screenshots stay still.
-    ui: { director: isDemo(), priceWeather: false, qr: true, clockFocus: false, muted: loadMuted() },
+    ui: {
+      director: isDemo(),
+      priceWeather: false,
+      qr: true,
+      clockFocus: false,
+      muted: loadMuted(),
+      daylight: loadDaylight(),
+    },
     setUi: (patch) => set((s) => ({ ui: { ...s.ui, ...patch } })),
     fps: 0,
     setMode: (mode) => set({ mode }),

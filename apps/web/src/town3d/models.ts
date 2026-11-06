@@ -2,6 +2,7 @@ import * as THREE from "three"
 import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js"
 import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js"
 import { clayTone, fitScale, isGlass } from "./look"
+import { LOOKS, type SceneLook } from "./theme"
 
 const BASE = "/assets/models/kenney/"
 
@@ -31,6 +32,7 @@ export class Models {
   private readonly loader = new GLTFLoader()
   private readonly clayCache = new Map<THREE.Texture, { clay: THREE.Texture; glass: THREE.Texture }>()
   private readonly materials = new Map<string, THREE.Material>()
+  private look: SceneLook = LOOKS.night
 
   constructor(private readonly base = BASE) {}
 
@@ -127,6 +129,8 @@ export class Models {
           .lerp(new THREE.Color(0x1a2430), 0.6)
           .multiplyScalar(0.5)
         m = new THREE.MeshStandardMaterial({ color: c, roughness: 0.95, metalness: 0 })
+        m.userData = { kind: "leaves", base: c.clone() }
+        this.relook(m)
         this.materials.set(id, m)
       }
       return m
@@ -141,6 +145,8 @@ export class Models {
         roughness: 0.55,
         metalness: 0.08,
       })
+      m.userData = { kind: "paint", base: (m as THREE.MeshStandardMaterial).color.clone() }
+      this.relook(m)
       this.materials.set(id, m)
     }
     return m
@@ -161,8 +167,24 @@ export class Models {
       roughness: 0.82,
       metalness: 0.02,
     })
+    m.userData = { kind: "clay", base: (m as THREE.MeshStandardMaterial).color.clone(), lit }
+    this.relook(m)
     this.materials.set(id, m)
     return m
+  }
+
+  /** Day or night (D-122): every building, car, person and tree takes the look, now and when made. */
+  setLook(look: SceneLook): void {
+    this.look = look
+    for (const m of this.materials.values()) this.relook(m)
+  }
+
+  private relook(m: THREE.Material) {
+    const d = m.userData as { kind?: "clay" | "paint" | "leaves"; base?: THREE.Color; lit?: number }
+    if (!d.kind || !d.base || !(m instanceof THREE.MeshStandardMaterial)) return
+    const k = d.kind === "clay" ? this.look.clay : d.kind === "paint" ? this.look.paint : this.look.leaves
+    m.color.copy(d.base).multiplyScalar(k)
+    if (d.kind === "clay") m.emissiveIntensity = (d.lit ?? 0) * this.look.windows
   }
 
   private clayTextures(map: THREE.Texture): { clay: THREE.Texture; glass: THREE.Texture } {

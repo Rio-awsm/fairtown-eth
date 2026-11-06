@@ -1,6 +1,7 @@
 import { decodeTicket, toTicketJson, type TicketJson } from "@fairtown/shared/handover"
 import type { LotStatus } from "@fairtown/shared/keys"
 import type { LotState, TownState } from "../game/reducer"
+import { unitLabel } from "../money/format"
 
 /** QR handover (S3 2.2) logic, kept pure. Every message is plain words: no crypto terms on /scan. */
 
@@ -73,7 +74,7 @@ export function cameraProblem(error: unknown): string {
 /** "600 kg cod from Ingrid Solheim, Lot 12." */
 export function describeTicket(ticket: TicketJson, lot: LotState): string {
   const units = BigInt(ticket.tokenAmount) / LOT_UNITS
-  return `${units} ${lot.unit} ${lot.commodity} from ${lot.sellerName}, Lot ${lot.lotId}.`
+  return `${units} ${unitLabel(lot.unit)} ${lot.commodity} from ${lot.sellerName}, Lot ${lot.lotId}.`
 }
 
 export type HandoverParty = { buyer: string; tokenAmount: string }

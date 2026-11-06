@@ -44,9 +44,24 @@ export function formatMoney(base: bigint, currency: Currency, opts: FormatOpts =
   return formatIn(base, currency, opts.locale ?? DEFAULT_LOCALE[currency], 2, 2)
 }
 
+/** Units as people say them; the protocol's names (`kg_route`, contract 6) never reach the screen. */
+const UNIT_WORDS: Record<string, string> = {
+  kg_route: "kg moved",
+  slot_day: "slot-day",
+  gpu_hour: "GPU-hour",
+}
+
+/** `kg_route` → `kg moved`; a unit with no word of its own shows with spaces for underscores. */
+export function unitLabel(unit: string): string {
+  return UNIT_WORDS[unit] ?? unit.replace(/_/g, " ")
+}
+
+/** `truck_capacity` → `truck capacity`: commodity names as words. */
+export const commodityLabel = (commodity: string) => commodity.replace(/_/g, " ")
+
 /** A price per unit, e.g. `€7.50/kg`. Keeps sub-cent floors down to the 0.001 product minimum. */
 export function formatPerUnit(perUnit: bigint, currency: Currency, unit: string, opts: FormatOpts = {}): string {
-  return `${formatIn(perUnit, currency, opts.locale ?? DEFAULT_LOCALE[currency], 2, DECIMALS)}/${unit}`
+  return `${formatIn(perUnit, currency, opts.locale ?? DEFAULT_LOCALE[currency], 2, DECIMALS)}/${unitLabel(unit)}`
 }
 
 const usdRate = (code: string, perUsd: Record<string, number>): number | undefined =>
