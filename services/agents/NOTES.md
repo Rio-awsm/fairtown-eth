@@ -115,3 +115,13 @@
 - Role bitmaps are per nybble (each role is a 4-bit holder count, admin roles 128 bits up); "all roles" is `0x1111...`, not all bits set (`EACInvalidRoleBitmap` otherwise).
 - `register` on the ETHRegistrar takes the subregistry and resolver, so `fairtown.eth` was registered already pointing at our UserRegistry (no separate `setSubregistry`).
 - No Solidity toolchain (Foundry not installed), so no custom registrar contract; the service wallet is the registrar.
+
+## 2026-11-06, S2 8.4 Hedera x402 market intel (8.3 World dropped, D-81)
+
+**Built:** `src/addons/hedera/intel.ts` (paid route, x402 resource server, intel from Arkiv and signals), `buyer.ts` (agent client with spending policy, mirror-node balances), LLM strategy `intel` option, `pnpm -F agents hedera:setup` and `hedera:pay`, `test/hedera.test.ts`. Behind `ADDON_HEDERA`.
+
+**Found live:**
+- Testnet USDC is `0.0.429274` in the `@x402/hedera` source; the guide and the package README example say `0.0.6001`.
+- The first live payment failed preflight ("payer holds 0 of 0.0.429274"): the buyer now reads its balance from the mirror node and only offers what it can pay.
+- Settled: `0.0.9185802@1793948661.406575988`, 0.05 HBAR agent to merchant, `SUCCESS`, fee paid by the facilitator, about 3 s end to end.
+- The DER-encoded ECDSA key from portal.hedera.com loads with `PrivateKey.fromStringDer`.

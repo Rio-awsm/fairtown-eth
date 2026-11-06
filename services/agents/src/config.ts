@@ -52,6 +52,11 @@ export const AgentsConfig = z.object({
   ENS_PRIVATE_KEY: z.string().optional(),
   ENS_SEPOLIA_RPC_URL: z.string().url().optional(),
   ENS_PARENT_NAME: z.string().default("fairtown.eth"),
+  ADDON_HEDERA: z.enum(["0", "1"]).default("0").transform((v) => v === "1"),
+  HEDERA_ACCOUNT_ID: z.string().regex(/^0\.0\.\d+$/).optional(),
+  HEDERA_AGENT_ACCOUNT_ID: z.string().regex(/^0\.0\.\d+$/).optional(),
+  HEDERA_AGENT_PRIVATE_KEY: z.string().optional(),
+  X402_FACILITATOR_URL: z.string().url().default("https://x402.org/facilitator"),
   CHAIN_BACKFILL_BLOCKS: blocks.default(9000n), // restart lookback: longest auction + pickup + report + contest windows
   TREASURY_ADDRESS: z
     .string()

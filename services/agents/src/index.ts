@@ -22,6 +22,8 @@ import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
 import { SectorEngine } from "./sectors/engine"
 import { MarketState, moveOnSignal } from "./market/state"
 import { SessionStore } from "./handover/sessions"
+import { DEFAULT_POLICY, hederaClient, IntelBuyer, intelLine, mirrorBalances } from "./addons/hedera/buyer"
+import { intelServer } from "./addons/hedera/intel"
 import { EnsAgents } from "./addons/ens/agents"
 import { EnsClient } from "./addons/ens/client"
 import { existsSync, readFileSync } from "node:fs"
@@ -124,6 +126,25 @@ if (config.ADDON_ENS) {
   }
 }
 
+// ADDON_HEDERA: paid market intel over x402 on Hedera testnet (S2 8.4). The merchant is HEDERA_ACCOUNT_ID; buyer agents pay
+// from HEDERA_AGENT_ACCOUNT_ID within per-agent budgets and an allowlist.
+const hedera = config.ADDON_HEDERA && config.HEDERA_ACCOUNT_ID && config.HEDERA_AGENT_ACCOUNT_ID && config.HEDERA_AGENT_PRIVATE_KEY
+const intelUrl = (c: string) => `${config.PUBLIC_BASE_URL.replace(/\/+$/, "")}/api/intel/${c}`
+const intelBuyer = hedera
+  ? new IntelBuyer({
+      client: hederaClient(config.HEDERA_AGENT_ACCOUNT_ID!, config.HEDERA_AGENT_PRIVATE_KEY!),
+      policy: DEFAULT_POLICY(config.HEDERA_ACCOUNT_ID!, new URL(config.PUBLIC_BASE_URL).host),
+      balanceOf: mirrorBalances(config.HEDERA_AGENT_ACCOUNT_ID!),
+    })
+  : undefined
+const intelFor = intelBuyer
+  ? async (o: { agent: { agentId: string }; lot: { commodity: string } }) => {
+      const r = await intelBuyer.buy(o.agent.agentId, intelUrl(o.lot.commodity), o.lot.commodity)
+      if (!r.ok) log("intel not bought", { reason: r.reason })
+      return r.ok ? intelLine(r.intel) : undefined
+    }
+  : undefined
+
 const strategy = aiConfig.MOCK_AI
   ? ruleStrategy
   : createLlmStrategy({
@@ -131,6 +152,7 @@ const strategy = aiConfig.MOCK_AI
       context: marketContext({ references: listing.references, arkiv }),
       ...(fake ? { blockMs: FAKE_BLOCK_MS } : {}),
       onFallback: (code, a) => log("bidder fell back to rules", { code, agent: a.name }),
+      ...(intelFor ? { intel: intelFor } : {}),
     })
 const runtime = new AgentRuntime({
   chain,
@@ -205,6 +227,7 @@ const app = buildApp({
   handover: { chain, wallets, runtime, sellers, sessions, photos: listing.photos, drafts, config, ticketValidBlocks: fake ? 150n : 1500n },
   humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config, ...(ensAgents ? { onJoined: (a) => void ensAgents!.register(a) } : {}) },
   director,
+  ...(hedera ? { intel: { server: intelServer(config.X402_FACILITATOR_URL), payTo: config.HEDERA_ACCOUNT_ID!, arkiv, market, block: () => chain.blockNumber(), onSettled: (tx: string) => log("intel payment settled", { tx }) } } : {}),
   health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI, ...(aiConfig.VISION_MODEL ? { visionModel: aiConfig.VISION_MODEL } : {}) }),
 })
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)

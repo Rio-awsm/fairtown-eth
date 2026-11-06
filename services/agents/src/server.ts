@@ -12,11 +12,12 @@ import { registerHandoverRoutes, type HandoverDeps } from "./handover/routes"
 import { registerHumanRoutes, type HumanDeps } from "./humans/routes"
 import type { Director } from "./director/director"
 import { registerDirectorRoutes } from "./director/routes"
+import { registerIntelRoute } from "./addons/hedera/intel"
 import { registerListingRoutes, type ListingDeps } from "./listing/routes"
 import { registerAgentRoutes } from "./runtime/routes"
 import type { AgentRuntime } from "./runtime/runtime"
 
-export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; market?: MarketDeps; handover?: HandoverDeps; humans?: HumanDeps; director?: Director; health?: () => Promise<HealthExtras>; logger?: boolean }
+export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; market?: MarketDeps; handover?: HandoverDeps; humans?: HumanDeps; director?: Director; intel?: Parameters<typeof registerIntelRoute>[1]; health?: () => Promise<HealthExtras>; logger?: boolean }
 
 const Dep = z.object({ ok: z.boolean(), detail: z.string() })
 const ExtendedHealth = HealthResponse.extend({
@@ -80,6 +81,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   if (deps.handover) registerHandoverRoutes(app, deps.handover)
   if (deps.humans) registerHumanRoutes(app, deps.humans)
   if (deps.director) registerDirectorRoutes(app, deps.director)
+  if (deps.intel) registerIntelRoute(app, deps.intel)
   if (deps.listing) registerListingRoutes(app, { ...deps.listing, config: deps.config, chain: deps.chain })
 
   return app

@@ -46,6 +46,8 @@ export type LlmStrategyOptions = {
   blockMs?: number
   timeoutMs?: number
   onFallback?: (code: string, agent: RuntimeAgent) => void
+  // ADDON_HEDERA: one line of paid market intel (x402 on Hedera). It informs the model only; guardrails still decide.
+  intel?: (o: Observation) => Promise<string | undefined>
 }
 
 const WORD_LIMIT = 150
@@ -192,9 +194,10 @@ export function createLlmStrategy(opts: LlmStrategyOptions): Strategy & { stats:
       stats.llm++
       let d: Decision | null
       try {
+        const paid = await opts.intel?.(o).catch(() => undefined)
         const r = await opts.ai.decide("bidder", {
           system: personaPrompt(o.agent, bioOf(o.agent)),
-          prompt: observationText(o, ctx, opts.blockMs),
+          prompt: observationText(o, ctx, opts.blockMs) + (paid ? `\n${paid}` : ""),
           schema: BidAdvice,
           ...(opts.timeoutMs ? { timeoutMs: opts.timeoutMs } : {}),
         })

@@ -84,6 +84,21 @@ Every agent is a name under `fairtown.eth` on ENSv2 Sepolia, owned by its own wa
 
 Reproduce: `pnpm -F agents ens:setup` (idempotent), `pnpm -F agents ens:agents` (27 names), `pnpm -F agents test:live` (register, resolve, revoke, unauthorised-registrar failure). The registry pattern follows ENS's contract-developer tutorial, which is marked educational and unaudited; here the service wallet itself holds `ROLE_REGISTRAR` instead of a registrar contract.
 
+## Hedera: agents that pay for market intel (x402)
+
+`GET /api/intel/:commodity` is an x402-protected endpoint that settles on **Hedera testnet** through the official facilitator (`https://x402.org/facilitator`, fee payer `0.0.9185802`). It returns recent clears for the commodity from the Arkiv ledger, live demand signals and the sellers with a no-show record. Price: 0.01 USDC (HTS token `0.0.429274`) or 0.05 HBAR. Behind `ADDON_HEDERA=1`.
+
+**Payment flow, no human in it:**
+1. A buyer agent (LLM strategy) looks at a lot and asks for intel on its commodity.
+2. The endpoint answers `402` with a `PAYMENT-REQUIRED` header listing both prices and the merchant account.
+3. The agent's client checks its policy: merchant host and pay-to account on the allowlist, per-call cap, its own remaining budget, and its balance from the mirror node. It prefers USDC and falls back to HBAR.
+4. It signs the payment (`@x402/hedera` exact scheme) and retries with `PAYMENT-SIGNATURE`; the server verifies through the facilitator, builds the intel, settles, and returns the data with `PAYMENT-RESPONSE`.
+5. The intel becomes one line in the bidder's prompt. It only informs the model; guardrails still decide every bid.
+
+**Settled payment:** transaction `0.0.9185802@1793948661.406575988` ([HashScan](https://hashscan.io/testnet/transaction/0.0.9185802-1793948661-406575988)): 0.05 HBAR from buyer agent `0.0.11335677` to merchant `0.0.11335541`, `SUCCESS`, fee paid by the facilitator.
+
+Spending controls (`services/agents/src/addons/hedera/buyer.ts`): per-agent budget per asset (0.20 USDC, 1 HBAR per run), per-call cap, merchant host and pay-to allowlist, plus the x402 client's own $0.10 per-payment cap; paid intel is cached 5 minutes so agents don't pay every tick. Reproduce: `pnpm -F agents hedera:setup`, then `pnpm -F agents hedera:pay cod`.
+
 ## Licence
 
 MIT. See `LICENSE`.
