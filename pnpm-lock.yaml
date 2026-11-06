@@ -137,6 +137,9 @@ importers:
       fastify:
         specifier: ^5.12.8
         version: 5.12.8
+      viem:
+        specifier: 'catalog:'
+        version: 2.57.16(typescript@5.9.3)(zod@4.6.7)
       ws:
         specifier: ^8.22.1
         version: 8.22.1

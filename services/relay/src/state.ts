@@ -30,6 +30,10 @@ export class RelayState {
     return true
   }
 
+  nameOf(agentId: string) {
+    return this.agents.get(agentId.toLowerCase())?.name ?? this.agents.get(agentId)?.name
+  }
+
   get currentBlock() {
     return this.block
   }

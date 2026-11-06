@@ -3,6 +3,7 @@ import Fastify, { type FastifyError, type FastifyInstance } from "fastify"
 import { timingSafeEqual } from "node:crypto"
 import { WebSocket, WebSocketServer } from "ws"
 import { z } from "zod"
+import type { ChainMapper, RawChainEvent } from "./mapping"
 import type { RelayState } from "./state"
 
 export type RelayDeps = {
@@ -11,6 +12,9 @@ export type RelayDeps = {
   logger?: boolean
   maxBufferedBytes?: number
   heartbeatMs?: number
+  // Dev bridge for CHAIN_MODE=fake: the agents service forwards FakeChain logs and the relay maps them, so the relay stays
+  // the only producer of chain-derived events.
+  mapper?: ChainMapper
 }
 export type Relay = {
   app: FastifyInstance
@@ -92,6 +96,21 @@ export function buildRelay(deps: RelayDeps): Relay {
   })
   app.setNotFoundHandler((req, reply) => {
     reply.status(404).send({ error: { code: "not_found", message: `${req.method} ${req.url} not found` } })
+  })
+
+  app.post("/internal/chain", async (req, reply) => {
+    if (!authorized(req.headers.authorization))
+      return reply.status(401).send({ error: { code: "unauthorized", message: "Bad or missing bearer token" } })
+    if (!deps.mapper) return reply.status(409).send({ error: { code: "not_fake", message: "Chain bridge is only for CHAIN_MODE=fake" } })
+    const body = req.body as RawChainEvent[]
+    if (!Array.isArray(body)) return reply.status(400).send({ error: { code: "bad_request", message: "body must be an array of chain events" } })
+    let accepted = 0
+    for (const e of body) {
+      const envs = await deps.mapper.map(e)
+      if (e.eventName === "LotSettled") deps.mapper.forget(BigInt(String(e.args.lotId)))
+      accepted += publish(envs).accepted
+    }
+    return { accepted }
   })
 
   app.get("/health", async () => ({ ok: true, clients: wss.clients.size, block: deps.state.currentBlock }))

@@ -12,7 +12,7 @@ import { PERSONAS } from "./fixtures/personas"
 import { DraftStore } from "./listing/drafts"
 import { PhotoStore } from "./listing/photos"
 import { loadReferences } from "./listing/references"
-import { RelayPublisher } from "./runtime/publisher"
+import { ChainBridge, RelayPublisher } from "./runtime/publisher"
 import { AgentRuntime } from "./runtime/runtime"
 import { Wallets } from "./runtime/wallets"
 import { SellerDirectory } from "./sellers"
@@ -58,6 +58,10 @@ const runtime = new AgentRuntime({
 runtime.addPersonas(PERSONAS)
 
 const stopLedger = ledger.start()
+if (fake) {
+  const bridge = new ChainBridge(`http://localhost:${config.RELAY_PORT}`, config.RELAY_INTERNAL_TOKEN)
+  chain.watch((e) => bridge.forward(e))
+}
 await runtime.bootstrap(undefined, PERSONAS.filter((p) => p.seeded?.proven).map((p) => p.id))
 const stopRuntime = runtime.start()
 const stopMining = fake ? fake.autoMine(FAKE_BLOCK_MS) : () => {}

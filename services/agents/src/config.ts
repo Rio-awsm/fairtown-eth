@@ -33,6 +33,7 @@ export const AgentsConfig = z.object({
   AGENT_MNEMONIC: z.string().optional(),
   RPC_URL: z.string().url().optional(),
   RPC_WS_URL: z.string().optional(),
+  LOGS_RPC_URL: z.string().url().optional(),
   OPERATOR_PRIVATE_KEY: z.string().optional(),
   RELAY_PORT: port.default(8788),
   RELAY_INTERNAL_TOKEN: z.string().default("change-me"),

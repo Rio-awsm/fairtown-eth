@@ -37,6 +37,32 @@ export class RelayPublisher implements Publisher {
   }
 }
 
+// CHAIN_MODE=fake only: forward FakeChain logs to the relay, which maps them to town events (it stays their only producer).
+export class ChainBridge {
+  private queue: Promise<void> = Promise.resolve()
+  constructor(
+    private readonly url: string,
+    private readonly token: string,
+    private readonly onError: (e: unknown) => void = () => {},
+  ) {}
+  forward(event: unknown) {
+    const body = JSON.stringify([event], (_k, v) => (typeof v === "bigint" ? v.toString() : v))
+    this.queue = this.queue.then(async () => {
+      try {
+        const res = await fetch(`${this.url.replace(/\/+$/, "")}/internal/chain`, {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: `Bearer ${this.token}` },
+          body,
+          signal: AbortSignal.timeout(2000),
+        })
+        if (!res.ok) this.onError(new Error(`relay bridge HTTP ${res.status}`))
+      } catch (e) {
+        this.onError(e)
+      }
+    })
+  }
+}
+
 export class MemoryPublisher implements Publisher {
   readonly sent: TownEnvelope[] = []
   async publish(events: TownEvent[], block?: number) {

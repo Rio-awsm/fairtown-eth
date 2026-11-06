@@ -14,3 +14,17 @@
 - Unfunded agents in the runtime will try to bid; production bootstraps all 27 first.
 
 **Still open.** `RPC_WS_URL` (Alchemy) returns HTTP 401: the key in `.env` is 27 characters and looks truncated. `RPC_URL` is still the public endpoint. Operator wallet has 0.0144 ETH; 27 agents at 0.0005 ETH each need 0.0135, so top it up before running the full town on Base Sepolia.
+
+## 2026-11-06, S2 4.1 relay
+
+**Built:** `services/relay/src/mapping.ts` (every section 7 event to its TownEvent, deterministic ids `chain-<tx>-<logIndex>` so backfills and reconnects dedupe), `chainWatcher.ts` (new heads over the Alchemy WebSocket with reconnect, logs over HTTP from the last processed block, newly listed auctions picked up mid-range, clearing-price ticker every 2 s, clock every 25 blocks), `/internal/chain` dev bridge for `CHAIN_MODE=fake` (agents forward FakeChain logs, the relay maps them, so only the relay produces chain-derived events).
+
+**RPC limits found live:**
+- Alchemy free tier rejects `eth_getLogs` over about 10 blocks, with a misleading "JSON is not a valid request object" (HTTP 400).
+- The public Base Sepolia RPC caps `eth_getLogs` at 200 blocks ("eth_getLogs is limited to a 200 range").
+- Fix: logs go to `LOGS_RPC_URL` (default public RPC) in 200-block chunks; heads, reads and writes stay on Alchemy. Backfilling 20,000 blocks takes about 45 s.
+- viem error messages include the RPC URL and therefore the Alchemy key. All relay and agents logging strips URLs; a live test printed one raw error once before the fix (testnet key; rotate if wanted).
+
+**Live result.** `pnpm -F relay test:live`: backfill from the v1 deployment block to a real WebSocket client, 82 envelopes, no errors; S1's smoke lot 1 reached `paid_in_full` through handover and delivered, lots 2 to 10 `sold`.
+
+**Not built:** an Arkiv watcher. Arkiv watch events carry no attributes and the TownEvent union has no Arkiv entity event; S3 reads prices and reputation from Arkiv directly with `arkiv/queries.md`.

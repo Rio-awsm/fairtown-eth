@@ -35,7 +35,7 @@ import type { BidInput, ChainAdapter, ChainEvent, LotSpecInput, LotState, Seller
 const MAX_UINT48 = 281474976710655
 const BID_GAS = 1_500_000n
 const APPROVE_GAS = 120_000n // explicit gas skips eth_estimateGas, which flaps on load-balanced public RPCs
-const LOG_CHUNK = 2_000n
+const LOG_CHUNK = 200n // public Base Sepolia RPC limits eth_getLogs to a 200-block range
 const lc = (a: string) => a.toLowerCase() as Address
 
 const EVENTS_ABI = [
@@ -51,6 +51,7 @@ const EVENTS_ABI = [
 export type ViemChainOptions = {
   deployment: Deployment
   rpcUrl: string
+  logsRpcUrl?: string // Alchemy free tier caps eth_getLogs at ~10 blocks; default public Base Sepolia RPC
   operator: LocalAccount
   accountFor: (address: Address) => LocalAccount | undefined
   pollMs?: number
@@ -60,6 +61,7 @@ export type ViemChainOptions = {
 export class ViemChain implements ChainAdapter {
   readonly mode: "anvil" | "base-sepolia"
   readonly reader
+  private readonly logs
   private readonly d: Deployment
   private readonly c: Deployment["contracts"]
   private readonly opts: ViemChainOptions
@@ -76,6 +78,7 @@ export class ViemChain implements ChainAdapter {
     this.c = opts.deployment.contracts
     this.mode = opts.deployment.network === "anvil" ? "anvil" : "base-sepolia"
     this.reader = createPublicClient({ chain: baseSepolia, transport: http(opts.rpcUrl, { timeout: 30_000, retryCount: 5, retryDelay: 600 }), pollingInterval: 1_000 })
+    this.logs = createPublicClient({ chain: baseSepolia, transport: http(opts.logsRpcUrl ?? "https://sepolia.base.org", { timeout: 30_000, retryCount: 5, retryDelay: 600 }) })
     this.currencyAddr = { USD: lc(this.c.TestUSD), EUR: lc(this.c.TestEUR), USDC: lc(this.d.external.CircleTestUSDC) }
     for (const [code, a] of Object.entries(this.currencyAddr)) {
       this.codeOf.set(a, code as Currency)
@@ -331,7 +334,7 @@ export class ViemChain implements ChainAdapter {
           let from: bigint = next ?? head + 1n
           while (!stopped && from <= head) {
             const to: bigint = from + LOG_CHUNK - 1n < head ? from + LOG_CHUNK - 1n : head
-            const logs = await this.reader.getLogs({ address: this.addresses(), fromBlock: from, toBlock: to })
+            const logs = await this.logs.getLogs({ address: this.addresses(), fromBlock: from, toBlock: to })
             const events = parseEventLogs({ abi: EVENTS_ABI, logs, strict: false }) as unknown as Array<ChainEvent & { removed?: boolean }>
             for (const e of events) {
               const ev = { eventName: e.eventName, args: e.args, address: lc(e.address), blockNumber: e.blockNumber, transactionHash: e.transactionHash, logIndex: e.logIndex } as ChainEvent
@@ -369,7 +372,7 @@ export class ViemChain implements ChainAdapter {
     if (head < endBlock) return undefined
     const to = endBlock + 20_000n < head ? endBlock + 20_000n : head
     for (let from = endBlock; from <= to; from += LOG_CHUNK) {
-      const logs = await this.reader.getContractEvents({
+      const logs = await this.logs.getContractEvents({
         address: this.c.MarketSettlement as Address,
         abi: marketSettlementAbi,
         eventName: "LotSettled",

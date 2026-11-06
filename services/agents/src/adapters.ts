@@ -29,7 +29,7 @@ export async function createAdapters(config: AgentsConfig, accountFor?: (a: Addr
     if (!config.OPERATOR_PRIVATE_KEY || !config.RPC_URL || !accountFor)
       throw new Error(`CHAIN_MODE=${config.CHAIN_MODE} needs OPERATOR_PRIVATE_KEY, RPC_URL and AGENT_MNEMONIC`)
     const deployment = await loadDeployment(config.CHAIN_MODE)
-    const viem = new ViemChain({ deployment, rpcUrl: config.RPC_URL, operator: writerAccount(config.OPERATOR_PRIVATE_KEY), accountFor })
+    const viem = new ViemChain({ deployment, rpcUrl: config.RPC_URL, ...(config.LOGS_RPC_URL ? { logsRpcUrl: config.LOGS_RPC_URL } : {}), operator: writerAccount(config.OPERATOR_PRIVATE_KEY), accountFor })
     return { chain: viem, arkiv, writer, stop: () => {}, viem }
   }
   const chain = new FakeChain({
