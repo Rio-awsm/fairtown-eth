@@ -1,4 +1,4 @@
-import { BaseError, ContractFunctionRevertedError, type Hex } from "viem"
+import { BaseError, ContractFunctionRevertedError, custom, type Hex, type Transport } from "viem"
 import { splitPayout } from "@fairtown/shared/units"
 // One reviewed .env loader for the repo (C 0.1, D-34): Node's parseEnv plus a ${VAR} expander.
 export { loadEnv } from "@fairtown/shared/env"
@@ -98,6 +98,21 @@ export function safeErrorMessage(e: unknown, secrets: (string | undefined)[]): s
   } else if (e instanceof Error) msg = e.message
   else msg = String(e)
   return redact(msg, secrets)
+}
+
+/**
+ * Sends eth_getLogs to `logs` and everything else to `main` (C 1.1). Alchemy's free tier caps getLogs at a tiny
+ * block range, so log tailing goes to LOGS_RPC_URL (public RPC, as the agents service does) when it is set.
+ */
+export function splitLogsTransport(main: Transport, logs: Transport | undefined): Transport {
+  if (!logs) return main
+  return (opts) => {
+    const m = main(opts)
+    const l = logs(opts)
+    return custom({
+      request: ({ method, params }) => (method === "eth_getLogs" ? l : m).request({ method, params } as never),
+    })(opts)
+  }
 }
 
 /** getLogs block-range errors from RPC providers ("eth_getLogs is limited to a 200 range", "range too large", ...). */

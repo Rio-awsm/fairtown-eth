@@ -12,20 +12,22 @@ import { baseSepolia } from "viem/chains"
 import { loadDeployment } from "@fairtown/shared/addresses"
 import { keeperConfig } from "./config"
 import { Keeper } from "./keeper"
-import { loadEnv } from "./lib"
+import { loadEnv, splitLogsTransport } from "./lib"
 import { createLogger, errText } from "./log"
 import { TxQueue, viemSender } from "./txQueue"
 
 const root = fileURLToPath(new URL("../../../", import.meta.url))
 const { env } = loadEnv(`${root}.env`)
-const secrets = [env.RPC_URL, env.FORK_RPC_URL, env.ANVIL_RPC_URL, env.KEEPER_PRIVATE_KEY]
+const secrets = [env.RPC_URL, env.LOGS_RPC_URL, env.FORK_RPC_URL, env.ANVIL_RPC_URL, env.KEEPER_PRIVATE_KEY]
 const log = createLogger(secrets)
 
 try {
   const cfg = keeperConfig(env, process.argv[2])
   const dep = await loadDeployment(cfg.network)
   // Fail fast on a dead connection (10 s x 3 tries); the loop retries next poll (S1 2.1 live run, NOTES).
-  const transport = http(cfg.rpcUrl, { timeout: 10_000, retryCount: 2 })
+  const rpc = (url: string) => http(url, { timeout: 10_000, retryCount: 2 })
+  const logsUrl = cfg.network === "base-sepolia" ? env.LOGS_RPC_URL : undefined
+  const transport = splitLogsTransport(rpc(cfg.rpcUrl), logsUrl ? rpc(logsUrl) : undefined)
   // No chain on the public client: reads need no OP-stack formatters, and it keeps the plain PublicClient type.
   const pub = createPublicClient({ transport })
   const account = privateKeyToAccount(cfg.keeperKey)

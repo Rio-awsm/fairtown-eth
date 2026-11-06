@@ -58,6 +58,29 @@ describe("ledger writer", () => {
     expect(ledger.written).toMatchObject({ lot: 5, bid: 1, price: 1, reputation: 1 })
   })
 
+  it("writes a new price and lot when an older deployment left entities with the same lotId", async () => {
+    const w = world()
+    const arkiv = new MemoryArkivStore()
+    // Lot ids restart with every deployment; the writer owns entities from earlier runs (C 1.1 e2e found this).
+    const stale = { sector: "fish", commodity: "cod", grade: "fresh_a", market: "fish_dock", place: "bergen", currency: "EUR", day: "2026-11-01", tx: "0xold" }
+    await arkiv.put(S.price, { ...stale, lotId: 1n, finalClearingPerUnit: 2_178_000n, avgPerUnit: 2_178_000n, soldUnits: 5n }, { owner: WRITER, expiresInSeconds: 3600, dedupe: { lotId: 1n } })
+    const ledger = new LedgerWriter({ chain: w.chain, arkiv, writer: WRITER, hasArkivFunds: () => false, now: () => new Date("2026-11-07T05:00:00Z") })
+    ledger.start()
+    const ingrid = await w.agent("SELLER")
+    const hanse = await w.agent("BUYER", { EUR: "10000" })
+    const { lotId, auction } = await w.chain.createLot(ingrid, codSpec(ingrid))
+    expect(lotId).toBe(1n)
+    await arkiv.put(S.lot, { ...stale, status: "sold", lotId, auction: "0x00000000000000000000000000000000000000aa", floorPerUnit: 1n, endBlock: 1n, parentLotId: 0n, details: new Uint8Array() }, { owner: WRITER, expiresInSeconds: 3600, dedupe: { lotId } })
+    await w.bid(hanse, lotId, auction, "9.10", "5460")
+    w.chain.mine(45)
+    await ledger.idle()
+    const prices = (await arkiv.query(S.price, { lotId })).entities
+    expect(prices).toHaveLength(2)
+    expect(prices.map((p) => p.values.avgPerUnit)).toContain(toBase("9.10"))
+    const lots = (await arkiv.query(S.lot, { lotId })).entities
+    expect(lots.map((l) => l.values.auction)).toContain(auction.toLowerCase())
+  })
+
   it("lets the writer write bids for walk-ins without Arkiv funds", async () => {
     const { arkiv, lotId, hanse } = await bergen({ walkinHanse: true })
     const bid = (await arkiv.query(S.bid, { lotId })).entities[0]!
@@ -95,7 +118,8 @@ describe("ledger writer", () => {
     broken.put = async () => {
       throw new Error("rabdi down")
     }
-    const ledger = new LedgerWriter({ chain: w.chain, arkiv: broken, writer: WRITER, onError: (e, ev) => errors.push(`${ev}: ${(e as Error).message}`) })
+    // No retry delays: the default 1 s + 3 s backoff left the test 1 s of headroom under the 5 s timeout.
+    const ledger = new LedgerWriter({ chain: w.chain, arkiv: broken, writer: WRITER, retryDelaysMs: [0, 0], onError: (e, ev) => errors.push(`${ev}: ${(e as Error).message}`) })
     ledger.start()
     const s = await w.agent("SELLER")
     await w.chain.createLot(s, codSpec(s))

@@ -138,7 +138,8 @@ export class LedgerWriter {
           },
           info.seller,
           await this.secondsUntil(a.endBlock, DAY),
-          { lotId: a.lotId },
+          // lotId alone is not unique: ids restart with every deployment and the writer owns old entities (C 1.1).
+          { lotId: a.lotId, auction: lc(a.auction) },
         )
         this.lots.set(a.lotId.toString(), info)
         if (info.sector === "truck" || info.sector === "storage") {
@@ -155,7 +156,7 @@ export class LedgerWriter {
             },
             info.seller,
             await this.secondsUntil(a.endBlock, DAY),
-            { lotId: a.lotId },
+            { lotId: a.lotId, readyByBlock: a.endBlock },
           )
         }
         return
@@ -196,7 +197,7 @@ export class LedgerWriter {
           },
           this.o.writer,
           180 * DAY,
-          { lotId: a.lotId },
+          { lotId: a.lotId, finalClearingPerUnit: a.finalClearingPerUnit, avgPerUnit: a.avgPerUnit, soldUnits: a.soldUnits },
         )
         return
       }

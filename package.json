@@ -24,7 +24,8 @@
     "smoke:anvil": "pnpm -F keeper smoke anvil",
     "smoke:base-sepolia": "pnpm -F keeper smoke base-sepolia",
     "dev:all": "node scripts/pending.mjs dev:all \"C 1.2\"",
-    "e2e:day": "node scripts/pending.mjs e2e:day \"C 2.3\""
+    "e2e:day": "node scripts/pending.mjs e2e:day \"C 2.3\"",
+    "e2e:lot": "pnpm -s -F scripts run e2e:lot"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

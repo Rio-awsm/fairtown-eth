@@ -8,9 +8,11 @@
     "chain:fork": "tsx chain-fork.ts",
     "with-env": "tsx with-env.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "e2e:lot": "tsx e2e/lot.ts"
   },
   "dependencies": {
+    "@arkiv-network/sdk": "1.0.1",
     "@fairtown/shared": "workspace:*",
     "tsx": "catalog:",
     "viem": "catalog:"
