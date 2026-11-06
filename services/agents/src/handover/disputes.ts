@@ -4,6 +4,7 @@ import { concat, keccak256, type Address } from "viem"
 import type { ChainAdapter } from "../chain/types"
 import type { DraftStore } from "../listing/drafts"
 import { ChainError } from "../chain/errors"
+import { assertOwner, caller } from "../callers"
 import { HttpError, parse } from "../listing/routes"
 import type { PhotoInput, PhotoStore } from "../listing/photos"
 import type { AgentRuntime } from "../runtime/runtime"
@@ -34,6 +35,7 @@ export function registerDisputeRoutes(app: FastifyInstance, d: DisputeDeps & { r
     const body = parse(DisputeRequest, req.body)
     const buyer = [...d.runtime.agents.values()].find((a) => a.agentId === body.buyerId.toLowerCase() || a.personaId === body.buyerId)
     if (!buyer) throw new HttpError(404, "unknown_buyer", `Unknown buyer ${body.buyerId}`)
+    assertOwner(buyer.owner, caller(req), "agent")
     let r: Awaited<ReturnType<typeof fileDispute>>
     try {
       r = await fileDispute(d, buyer.agentId, BigInt(body.lotId), BigInt(body.tokenAmount), body.photos)

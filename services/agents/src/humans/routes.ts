@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs"
 import { z } from "zod"
 import type { AiGateway } from "../ai/gateway"
 import { SttError } from "../ai/stt"
+import { assertOwner, caller } from "../callers"
 import { RateLimiter, SESSION_MS, type SessionStore } from "../handover/sessions"
 import { HttpError, parse } from "../listing/routes"
 import type { Publisher } from "../runtime/publisher"
@@ -40,7 +41,8 @@ export function registerHumanRoutes(app: FastifyInstance, d: HumanDeps) {
     if (!name) throw new HttpError(400, "bad_request", "Pick a name")
     const currency = body.currency ?? "USD"
     if (!WALKIN_CURRENCIES.includes(currency)) throw new HttpError(400, "bad_currency", `Walk-ins play in USD or EUR, not ${currency}`)
-    const slot = joins.take(req.ip)
+    const who = caller(req)
+    const slot = joins.take(who.rateKey) // per Telegram user for bot calls, else per IP
     if (!slot.ok) throw slot.reason === "cap_reached" ? new HttpError(503, "walkin_full", "The market is full, try again later") : new HttpError(429, "rate_limited", "Three joins per 10 minutes from one place")
     const budget = toBase(d.config.WALKIN_BUDGET)
     const agent = d.runtime.addAgent({
@@ -54,6 +56,7 @@ export function registerHumanRoutes(app: FastifyInstance, d: HumanDeps) {
       // Guardrails still apply: budget, 60% per auction, tick above clearing, rate limit. The human picks the price.
       mandate: { commodities: [...COMMODITIES], maxPerUnit: budget.toString(), avoidNoShowSellers: false },
       manual: true,
+      ...(who.owner ? { owner: who.owner } : {}),
     })
     await d.runtime.bootstrap([agent])
     d.onJoined?.(agent)
@@ -68,6 +71,7 @@ export function registerHumanRoutes(app: FastifyInstance, d: HumanDeps) {
     if (!s) throw new HttpError(401, "no_session", "Your visit has ended, join again")
     const agent = d.runtime.agents.get(s.subject as `0x${string}`)
     if (!agent) throw new HttpError(401, "no_session", "Your visit has ended, join again")
+    assertOwner(agent.owner, caller(req), "agent")
     const r = await d.runtime.manualBid(agent.agentId, BigInt(body.lotId), BigInt(body.maxPerUnit), BigInt(body.amount), `${agent.name} bids from a phone`)
     if (r.result.status === "bid") return WalkinBidResponse.parse({ bidId: r.result.bidId.toString(), tx: r.result.tx })
     if (r.result.status === "failed") throw new HttpError(502, "bid_failed", "The bid didn't go through, try again")

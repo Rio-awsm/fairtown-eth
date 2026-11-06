@@ -45,6 +45,7 @@ export const AgentsConfig = z.object({
   CORS_ORIGINS: z.string().optional(), // extra browser origins, comma separated (the web app's own origin is always allowed)
   SELLER_PIN: z.string().min(4).optional(), // one disclosed demo PIN; unset disables seller sessions
   TRUST_PROXY: z.string().optional(), // IP/CIDR of the tunnel (e.g. 127.0.0.1), never "true"
+  TELEGRAM_SERVICE_TOKEN: z.string().min(32).optional(), // TG 0.2 (ICR-012): shared with the Telegram bot; unset refuses all bot calls
   WALKIN_BUDGET: z.string().regex(/^\d+(\.\d{1,6})?$/).default("500"),
   WALKIN_CAP: z.coerce.number().int().positive().default(50),
   CRE_BRIDGE_PORT: port.default(8789),

@@ -12,6 +12,7 @@ import {
 import type { FastifyInstance, FastifyRequest } from "fastify"
 import { concat, keccak256, type Address } from "viem"
 import { z } from "zod"
+import { assertOwner, caller } from "../callers"
 import { ChainError } from "../chain/errors"
 import type { ChainAdapter } from "../chain/types"
 import type { DraftStore } from "../listing/drafts"
@@ -69,7 +70,8 @@ export function registerHandoverRoutes(app: FastifyInstance, d: HandoverDeps) {
   app.post("/api/sessions/seller", async (req) => {
     if (!d.config.SELLER_PIN) throw new HttpError(503, "sessions_disabled", "Seller sessions need SELLER_PIN")
     const body = parse(SellerSessionRequest, req.body)
-    if (!pinTries.take(req.ip).ok) throw new HttpError(429, "rate_limited", "Too many tries, wait a few minutes")
+    // Keyed per Telegram user for bot calls, else per IP: one bot user guessing PINs never locks out the others.
+    if (!pinTries.take(caller(req).rateKey).ok) throw new HttpError(429, "rate_limited", "Too many tries, wait a few minutes")
     const seller = d.sellers.get(body.sellerId)
     if (!seller || !["SELLER", "TRUCK", "STORAGE"].includes(seller.role)) throw new HttpError(404, "unknown_seller", `No seller ${body.sellerId}`)
     if (!samePin(body.pin, d.config.SELLER_PIN)) throw new HttpError(401, "bad_pin", "Wrong PIN")
@@ -99,6 +101,7 @@ export function registerHandoverRoutes(app: FastifyInstance, d: HandoverDeps) {
   app.post("/api/handover/confirm", async (req) => {
     const body = parse(HandoverConfirmRequest, req.body)
     const receiver = agentOf(body.receiverId)
+    assertOwner(receiver.owner, caller(req), "agent")
     const ticket = fromTicketJson(body.ticket)
     if (ticket.expiryBlock < (await d.chain.blockNumber())) throw new HttpError(409, "TicketExpired", "This handover code has expired; ask the seller for a new one")
     const r = await onChain(() => d.wallets.queue(receiver.agentId, () => d.chain.confirmHandover(receiver.agentId, ticket)))
@@ -108,6 +111,7 @@ export function registerHandoverRoutes(app: FastifyInstance, d: HandoverDeps) {
   app.post("/api/noshow/report", async (req) => {
     const body = parse(NoShowReportRequest, req.body)
     const buyer = agentOf(body.buyerId)
+    assertOwner(buyer.owner, caller(req), "agent")
     const r = await onChain(() => d.wallets.queue(buyer.agentId, () => d.chain.reportNoShow(buyer.agentId, BigInt(body.lotId), BigInt(body.tokenAmount))))
     return NoShowReportResponse.parse({ tx: r.tx, contestEnds: Number(r.contestEnds) })
   })

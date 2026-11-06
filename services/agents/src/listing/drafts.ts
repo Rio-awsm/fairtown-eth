@@ -24,6 +24,7 @@ export type Draft = {
   advanceBps: number
   tier: "new" | "proven" | "truck"
   createdAt: string
+  owner?: `tg:${string}` // drafted through the Telegram bot (ICR-012): only that Telegram user may confirm it
   confirmed?: { lotId: bigint; tx: Hex; floorPerUnit: bigint; durationBlocks: number }
 }
 

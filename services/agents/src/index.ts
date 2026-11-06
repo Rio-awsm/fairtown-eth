@@ -74,7 +74,9 @@ const recentPrices = async (commodity: string, place: string) => {
     return []
   }
 }
-const listing = { ai, sellers, photos: new PhotoStore(resolve(root, config.STORAGE_DIR)), drafts, references: loadReferences(), recentPrices, ...(swarm ? { swarm } : {}), winnersOf: (id: bigint) => sectors.winners(id) }
+// Seller and walk-in sessions; the listing routes read them for Telegram bot drafts (ICR-012).
+const sessions = new SessionStore()
+const listing = { ai, sellers, sessions, photos: new PhotoStore(resolve(root, config.STORAGE_DIR)), drafts, references: loadReferences(), recentPrices, ...(swarm ? { swarm } : {}), winnersOf: (id: bigint) => sectors.winners(id) }
 let log: (msg: string, extra?: object) => void = () => {}
 
 const ledger = new LedgerWriter({
@@ -244,7 +246,6 @@ clockTimer.unref?.()
 const stopMining = fake ? fake.autoMine(FAKE_BLOCK_MS) : () => {}
 
 // Handover codes live about 5 minutes: 1500 blocks at 200 ms, 150 in fake mode (2 s blocks).
-const sessions = new SessionStore()
 const app = buildApp({
   config,
   chain,
