@@ -7,7 +7,7 @@ import { createAdapters, FAKE_BLOCK_MS } from "./adapters"
 import { parseAiConfig } from "./ai/config"
 import { createGateway } from "./ai/gateway"
 import { LedgerWriter } from "./arkiv/ledgerWriter"
-import { parseConfig } from "./config"
+import { parseConfig, pickupWindowFor } from "./config"
 import { PERSONAS } from "./fixtures/personas"
 import { DraftStore } from "./listing/drafts"
 import { PhotoStore } from "./listing/photos"
@@ -17,6 +17,10 @@ import { AgentRuntime } from "./runtime/runtime"
 import { Wallets } from "./runtime/wallets"
 import { SellerDirectory } from "./sellers"
 import { buildApp } from "./server"
+import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
+import { SectorEngine } from "./sectors/engine"
+import { AUCTION_BLOCKS, AUCTION_BLOCKS_FAKE } from "./sectors/rules"
+import { SECTORS } from "@fairtown/shared"
 import { createLlmStrategy, marketContext } from "./strategies/llm"
 import { ruleStrategy } from "./strategies/rule"
 
@@ -75,9 +79,28 @@ if (fake) {
 }
 await runtime.bootstrap(undefined, PERSONAS.filter((p) => p.seeded?.proven).map((p) => p.id))
 const stopRuntime = runtime.start()
+
+// Fake mode mines a block every 2 s (not 200 ms), so it uses the D-12 durations and windows (D-50 divided by 10).
+const disputes = { chain, wallets, photos: listing.photos, drafts, baseUrl: config.PUBLIC_BASE_URL }
+const sectors = new SectorEngine({
+  chain,
+  wallets,
+  publisher,
+  runtime,
+  references: listing.references,
+  rules: {
+    auctionBlocks: fake ? AUCTION_BLOCKS_FAKE : AUCTION_BLOCKS,
+    pickupBlocks: Object.fromEntries(SECTORS.map((s) => [s, fake ? pickupWindowFor(config, s) / 10n : pickupWindowFor(config, s)])) as Record<(typeof SECTORS)[number], bigint>,
+    relistStepBps: config.RELIST_STEP_BPS,
+    ...(fake ? { arriveBlocks: 3n, travelBlocks: 10n } : {}),
+  },
+  fileDispute: (buyer, lotId, tokens) => fileDispute(disputes, buyer, lotId, tokens, fixtureDisputePhotos(lotId)),
+  onError: (what, err) => log("sector step failed", { what, err: err instanceof Error ? err.message.replace(/https?:\/\/\S+/g, "<url>") : String(err) }),
+})
+const stopSectors = sectors.start()
 const stopMining = fake ? fake.autoMine(FAKE_BLOCK_MS) : () => {}
 
-const app = buildApp({ config, chain, arkiv, ai, listing, runtime })
+const app = buildApp({ config, chain, arkiv, ai, listing, runtime, disputes })
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)
 await app.listen({ port: config.AGENTS_PORT, host: "0.0.0.0" })
 
@@ -85,6 +108,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, async () => {
     stopMining()
     stopRuntime()
+    stopSectors()
     stopLedger()
     await app.close()
     process.exit(0)

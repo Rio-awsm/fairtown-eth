@@ -35,6 +35,8 @@ export class AgentRuntime {
   private readonly spent = new Map<Address, bigint>()
   private readonly bids = new Map<string, { agent: Address; amount: bigint; lotId: bigint }>()
   private readonly lots = new Map<string, TrackedLot>()
+  // Lot-specific mandates: a parent lot's buyer bids on its truck or storage lot. Same executor and guardrails.
+  private readonly duties = new Map<string, Map<Address, MandateT>>()
   private readonly executor: Executor
   private nextWallet = 0
   private timer?: ReturnType<typeof setInterval>
@@ -127,6 +129,16 @@ export class AgentRuntime {
     }
   }
 
+  assignDuty(agentId: Address, lotId: bigint, mandate: MandateT) {
+    const k = lotId.toString()
+    const m = this.duties.get(k) ?? new Map<Address, MandateT>()
+    m.set(lc(agentId), mandate)
+    this.duties.set(k, m)
+  }
+  dutiesFor(lotId: bigint) {
+    return this.duties.get(lotId.toString())
+  }
+
   // ---------- loop ----------
   start(tickMs = 3000) {
     this.unwatch = this.o.chain.watch((e) => this.onEvent(e))
@@ -168,6 +180,7 @@ export class AgentRuntime {
         const key = e.args.lotId.toString()
         const lot = this.lots.get(key)
         if (lot) lot.ended = true
+        this.duties.delete(key)
         for (const ex of this.exposure.values()) {
           const held = ex.onLot.get(key) ?? 0n
           ex.total -= held
@@ -214,18 +227,17 @@ export class AgentRuntime {
           blocksLeft: lot.endBlock - block,
         }
         const key = t.lotId.toString()
-        const observe = (a: RuntimeAgent) => {
+        const duty = this.duties.get(key)
+        const observe = (base: RuntimeAgent) => {
+          const m = duty?.get(base.agentId)
+          const a = m ? { ...base, mandate: m } : base
           const ex = this.ex(a.agentId)
           return { ex, o: { agent: a, budgetLeft: this.budgetLeft(a), exposureOnLot: ex.onLot.get(key) ?? 0n, myBestOnLot: ex.best.get(key) ?? 0n, lot: { ...obsLot } } }
         }
-        const eligible = [...this.agents.values()].filter(
-          (a) =>
-            BIDDERS.has(a.role) &&
-            !a.paused &&
-            a.mandate &&
-            a.currency === obsLot.currency &&
-            a.mandate.commodities.includes(obsLot.commodity as (typeof a.mandate.commodities)[number]),
-        )
+        const eligible = [...this.agents.values()].filter((a) => {
+          const m = duty?.get(a.agentId) ?? a.mandate
+          return BIDDERS.has(a.role) && !a.paused && m && a.currency === obsLot.currency && m.commodities.includes(obsLot.commodity as (typeof m.commodities)[number])
+        })
         const { strategy } = this.o
         const pre = strategy.parallel
           ? await Promise.all(

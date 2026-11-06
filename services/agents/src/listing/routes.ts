@@ -36,7 +36,7 @@ export type ListingDeps = {
   recentPrices?: (commodity: string, place: string) => Promise<bigint[]>
 }
 
-const parse = <T>(schema: z.ZodType<T>, body: unknown): T => {
+export const parse = <T>(schema: z.ZodType<T>, body: unknown): T => {
   const r = schema.safeParse(body)
   if (!r.success) {
     const i = r.error.issues[0]!

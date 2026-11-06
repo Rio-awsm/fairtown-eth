@@ -39,3 +39,13 @@
 - At 60 RPM a busy town can't ask the model for every agent every tick: hard passes skip the model, the cache absorbs repeats, and the rest fall back to rules. Expect a mix of LLM and rule reasons on a crowded lot.
 - The guide's "cache for 2 blocks" assumed 2 s blocks; at 200 ms it is 10 blocks (D-64).
 - First reasons leaned on "I'll bid the reference price" with no symbol; the prompt now asks for the symbol and one deciding fact.
+
+## 2026-11-06, S2 5.2 sectors and handover behaviour
+
+**Built:** `src/sectors/engine.ts` (event queue plus a block scheduler: relists, truck lots on `TransportNeeded`, cold-store lots on `StorageNeeded`, storage requests, scripted pickup and drop-off tickets, compute access, no-show reports, dispute flag), `src/sectors/rules.ts` (D-50 durations, relist floor, truck pick with backhaul, slot-days, family pool split), `src/sectors/compute.ts` (simulated GPU provider, labelled), `src/handover/tickets.ts` (only place seller keys sign), `src/handover/disputes.ts` (`POST /api/disputes`, fixture photos for the scene). Runtime gained lot-only duty mandates so a parent's buyer can bid on its truck or storage lot through the same guardrails. Wired in `index.ts`; fake mode uses the D-12 durations (blocks are 2 s there).
+
+**Gotchas:**
+- Guardrail rate limit (6 bids per agent per minute, D-61) is wall-clock. A buyer busy outbidding on its main lot can be blocked for up to a minute on its own truck or storage lot. Tests use a fake clock; in the demo, watch the Lagos cold-storage chain.
+- Relist counting relies on the child lot's `parentLotId` pointing at the relisted lot (FakeChain does this). Check the real `MarketSettlement.relist` once S1 3.1 lands.
+- On Base Sepolia v1, `openDispute` is `NotImplemented` (D-48 stubs); the route returns 409 `NotImplemented` until S1 4.1.
+- No anvil (Foundry not installed). The guide's anvil chain test is covered by FakeChain scenarios now; a Base Sepolia run of cod, truck, pickup, drop-off needs S1 3.1 contracts.
