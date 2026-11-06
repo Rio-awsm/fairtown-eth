@@ -106,6 +106,7 @@ contract LotFactoryTest is LotFixture {
         LotFactory.LotSpec memory spec = _cod(address(teur));
         spec.commodity = "truck_capacity";
         spec.sector = Keys.TRUCK;
+        spec.seller = _registered("lars.truck", reg.TRUCK());
         (uint256 lotId,) = _list(spec);
         assertEq(LotToken(factory.getLot(lotId).token).name(), "Lot 1 Truck capacity");
     }
@@ -218,6 +219,99 @@ contract LotFactoryTest is LotFixture {
         assertEq(relisted, 2);
         assertEq(factory.getLot(relisted).spec.parentLotId, parent);
         assertTrue(factory.getLot(relisted).token != factory.getLot(parent).token, "new token");
+    }
+
+    // ------------------------------------------------------------------ sectors, roles, parents (S1 3.1, D-62)
+
+    function _specFor(bytes32 sector, address seller, uint256 parent)
+        internal
+        view
+        returns (LotFactory.LotSpec memory s)
+    {
+        s = _cod(address(teur));
+        s.sector = sector;
+        s.seller = seller;
+        s.parentLotId = parent;
+    }
+
+    function _expectWrongRole(bytes32 sector, address seller, uint8 role, address caller) internal {
+        LotFactory.LotSpec memory s = _specFor(sector, seller, 0);
+        vm.expectRevert(abi.encodeWithSelector(LotFactory.WrongRole.selector, seller, sector, role));
+        vm.prank(caller);
+        factory.createLot(s);
+    }
+
+    function test_eachSectorListsWithItsRole() public {
+        address truck = _registered("lars.truck", reg.TRUCK());
+        address store = _registered("fjord.cold_store", reg.STORAGE());
+        address gpu = _registered("northlight.compute", reg.SELLER());
+        (uint256 fish,) = _list(_specFor(Keys.FISH, ingrid, 0));
+        _list(_specFor(Keys.PRODUCE, ingrid, 0));
+        _list(_specFor(Keys.FLOWERS, ingrid, 0));
+        _list(_specFor(Keys.COMPUTE, gpu, 0));
+        (uint256 t,) = _list(_specFor(Keys.TRUCK, truck, fish)); // chained
+        (uint256 d,) = _list(_specFor(Keys.TRUCK, truck, 0)); // standalone (Dallas)
+        (uint256 st,) = _list(_specFor(Keys.STORAGE, store, fish));
+        assertEq(factory.getLot(t).spec.parentLotId, fish);
+        assertEq(factory.getLot(d).spec.parentLotId, 0);
+        assertEq(factory.getLot(st).spec.parentLotId, fish);
+        // An operator listing for a seller is held to the seller's role, not its own.
+        vm.prank(op);
+        factory.createLot(_specFor(Keys.TRUCK, truck, fish));
+    }
+
+    function test_RevertWhen_sellerRoleDoesNotMatchSector() public {
+        uint8 tr = reg.TRUCK();
+        uint8 sto = reg.STORAGE();
+        uint8 sel = reg.SELLER();
+        address truck = _registered("lars.truck", tr);
+        address store = _registered("fjord.cold_store", sto);
+        _expectWrongRole(Keys.TRUCK, ingrid, sel, ingrid);
+        _expectWrongRole(Keys.STORAGE, ingrid, sel, ingrid);
+        _expectWrongRole(Keys.FISH, truck, tr, truck);
+        _expectWrongRole(Keys.COMPUTE, truck, tr, truck);
+        _expectWrongRole(Keys.STORAGE, truck, tr, truck);
+        _expectWrongRole(Keys.PRODUCE, store, sto, store);
+        _expectWrongRole(Keys.TRUCK, store, sto, store);
+        _expectWrongRole(Keys.COMPUTE, store, sto, op); // operator cannot bypass it
+    }
+
+    function test_RevertWhen_badParent() public {
+        address truck = _registered("lars.truck", reg.TRUCK());
+        address store = _registered("fjord.cold_store", reg.STORAGE());
+        address gpu = _registered("northlight.compute", reg.SELLER());
+        (uint256 fish,) = _list(_specFor(Keys.FISH, ingrid, 0));
+        (uint256 compute,) = _list(_specFor(Keys.COMPUTE, gpu, 0));
+        (uint256 t,) = _list(_specFor(Keys.TRUCK, truck, fish));
+        (uint256 st,) = _list(_specFor(Keys.STORAGE, store, fish));
+
+        // Only truck and storage lots may name a parent.
+        bytes32[4] memory unchained = [Keys.FISH, Keys.PRODUCE, Keys.FLOWERS, Keys.COMPUTE];
+        for (uint256 i; i < unchained.length; i++) {
+            address who = unchained[i] == Keys.COMPUTE ? gpu : ingrid;
+            LotFactory.LotSpec memory s = _specFor(unchained[i], who, fish);
+            vm.expectRevert(abi.encodeWithSelector(LotFactory.ParentNotAllowed.selector, unchained[i]));
+            vm.prank(who);
+            factory.createLot(s);
+        }
+        // The parent must be goods that move: not a truck, storage or compute lot.
+        uint256[3] memory badParents = [t, st, compute];
+        bytes32[3] memory badSectors = [Keys.TRUCK, Keys.STORAGE, Keys.COMPUTE];
+        for (uint256 i; i < badParents.length; i++) {
+            LotFactory.LotSpec memory s = _specFor(Keys.TRUCK, truck, badParents[i]);
+            vm.expectRevert(abi.encodeWithSelector(LotFactory.BadParent.selector, badParents[i], badSectors[i]));
+            vm.prank(truck);
+            factory.createLot(s);
+            s = _specFor(Keys.STORAGE, store, badParents[i]);
+            vm.expectRevert(abi.encodeWithSelector(LotFactory.BadParent.selector, badParents[i], badSectors[i]));
+            vm.prank(store);
+            factory.createLot(s);
+        }
+        // Unknown parent still reports UnknownParent first.
+        LotFactory.LotSpec memory u = _specFor(Keys.TRUCK, truck, 99);
+        vm.expectRevert(abi.encodeWithSelector(LotFactory.UnknownParent.selector, 99));
+        vm.prank(truck);
+        factory.createLot(u);
     }
 
     function test_RevertWhen_adminCallsByStranger() public {

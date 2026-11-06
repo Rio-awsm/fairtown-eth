@@ -105,6 +105,13 @@ abstract contract LotFixture is Test {
         });
     }
 
+    /// Registers a fresh agent with `role`. The role is an argument, so read reg.X() before calling (prank gotcha).
+    function _registered(string memory name, uint8 role) internal returns (address who) {
+        who = makeAddr(name);
+        vm.prank(op);
+        reg.register(who, role, name);
+    }
+
     function _list(LotFactory.LotSpec memory spec) internal returns (uint256 lotId, IContinuousClearingAuction a) {
         vm.prank(spec.seller);
         (uint256 id, address auction,) = factory.createLot(spec);

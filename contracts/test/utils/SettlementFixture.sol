@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import {Vm} from "forge-std/Vm.sol";
 import {IContinuousClearingAuction} from "continuous-clearing-auction/interfaces/IContinuousClearingAuction.sol";
 import {LotFixture, IERC20Like} from "./LotFixture.sol";
 import {LotFactory} from "../../src/LotFactory.sol";
@@ -36,6 +37,12 @@ abstract contract SettlementFixture is LotFixture {
     address internal lars; // truck seller (carrier)
     uint256 internal larsKey;
     uint256 internal ingridKey;
+    address internal maya; // Dallas truck owner, standalone lots (S1 3.1)
+    uint256 internal mayaKey;
+    address internal vault; // cold store, STORAGE role (S1 3.1)
+    uint256 internal vaultKey;
+    address internal northlight; // GPU provider, lists compute as a SELLER (S1 3.1, D-62)
+    uint256 internal northlightKey;
     bool internal withResolver = true;
 
     function _settlementAddress() internal view override returns (address) {
@@ -66,9 +73,18 @@ abstract contract SettlementFixture is LotFixture {
         assertEq(address(ms), settlement, "predicted settlement address");
         (, ingridKey) = makeAddrAndKey("ingrid.seller");
         (lars, larsKey) = makeAddrAndKey("lars.truck");
+        (maya, mayaKey) = makeAddrAndKey("maya.truck");
+        (vault, vaultKey) = makeAddrAndKey("fjord.cold_store");
+        (northlight, northlightKey) = makeAddrAndKey("northlight.compute");
         uint8 truckRole = reg.TRUCK(); // read before the prank (NOTES: vm.prank gotcha)
-        vm.prank(op);
+        uint8 storageRole = reg.STORAGE();
+        uint8 sellerRole = reg.SELLER();
+        vm.startPrank(op);
         reg.register(lars, truckRole, "lars.truck");
+        reg.register(maya, truckRole, "maya.truck");
+        reg.register(vault, storageRole, "fjord.cold_store");
+        reg.register(northlight, sellerRole, "northlight.compute");
+        vm.stopPrank();
         for (uint256 i; i < buyers.length; i++) {
             vm.prank(buyers[i]);
             teur.approve(PERMIT2, type(uint256).max);
@@ -140,5 +156,21 @@ abstract contract SettlementFixture is LotFixture {
 
     function _bal(address token, address who) internal view returns (uint256) {
         return IERC20Like(token).balanceOf(who);
+    }
+
+    /// Index of the first log with event `sel` whose first indexed topic is `lotId`.
+    function _indexOf(Vm.Log[] memory logs, bytes32 sel, uint256 lotId) internal pure returns (uint256) {
+        for (uint256 i; i < logs.length; i++) {
+            if (logs[i].topics.length > 1 && logs[i].topics[0] == sel && uint256(logs[i].topics[1]) == lotId) {
+                return i;
+            }
+        }
+        revert("event not found");
+    }
+
+    function _assertNoEvent(Vm.Log[] memory logs, bytes32 sel) internal pure {
+        for (uint256 i; i < logs.length; i++) {
+            require(logs[i].topics.length == 0 || logs[i].topics[0] != sel, "unexpected event");
+        }
     }
 }

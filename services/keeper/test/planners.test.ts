@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { planCheckpoints } from "../src/checkpointer"
-import { planCarriers, planNoShows, planReleases } from "../src/deadlines"
+import { goodsParentOf, planCarriers, planNoShows, planReleases } from "../src/deadlines"
 import { planSettles } from "../src/settler"
 import { reportKey } from "../src/state"
 import { FakeReads, KeeperState, addr, ctx, lot, sale } from "./fakes"
@@ -80,12 +80,52 @@ describe("planCarriers", () => {
     state.settled.delete(1n)
     expect(planCarriers(state, ctx(r, 1_000n))).toHaveLength(0)
   })
-  it("never assigns a relisted truck lot to the old truck lot", () => {
+  it("plans one carrier per goods lot, never a truck lot as the parent", () => {
     const { state, r } = chained()
-    lot(state, { lotId: 3n, sector: "truck", parentLotId: 2n })
+    lot(state, { lotId: 3n, sector: "truck", parentLotId: 2n }) // relist of truck lot 2
     state.settled.set(3n, { soldUnits: 10n, held: 1n, pickupDeadline: 4_000n })
-    const keys = planCarriers(state, ctx(r, 1_000n)).map((a) => a.key)
-    expect(keys).toEqual(["carrier:1"])
+    const plan = planCarriers(state, ctx(r, 1_000n))
+    expect(plan.map((a) => a.key)).toEqual(["carrier:1"])
+    expect(plan[0]!.call.args).toEqual([1n, 2n])
+  })
+  it("assigns a relisted truck lot to the goods lot when the first truck lot did not sell (D-61)", async () => {
+    const { state, r } = chained()
+    state.settled.set(2n, { soldUnits: 0n, held: 0n, pickupDeadline: 0n }) // truck lot 2: no bids
+    lot(state, { lotId: 3n, sector: "truck", parentLotId: 2n }) // relist 2 -> 3
+    lot(state, { lotId: 4n, sector: "truck", parentLotId: 3n }) // relist 3 -> 4
+    state.settled.set(4n, { soldUnits: 400n, held: 1n, pickupDeadline: 4_000n })
+    r.sales.set(4n, sale({ sector: "truck", parentLotId: 1n })) // settlement resolved the goods lot
+    const [a, ...rest] = planCarriers(state, ctx(r, 1_000n))
+    expect(rest).toHaveLength(0)
+    expect(a!.call.args).toEqual([1n, 4n])
+    expect(await a!.stillNeeded()).toBe(true)
+    // If the chain onchain disagrees (old contract without D-61), the keeper does not send.
+    r.sales.set(4n, sale({ sector: "truck", parentLotId: 3n }))
+    expect(await a!.stillNeeded()).toBe(false)
+  })
+  it("goodsParentOf follows truck relists, and gives 0 for standalone and undefined for unknown chains", () => {
+    const state = new KeeperState()
+    lot(state, { lotId: 1n, sector: "fish" })
+    lot(state, { lotId: 2n, sector: "truck", parentLotId: 1n })
+    lot(state, { lotId: 3n, sector: "truck", parentLotId: 2n })
+    lot(state, { lotId: 4n, sector: "truck", parentLotId: 0n })
+    lot(state, { lotId: 5n, sector: "truck", parentLotId: 4n })
+    lot(state, { lotId: 6n, sector: "truck", parentLotId: 99n })
+    expect(goodsParentOf(state, 2n)).toBe(1n)
+    expect(goodsParentOf(state, 3n)).toBe(1n)
+    expect(goodsParentOf(state, 4n)).toBe(0n)
+    expect(goodsParentOf(state, 5n)).toBe(0n)
+    expect(goodsParentOf(state, 6n)).toBeUndefined()
+    expect(goodsParentOf(state, 42n)).toBeUndefined()
+  })
+  it("never plans carriers for storage or compute lots", () => {
+    const state = new KeeperState()
+    const r = new FakeReads()
+    lot(state, { lotId: 1n, sector: "fish" })
+    lot(state, { lotId: 2n, sector: "storage", parentLotId: 1n })
+    lot(state, { lotId: 3n, sector: "compute" })
+    for (const id of [1n, 2n, 3n]) state.settled.set(id, { soldUnits: 5n, held: 1n, pickupDeadline: 4_000n })
+    expect(planCarriers(state, ctx(r, 1_000n))).toHaveLength(0)
   })
   it("skips unsold truck lots, standalone truck lots and parents that already have a carrier", async () => {
     const { state, r } = chained()
@@ -154,5 +194,17 @@ describe("planReleases", () => {
     expect(await out[0]!.stillNeeded()).toBe(false)
     r.sales.set(1n, sale({ complete: true })) // every buyer picked up
     expect(await out[0]!.stillNeeded()).toBe(false)
+  })
+  it("uses each lot's own pickup deadline: a GPU lot (600-block window) releases before a fish lot", () => {
+    const state = new KeeperState()
+    const r = new FakeReads()
+    lot(state, { lotId: 1n, sector: "fish" })
+    lot(state, { lotId: 2n, sector: "compute" })
+    state.settled.set(1n, { soldUnits: 100n, held: 1n, pickupDeadline: 550n + 3_000n })
+    state.settled.set(2n, { soldUnits: 100n, held: 1n, pickupDeadline: 550n + 600n })
+    const at = (head: bigint) => planReleases(state, ctx(r, head)).map((a) => a.key)
+    expect(at(550n + 600n + 3_000n)).toEqual([])
+    expect(at(550n + 600n + 3_001n)).toEqual(["release:2"])
+    expect(at(550n + 3_000n + 3_001n)).toEqual(["release:1", "release:2"])
   })
 })

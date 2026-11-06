@@ -5,8 +5,9 @@
  * only checks that they exist. A fork of Base Sepolia was tried first and failed 2 runs in 6 on RPC latency.
  * Deploys v1 with throwaway keys into deployments/.test-keeper-<pid>/ (gitignored), then:
  * a 4-bid auction with keeper checkpoints, settle, exits (both kinds) and claims; a zero-bid lot; a chained truck lot
- * and carrier assignment; a no-show finalize; a release after the report window; and a second keeper rebuilt from
- * scratch that must send nothing. Needs Foundry (anvil, forge).
+ * and carrier assignment; a no-show finalize; a release after the report window; S1 3.1 market extensions (a relist
+ * chain at decaying floors, a relisted truck lot assigned as carrier, a GPU lot and a storage lot with no carrier);
+ * and a second keeper rebuilt from scratch that must send nothing. Needs Foundry (anvil, forge).
  */
 import { execFile, spawn, type ChildProcess } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs"
@@ -106,6 +107,8 @@ describe("keeper on a local anvil (S1 2.1)", () => {
   const treasury = k()
   const seller = k()
   const trucker = k()
+  const gpu = k() // compute provider, lists as a SELLER (D-62)
+  const store = k() // cold store, STORAGE role
   const buyers = { A: k(), B: k(), C: k(), D: k() }
   const cap = captureLogger(SECRETS)
   let keeper: Keeper
@@ -157,7 +160,11 @@ describe("keeper on a local anvil (S1 2.1)", () => {
         ],
       }),
     )
-    const [ev] = parseEventLogs({ abi: lotFactoryAbi, logs: r.logs, eventName: "LotListed" })
+    return listed(r.logs)
+  }
+  /** Reads LotListed from a receipt and gives every buyer a Permit2 allowance for the new auction. */
+  async function listed(logs: Parameters<typeof parseEventLogs>[0]["logs"]) {
+    const [ev] = parseEventLogs({ abi: lotFactoryAbi, logs, eventName: "LotListed" })
     const a = ev!.args
     for (const b of Object.values(buyers)) {
       await send(
@@ -170,6 +177,17 @@ describe("keeper on a local anvil (S1 2.1)", () => {
       )
     }
     return { lotId: a.lotId, auction: a.auction, token: a.token, endBlock: BigInt(a.endBlock) }
+  }
+  async function relist(by: PrivateKeyAccount, lotId: bigint, floorPerUnit: bigint, durationBlocks: bigint) {
+    const r = await send(
+      wallet(by).writeContract({
+        address: C().MarketSettlement as Address,
+        abi: marketSettlementAbi,
+        functionName: "relist",
+        args: [lotId, floorPerUnit, durationBlocks],
+      }),
+    )
+    return listed(r.logs)
   }
   async function bid(b: PrivateKeyAccount, auction: Address, perUnit: bigint, amount: bigint) {
     const tick = await pub.readContract({
@@ -208,7 +226,17 @@ describe("keeper on a local anvil (S1 2.1)", () => {
     }
     await test().setCode({ address: dep_PERMIT2, bytecode: PERMIT2_CODE })
     for (const t of CIRCLE_TEST_TOKENS) await test().setCode({ address: t, bytecode: "0x00" }) // exists, unused
-    for (const a of [deployer, operator, keeperAcc, restartedAcc, seller, trucker, ...Object.values(buyers)]) {
+    for (const a of [
+      deployer,
+      operator,
+      keeperAcc,
+      restartedAcc,
+      seller,
+      trucker,
+      gpu,
+      store,
+      ...Object.values(buyers),
+    ]) {
       await test().setBalance({ address: a.address, value: 10n ** 19n })
     }
     outDir = join(ROOT, "deployments", `.test-keeper-${process.pid}`)
@@ -429,6 +457,120 @@ describe("keeper on a local anvil (S1 2.1)", () => {
     expect(cap.text()).toContain(`releaseExpired lot ${A.lotId}`)
   }, 300_000)
 
+  // ------------------------------------------------------------------ S1 3.1 market extensions
+
+  let G: Awaited<ReturnType<typeof list>>
+  let G2: Awaited<ReturnType<typeof list>>
+  let T2: Awaited<ReturnType<typeof list>>
+  let GPU: Awaited<ReturnType<typeof list>>
+  let ST: Awaited<ReturnType<typeof list>>
+
+  it("3.1: settles a relist chain and assigns a relisted truck lot as the goods lot's carrier", async () => {
+    // Cod 600 kg at 9.00 sells 30% (180 kg), the rest is relisted at 7.65 and sells.
+    G = await list(seller, { floorPerUnit: 9_000_000n, durationBlocks: 40n })
+    await bid(buyers.A, G.auction, 18_000_000n, 1_620_000_000n)
+    await mineTo(G.endBlock)
+    await keeper.runUntilIdle()
+    expect((await sale(G.lotId)).settled).toBe(true)
+    G2 = await relist(seller, G.lotId, 7_650_000n, 60n)
+    await bid(buyers.B, G2.auction, 15_300_000n, 3_213_000_000n)
+
+    // A truck lot for the relisted goods lot gets no bids; the trucker relists it lower and it sells.
+    const T1 = await list(trucker, {
+      sector: toKey("truck"),
+      market: toKey("freight_yard"),
+      commodity: toKey("truck_capacity"),
+      floorPerUnit: 100_000n,
+      durationBlocks: 15n,
+      parentLotId: G2.lotId,
+    })
+    await mineTo(T1.endBlock)
+    await keeper.runUntilIdle()
+    const t1 = await sale(T1.lotId)
+    expect(t1.settled && t1.soldTokens === 0n).toBe(true)
+    T2 = await relist(trucker, T1.lotId, 80_000n, 15n)
+    await bid(buyers.B, T2.auction, 160_000n, 32_000_000n)
+    await mineTo(G2.endBlock > T2.endBlock ? G2.endBlock : T2.endBlock)
+    await keeper.runUntilIdle()
+
+    const g2 = await sale(G2.lotId)
+    expect(g2.settled && g2.soldTokens > 0n).toBe(true)
+    expect(g2.unsold).toBeLessThan(10n ** 12n) // the rest sold, dust only (D-63)
+    expect((await sale(T2.lotId)).parentLotId).toBe(G2.lotId) // resolved onchain (D-61)
+    expect(g2.carrier.toLowerCase()).toBe(trucker.address.toLowerCase())
+    expect(cap.text()).toContain(`assignCarrier lot ${G2.lotId} truck lot ${T2.lotId}`)
+    expect(cap.text()).not.toContain(`assignCarrier lot ${T1.lotId}`)
+  }, 300_000)
+
+  it("3.1: GPU and storage lots settle, exit, claim and release, with no carrier", async () => {
+    const reg = { address: C().AgentRegistry as Address, abi: agentRegistryAbi } as const
+    await send(
+      wallet(operator).writeContract({
+        ...reg,
+        functionName: "register",
+        args: [gpu.address, ROLES.SELLER, "test.compute"],
+      }),
+    )
+    await send(
+      wallet(operator).writeContract({
+        ...reg,
+        functionName: "register",
+        args: [store.address, ROLES.STORAGE, "test.cold_store"],
+      }),
+    )
+    GPU = await list(gpu, {
+      sector: toKey("compute"),
+      market: toKey("compute_yard"),
+      commodity: toKey("gpu_hour"),
+      grade: toKey("gpu_verified"),
+      place: toKey("any_dc"),
+      qty: 200n,
+      floorPerUnit: 1_200_000n,
+      durationBlocks: 30n,
+      pickupWindowBlocks: 30n, // short window, like PICKUP_COMPUTE
+    })
+    ST = await list(store, {
+      sector: toKey("storage"),
+      market: toKey("cold_vault"),
+      commodity: toKey("storage_slot"),
+      grade: toKey("na"),
+      qty: 10n,
+      floorPerUnit: 2_000_000n,
+      durationBlocks: 30n,
+      parentLotId: G.lotId,
+    })
+    await bid(buyers.D, GPU.auction, 2_400_000n, 120_000_000n)
+    await bid(buyers.A, ST.auction, 4_000_000n, 6_000_000n)
+    await mineTo(GPU.endBlock > ST.endBlock ? GPU.endBlock : ST.endBlock)
+    await keeper.runUntilIdle()
+    for (const id of [GPU.lotId, ST.lotId]) {
+      const s = await sale(id)
+      expect(s.settled && s.soldTokens > 0n).toBe(true)
+      expect(s.carrier).toBe("0x0000000000000000000000000000000000000000")
+      expect(cap.text()).toContain(`claimTokensBatch lot ${id}`)
+    }
+    const gpuDeadline = (await sale(GPU.lotId)).pickupDeadline
+    const stDeadline = (await sale(ST.lotId)).pickupDeadline
+    // 30 vs 100 blocks of pickup; the two settles land a block or two apart.
+    expect(stDeadline - gpuDeadline).toBeGreaterThanOrEqual(65n)
+    expect(stDeadline - gpuDeadline).toBeLessThanOrEqual(75n)
+
+    // The GPU lot releases on its own short clock, before the others.
+    await mineTo(gpuDeadline + WINDOWS.report + 1n)
+    await keeper.runUntilIdle()
+    expect((await sale(GPU.lotId)).heldRemaining).toBe(0n)
+    expect((await sale(ST.lotId)).heldRemaining).toBeGreaterThan(0n)
+
+    let last = 0n
+    for (const l of [G, G2, T2, ST]) {
+      const d = (await sale(l.lotId)).pickupDeadline
+      if (d > last) last = d
+    }
+    await mineTo(last + WINDOWS.report + 1n)
+    await keeper.runUntilIdle()
+    for (const l of [G, G2, T2, GPU, ST]) expect((await sale(l.lotId)).heldRemaining).toBe(0n)
+  }, 300_000)
+
   it("running twice causes no reverts: a fresh keeper rebuilt from the chain sends nothing", async () => {
     expect(queue.stats.reverted).toBe(0)
     expect(queue.stats.failed).toBe(0)
@@ -437,7 +579,7 @@ describe("keeper on a local anvil (S1 2.1)", () => {
     const k2 = new Keeper({ pub, queue: q2, dep, log: cap.log, checkpointEvery: CHECKPOINT_EVERY, secrets: SECRETS })
     expect(await k2.runUntilIdle()).toBe(0)
     expect(q2.stats).toMatchObject({ sent: 0, reverted: 0, failed: 0 })
-    expect(k2.state.lots.size).toBe(3)
+    expect(k2.state.lots.size).toBe(9) // A, Z, T + G, G2, T1, T2, GPU, ST
     for (const s of SECRETS) if (s) expect(cap.text()).not.toContain(s)
   }, 300_000)
 })
