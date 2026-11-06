@@ -1,0 +1,70 @@
+{
+  "chain": "fake (FakeChain, 200 ms blocks)",
+  "agents": 50,
+  "openLots": 6,
+  "minutes": 10,
+  "blocks": "2984",
+  "lotsListed": 38,
+  "lotsSettled": 32,
+  "bids": 478,
+  "writes": {
+    "attempted": 1207,
+    "ok": 1207,
+    "failed": 0,
+    "simulatedRejects": 0,
+    "nonceErrors": 0,
+    "byMethod": {
+      "register": {
+        "ok": 50,
+        "failed": 0
+      },
+      "sendEth": {
+        "ok": 50,
+        "failed": 0
+      },
+      "mint": {
+        "ok": 37,
+        "failed": 0
+      },
+      "createLot": {
+        "ok": 47,
+        "failed": 0
+      },
+      "ensurePermit2": {
+        "ok": 478,
+        "failed": 0
+      },
+      "submitBid": {
+        "ok": 478,
+        "failed": 0
+      },
+      "confirmHandover": {
+        "ok": 63,
+        "failed": 0
+      },
+      "requestStorage": {
+        "ok": 3,
+        "failed": 0
+      },
+      "relist": {
+        "ok": 1,
+        "failed": 0
+      }
+    }
+  },
+  "txSuccess": 1,
+  "relay": {
+    "received": 9669,
+    "p50Ms": 0,
+    "p95Ms": 2,
+    "maxMs": 10,
+    "bridgeErrors": 0
+  },
+  "failures": [],
+  "thresholds": {
+    "txSuccess": 0.99,
+    "nonceErrors": 0,
+    "relayP95Ms": 1000
+  },
+  "pass": true
+}

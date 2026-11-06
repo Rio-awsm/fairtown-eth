@@ -11,7 +11,9 @@
     "gen:fixtures": "tsx scripts/gen-fixtures.ts",
     "test:live": "vitest run test/live",
     "fund:arkiv": "tsx scripts/fund-arkiv.ts",
-    "eval": "tsx scripts/eval.ts"
+    "eval": "tsx scripts/eval.ts",
+    "load": "tsx scripts/load.ts",
+    "record": "tsx scripts/record.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.85",

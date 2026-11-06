@@ -67,3 +67,15 @@
 - Walk-in Permit2 approval happens on the first bid (inside `ensurePermit2`), not at join, so the first bid on Base Sepolia takes two extra transactions (about 1 s).
 - The ticket QR fallback URL puts the code in the fragment (`#t=`), so it never reaches a server or tunnel log.
 - Add to `.env`: `SELLER_PIN` (4+ chars), and `TRUST_PROXY=127.0.0.1` when cloudflared runs on this machine. Without `TRUST_PROXY` every phone behind the tunnel shares one IP and the walk-in limit (3 per 10 min) applies to all of them.
+
+## 2026-11-06, S2 6.2 director, load test, recorded day
+
+**Built:** `src/director/` (seven scenes plus `full_day` as block-offset scripts, FakeChain and CRE-bridge signal sinks, `POST /api/director/scenario`, `GET /api/director/status`), `src/load/loadTest.ts` with `pnpm -F agents load` (report in `eval/load-report.{json,md}`), `src/load/record.ts` with `pnpm -F agents record` (writes `packages/shared/fixtures/day.recorded.jsonl`, ICR-007).
+
+**Results:** 10 min, 50 agents, 6 lot kinds kept open on FakeChain at 200 ms blocks: 1,207 writes, 100% success, 0 nonce errors, relay p95 2 ms over 9,669 envelopes. Recording: 516 envelopes over 1,200 blocks, every lot ends `paid_in_full` (10) or `refunded` (2).
+
+**Caveats:**
+- FakeChain cannot produce nonce errors or RPC failures, so this load run proves the runtime, engine and relay under load, not Base Sepolia. A real-chain load needs 50 funded wallets (~0.025 ETH) and the public-RPC rate limits in mind.
+- At D-50 durations on Base Sepolia (200 ms blocks), `full_day` lasts far longer than the 4-minute demo: the no-show scene alone needs the 3000-block pickup window plus the 600-block contest window (~12 min). For the video, play `day.recorded.jsonl` with relay replay, or run single scenes.
+- Director routes have no auth. On the public tunnel, anyone could start scenes (at most 3 at once, one per name). Keep `/control` presenter-only.
+- `npx vitest run` inside `services/relay` also runs the opt-in live tests; use `pnpm -F relay test` for unit tests.

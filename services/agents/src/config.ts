@@ -46,6 +46,8 @@ export const AgentsConfig = z.object({
   TRUST_PROXY: z.string().optional(), // IP/CIDR of the tunnel (e.g. 127.0.0.1), never "true"
   WALKIN_BUDGET: z.string().regex(/^\d+(\.\d{1,6})?$/).default("500"),
   WALKIN_CAP: z.coerce.number().int().positive().default(50),
+  CRE_BRIDGE_PORT: port.default(8789),
+  CRE_BRIDGE_TOKEN: z.string().optional(),
   TREASURY_ADDRESS: z
     .string()
     .regex(/^0x[0-9a-fA-F]{40}$/)

@@ -21,6 +21,8 @@ import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
 import { SectorEngine } from "./sectors/engine"
 import { MarketState, moveOnSignal } from "./market/state"
 import { SessionStore } from "./handover/sessions"
+import { creBridgeSignals, Director, fakeSignals } from "./director/director"
+import { loadCalendar } from "./humans/routes"
 import { findReference } from "./listing/references"
 import { AUCTION_BLOCKS, AUCTION_BLOCKS_FAKE } from "./sectors/rules"
 import { SECTORS } from "@fairtown/shared"
@@ -118,6 +120,16 @@ const sectors = new SectorEngine({
   onError: (what, err) => log("sector step failed", { what, err: err instanceof Error ? err.message.replace(/https?:\/\/\S+/g, "<url>") : String(err) }),
 })
 const stopSectors = sectors.start()
+
+// Scenes: FakeChain gets signals directly; a real chain goes through S1's CRE bridge (S1 4.5) when it is up.
+const director = new Director({
+  chain,
+  engine: sectors,
+  signals: fake ? fakeSignals(fake) : creBridgeSignals(`http://localhost:${config.CRE_BRIDGE_PORT}`, config.CRE_BRIDGE_TOKEN ?? ""),
+  signalBlocks: fake ? 300n : 3000n,
+  festivals: loadCalendar().events,
+})
+const stopDirector = director.begin()
 const stopMining = fake ? fake.autoMine(FAKE_BLOCK_MS) : () => {}
 
 // Handover codes live about 5 minutes: 1500 blocks at 200 ms, 150 in fake mode (2 s blocks).
@@ -133,6 +145,7 @@ const app = buildApp({
   market: { market, arkiv, chain, references: listing.references, sellers, params: protocolParams(config) },
   handover: { chain, wallets, runtime, sellers, sessions, photos: listing.photos, drafts, config, ticketValidBlocks: fake ? 150n : 1500n },
   humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config },
+  director,
 })
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)
 await app.listen({ port: config.AGENTS_PORT, host: "0.0.0.0" })
@@ -143,6 +156,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     stopRuntime()
     stopSectors()
     stopMarket()
+    stopDirector()
     stopLedger()
     await app.close()
     process.exit(0)

@@ -142,6 +142,13 @@ export class SectorEngine {
     return this.list(this.addr(p.id), { sector: "compute", market: "compute_yard", commodity: "gpu_hour", grade: "gpu_verified", place: p.place, currency: p.currency, qty: hours, floorPerUnit, parentLotId: 0n }, `${hours} GPU hours (${SIMULATED_LABEL})`)
   }
 
+  // A persona lists goods (director scenes, load test). Durations and pickup windows come from the sector rules.
+  async listFor(personaId: string, s: Omit<LotSpecInput, "durationBlocks" | "pickupWindowBlocks" | "seller" | "metadataURI" | "parentLotId">, reason: string) {
+    const seller = this.addr(personaId)
+    if (seller === ZERO) throw new Error(`No persona ${personaId}`)
+    return this.list(seller, { ...s, parentLotId: 0n }, reason)
+  }
+
   // ---------- events ----------
   private async onEvent(e: ChainEvent) {
     switch (e.eventName) {
