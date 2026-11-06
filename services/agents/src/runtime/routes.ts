@@ -3,6 +3,7 @@ import { AgentView, CreateBuyerRequest, CreateBuyerResponse, PatchAgentRequest }
 import type { FastifyInstance } from "fastify"
 import type { Address } from "viem"
 import type { z } from "zod"
+import { assertOwner, caller } from "../callers"
 import { HttpError } from "../listing/routes"
 import type { AgentRuntime } from "./runtime"
 
@@ -28,6 +29,7 @@ export function registerAgentRoutes(app: FastifyInstance, runtime: AgentRuntime)
 
   app.patch<{ Params: { agentId: string } }>("/api/agents/:agentId", async (req) => {
     const body = parse(PatchAgentRequest, req.body)
+    assertOwner(runtime.agents.get(req.params.agentId.toLowerCase() as Address)?.owner, caller(req), "agent")
     if (!runtime.patch(req.params.agentId as Address, body)) throw new HttpError(404, "unknown_agent", `No agent ${req.params.agentId}`)
     return viewOr404(req.params.agentId)
   })
@@ -36,6 +38,7 @@ export function registerAgentRoutes(app: FastifyInstance, runtime: AgentRuntime)
   app.post("/api/buyers", async (req) => {
     const body = parse(CreateBuyerRequest, req.body)
     if (!["BUYER", "SOCIETY"].includes(body.role)) throw new HttpError(400, "bad_role", "role must be BUYER or SOCIETY")
+    const who = caller(req)
     const budget = BigInt(body.budget)
     if (budget <= 0n || budget > MAX_CUSTOM_BUDGET) throw new HttpError(400, "bad_budget", "budget must be between 0 and 50,000")
     const agent = runtime.addAgent({
@@ -47,6 +50,7 @@ export function registerAgentRoutes(app: FastifyInstance, runtime: AgentRuntime)
       currency: body.currency,
       budget,
       mandate: body.mandate,
+      ...(who.owner ? { owner: who.owner } : {}),
     })
     await runtime.bootstrap([agent])
     return CreateBuyerResponse.parse({ agentId: agent.agentId, address: agent.agentId })

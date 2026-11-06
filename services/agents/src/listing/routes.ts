@@ -7,7 +7,9 @@ import type { AiGateway } from "../ai/gateway"
 import type { SwarmStore } from "../addons/swarm/store"
 import { verificationOf } from "../ai/verification"
 import type { ChainAdapter, LotState } from "../chain/types"
+import { assertOwner, caller } from "../callers"
 import { pickupWindowFor, type AgentsConfig } from "../config"
+import { bearer, type SessionStore } from "../handover/sessions"
 import type { SellerDirectory } from "../sellers"
 import { RUBRIC } from "./catalog"
 import type { Draft, DraftStore } from "./drafts"
@@ -38,6 +40,7 @@ export type ListingDeps = {
   recentPrices?: (commodity: string, place: string) => Promise<bigint[]>
   swarm?: SwarmStore // ADDON_SWARM: copy photos to Swarm; local disk stays the primary copy
   winnersOf?: (lotId: bigint) => Promise<Array<{ buyer: string; tokenAmount: bigint }>> // buyers still holding lot tokens (D-38)
+  sessions?: Pick<SessionStore, "get"> // bot drafts need the seller's session (ICR-012); without it bot drafts are refused
 }
 
 export const parse = <T>(schema: z.ZodType<T>, body: unknown): T => {
@@ -163,6 +166,13 @@ export function registerListingRoutes(app: FastifyInstance, deps: ListingDeps) {
     const body = parse(DraftRequest, req.body)
     const seller = deps.sellers.get(body.sellerId)
     if (!seller) throw new HttpError(404, "unknown_seller", `No seller ${body.sellerId}`)
+    // Through the Telegram bot a user drafts only as the seller they signed in as (PIN session); the draft is theirs.
+    const who = caller(req)
+    if (who.via === "bot") {
+      const s = deps.sessions?.get(bearer(req.headers.authorization), "seller")
+      if (!s) throw new HttpError(401, "no_session", "Sign in as the seller first")
+      if (s.subject !== seller.id) throw new HttpError(403, "wrong_seller", "This session belongs to another seller")
+    }
     let text = body.text
     let transcript: string | undefined
     if (!text) {
@@ -210,6 +220,7 @@ export function registerListingRoutes(app: FastifyInstance, deps: ListingDeps) {
       floorBasis: floor?.basis ?? ["No reference or recent clears; set your own floor"],
       advanceBps,
       tier,
+      ...(who.owner ? { owner: who.owner } : {}),
     })
     return { ...draftView(draft), floorBasis: draft.floorBasis }
   })
@@ -218,6 +229,7 @@ export function registerListingRoutes(app: FastifyInstance, deps: ListingDeps) {
     const body = parse(ConfirmRequest, req.body)
     const d = deps.drafts.get(body.draftId)
     if (!d) throw new HttpError(404, "unknown_draft", `No draft ${body.draftId}`)
+    assertOwner(d.owner, caller(req), "draft")
     if (d.confirmed) throw new HttpError(409, "already_listed", `Draft ${d.draftId} is already lot ${d.confirmed.lotId}`)
     const floorPerUnit = BigInt(body.floorPerUnit)
     if (floorPerUnit < 1_000n) throw new HttpError(400, "floor_too_low", "Floor must be at least 0.001 per unit")

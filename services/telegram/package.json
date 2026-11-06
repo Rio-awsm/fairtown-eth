@@ -12,6 +12,7 @@
   "dependencies": {
     "@fairtown/shared": "workspace:*",
     "grammy": "1.46.0",
+    "qrcode": "1.5.4",
     "zod": "catalog:"
   },
   "devDependencies": {

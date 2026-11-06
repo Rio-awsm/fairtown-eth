@@ -29,6 +29,7 @@ export type RuntimeAgent = {
   walletIndex: number
   personaId?: string
   manual?: boolean // walk-in humans: never auto-bid, only through manualBid
+  owner?: `tg:${string}` // created through the Telegram bot (ICR-012): only that Telegram user may act for this agent
 }
 
 export type LotObservation = {

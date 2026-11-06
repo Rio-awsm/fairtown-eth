@@ -31,7 +31,7 @@ describe("telegram bot: commands", () => {
 
   it("points unknown commands and plain text to /help", async () => {
     const h = harness()
-    await h.text("/sell 600 kg cod")
+    await h.text("/teleport bergen")
     await h.text("hello")
     expect(h.replies()).toEqual([TEXT.unknown, TEXT.unknown])
   })
@@ -74,7 +74,8 @@ describe("telegram bot: who it talks to", () => {
     const h = harness({ allowedUsers: new Set([ALICE.id]) })
     await h.text("/start", MALLORY)
     await h.press("x", MALLORY)
-    expect(h.replies()).toEqual([TEXT.notAllowed])
+    expect(h.replies()).toEqual([TEXT.yourId(MALLORY.id)])
+    expect(h.replies()[0]).toContain(String(MALLORY.id))
     expect(h.calls[1]).toEqual({ method: "answerCallbackQuery", payload: expect.objectContaining({ text: TEXT.notAllowed }) })
     await h.text("/start", ALICE)
     expect(h.replies()[1]).toBe(TEXT.start)

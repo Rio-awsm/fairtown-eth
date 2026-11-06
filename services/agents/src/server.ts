@@ -17,6 +17,7 @@ import { registerDirectorRoutes } from "./director/routes"
 import { registerIntelRoute } from "./addons/hedera/intel"
 import { registerListingRoutes, type ListingDeps } from "./listing/routes"
 import { registerAgentRoutes } from "./runtime/routes"
+import { registerCallers } from "./callers"
 import type { AgentRuntime } from "./runtime/runtime"
 
 export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; market?: MarketDeps; handover?: HandoverDeps; humans?: HumanDeps; director?: Director; intel?: Parameters<typeof registerIntelRoute>[1]; health?: () => Promise<HealthExtras>; logger?: boolean }
@@ -38,7 +39,7 @@ export function corsOrigins(c: { PUBLIC_WEB_URL?: string; CORS_ORIGINS?: string 
   return [...new Set(list.map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean))]
 }
 
-export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
+export const REDACT = ["req.headers.authorization", 'req.headers["x-fairtown-bot"]', "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
 
 export function buildApp(deps: AppDeps): FastifyInstance {
   const app = Fastify({
@@ -46,6 +47,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     ...(deps.config.TRUST_PROXY ? { trustProxy: deps.config.TRUST_PROXY } : {}),
     logger: deps.logger === false ? false : { level: "info", redact: { paths: REDACT, censor: "[redacted]" } },
   })
+  // Before any route: who is calling (direct, or the Telegram bot for one Telegram user). ICR-012.
+  registerCallers(app, deps.config.TELEGRAM_SERVICE_TOKEN)
 
   // The web app (S3) calls this API from another origin: allow it explicitly, never by reflecting any origin.
   void app.register(cors, { origin: corsOrigins(deps.config), allowedHeaders: ["Content-Type", "Authorization", "PAYMENT-SIGNATURE"], exposedHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE"] })
