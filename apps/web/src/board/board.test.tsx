@@ -83,7 +83,7 @@ describe("/board", () => {
     wrap(<BoardPage client={mock()} />)
     const box = screen.getByRole("region", { name: "Query the ledger" })
     expect(within(box).getByLabelText("Query text")).toHaveTextContent(
-      "arkiv.schema = str('fairtown.v1.price') AND commodity = str('cod') ORDER BY day:u64 DESC",
+      "arkiv.schema = str('fairtown.v1.price') AND commodity = str('cod') ORDER BY day:str DESC",
     )
     await waitFor(() =>
       expect(within(box).getByRole("table", { name: "Query results" }).querySelectorAll("tbody tr")).toHaveLength(2),
@@ -99,7 +99,7 @@ describe("/board", () => {
     wrap(<BoardPage client={mock()} />)
     const box = screen.getByRole("region", { name: "Query the ledger" })
     fireEvent.click(within(box).getByRole("button", { name: "Coastal Catch's record" }))
-    expect(within(box).getByLabelText("Query text")).toHaveTextContent(`seller = str('${COASTAL}')`)
+    expect(within(box).getByLabelText("Query text")).toHaveTextContent(new RegExp(`seller = addr\\(${COASTAL}\\)`, "i"))
     await waitFor(() => expect(within(box).getByRole("table", { name: "Query results" })).toHaveTextContent("noShows"))
   })
 

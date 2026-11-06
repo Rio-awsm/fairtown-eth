@@ -29,7 +29,10 @@ export function evaluate(expr: Expression, row: Record<string, unknown>): boolea
       return lo !== null && hi !== null && lo >= 0 && hi <= 0
     }
     case "comparison": {
-      const c = compare(row[expr.name], expr.value.value)
+      // Addresses compare case-insensitively, as the node does (addr columns hold 20 bytes, not text).
+      const isAddr = (expr.value as { type?: string }).type === "addr"
+      const lower = (x: unknown) => (isAddr && typeof x === "string" ? x.toLowerCase() : x)
+      const c = compare(lower(row[expr.name]), lower(expr.value.value))
       if (c === null) return false
       return { "=": c === 0, "<": c < 0, "<=": c <= 0, ">": c > 0, ">=": c >= 0 }[expr.operator]
     }

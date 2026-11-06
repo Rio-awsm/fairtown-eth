@@ -83,7 +83,7 @@ export class LiveArkivStore implements ArkivStore {
         wallet.createEntity(
           sdk,
           wrapped as never,
-          { expiration: ExpirationTime.fromSeconds(Math.max(60, Math.floor(opts.expiresInSeconds))), flags: schema.flags },
+          { expiration: ExpirationTime.fromSeconds(lifetimeSeconds(opts.expiresInSeconds)), flags: schema.flags },
           { gas: GAS },
         ),
       )
@@ -250,3 +250,12 @@ function short(e: unknown) {
 }
 
 export { bytesToHex }
+
+/**
+ * Arkiv lifetimes convert at 2 s per block and must be a positive whole multiple of 2 seconds ("Invalid expiry: a
+ * lifetime must be a multiple of the 2s block time", C 1.1 run). At least 60 s, rounded up to the next even second.
+ */
+export function lifetimeSeconds(seconds: number): number {
+  const s = Math.max(60, Math.ceil(seconds))
+  return s % 2 === 0 ? s : s + 1
+}

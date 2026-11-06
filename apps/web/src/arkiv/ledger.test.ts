@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { createMockLedger, unwrapRow } from "./ledger"
+import { createMockLedger, unwrapRow, withDayNumber } from "./ledger"
 import { emptyLedger } from "./mockLedger"
 import { allClears } from "./queries"
 
@@ -22,5 +22,17 @@ describe("createMockLedger", () => {
     const client = createMockLedger(() => ledger)
     expect(client.mode).toBe("mock")
     expect(await client.run(allClears(5))).toEqual([])
+  })
+})
+
+describe("live rows: S2 writes day as YYYY-MM-DD (C 2.2)", () => {
+  it("turns the date into days since 1970, the mock ledger's unit", () => {
+    expect(withDayNumber({ day: "1970-01-03", lotId: 4n })).toEqual({ day: 2n, lotId: 4n })
+    expect(withDayNumber({ day: "2026-11-06" }).day).toBe(BigInt(Math.floor(Date.UTC(2026, 10, 6) / 86_400_000)))
+  })
+
+  it("leaves numeric or missing days alone", () => {
+    expect(withDayNumber({ day: 3n })).toEqual({ day: 3n })
+    expect(withDayNumber({ lotId: 1n })).toEqual({ lotId: 1n })
   })
 })

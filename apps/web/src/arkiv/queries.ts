@@ -1,7 +1,7 @@
 import { createPublicClient } from "@arkiv-network/sdk"
 import { rabdi } from "@arkiv-network/sdk/chains"
-import { and, desc, eq, gte, type Expression } from "@arkiv-network/sdk/query"
-import { str, u64 } from "@arkiv-network/sdk/schema"
+import { and, desc, eq, type Expression } from "@arkiv-network/sdk/query"
+import { addr, str } from "@arkiv-network/sdk/schema"
 import { http } from "viem"
 import type { ReputationRow } from "./mockLedger"
 import { SCHEMAS } from "./schemas"
@@ -12,26 +12,19 @@ export type LedgerQuery = { entity: keyof typeof SCHEMAS; where?: Expression; li
 const combine = (parts: Expression[]): Expression | undefined =>
   parts.length === 0 ? undefined : parts.length === 1 ? parts[0] : and(...parts)
 
-/** Prices: by commodity, place, market and since a day. With no filter, all clears. */
-export function clearsFor(f: {
-  commodity?: string
-  place?: string
-  market?: string
-  sinceDay?: number
-  limit?: number
-}): LedgerQuery {
+/** Prices: by commodity, place and market. With no filter, all clears. */
+export function clearsFor(f: { commodity?: string; place?: string; market?: string; limit?: number }): LedgerQuery {
   const parts: Expression[] = []
   if (f.commodity) parts.push(eq("commodity", str(f.commodity)))
   if (f.place) parts.push(eq("place", str(f.place)))
   if (f.market) parts.push(eq("market", str(f.market)))
-  if (f.sinceDay !== undefined) parts.push(gte("day", u64(f.sinceDay)))
   const where = combine(parts)
   return { entity: "price", ...(where ? { where } : {}), limit: f.limit ?? 20 }
 }
 export const allClears = (limit = 20): LedgerQuery => ({ entity: "price", limit })
 export const sellerRecord = (seller: string): LedgerQuery => ({
   entity: "reputation",
-  where: eq("seller", str(seller.toLowerCase())),
+  where: eq("seller", addr(seller.toLowerCase() as `0x${string}`)),
   limit: 20,
 })
 export const allReputations = (): LedgerQuery => ({ entity: "reputation", limit: 100 })

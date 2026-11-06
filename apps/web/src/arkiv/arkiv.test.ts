@@ -1,3 +1,4 @@
+import { getAddress } from "viem"
 import type { TownEnvelope, TownEvent } from "@fairtown/shared/protocol"
 import { and, between, eq, exists, gte, or, startsWith } from "@arkiv-network/sdk/query"
 import { str, u256, u64 } from "@arkiv-network/sdk/schema"
@@ -17,19 +18,19 @@ const at = (event: TownEvent, ts: number): TownEnvelope => ({ ...envelope(event)
 describe("query text is the SDK's own", () => {
   it("prints the price query for a commodity", () => {
     expect(queryText(clearsFor({ commodity: "cod" }))).toBe(
-      "arkiv.schema = str('fairtown.v1.price') AND commodity = str('cod') ORDER BY day:u64 DESC",
+      "arkiv.schema = str('fairtown.v1.price') AND commodity = str('cod') ORDER BY day:str DESC",
     )
   })
 
-  it("prints a filtered price query with place and a day window", () => {
-    expect(queryText(clearsFor({ commodity: "cod", place: "bergen", sinceDay: 20_000 }))).toBe(
-      "arkiv.schema = str('fairtown.v1.price') AND commodity = str('cod') AND place = str('bergen') AND day >= u64(20000) ORDER BY day:u64 DESC",
+  it("prints a filtered price query with commodity and place", () => {
+    expect(queryText(clearsFor({ commodity: "cod", place: "bergen" }))).toBe(
+      "arkiv.schema = str('fairtown.v1.price') AND commodity = str('cod') AND place = str('bergen') ORDER BY day:str DESC",
     )
   })
 
   it("prints a seller's reputation query", () => {
     expect(queryText(sellerRecord(SELLER))).toBe(
-      `arkiv.schema = str('fairtown.v1.reputation') AND seller = str('${SELLER}') ORDER BY day:u64 DESC`,
+      `arkiv.schema = str('fairtown.v1.reputation') AND seller = addr(${getAddress(SELLER)}) ORDER BY day:str DESC`,
     )
   })
 })

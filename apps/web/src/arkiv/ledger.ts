@@ -35,7 +35,7 @@ export function createLiveLedger(accessKey: string): LedgerClient {
         .orderBy(desc("day") as never)
         .limit(q.limit)
         .fetch()
-      return page.entities.map((e) => unwrapRow(e as Record<string, unknown>))
+      return page.entities.map((e) => withDayNumber(unwrapRow(e as Record<string, unknown>)))
     },
   }
 }
@@ -43,4 +43,14 @@ export function createLiveLedger(accessKey: string): LedgerClient {
 /** MOCK LEDGER: the same query, evaluated on the ledger built from the relay replay. */
 export function createMockLedger(read: () => Ledger): LedgerClient {
   return { mode: "mock", run: async (q) => runLocal(q, read()) }
+}
+
+/**
+ * S2 writes `day` as "YYYY-MM-DD"; the board and price weather count days as numbers (days since 1970-01-01, the
+ * mock ledger's unit). Converts live rows so both modes look the same.
+ */
+export function withDayNumber(row: Record<string, unknown>): Record<string, unknown> {
+  const d = row.day
+  if (typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return row
+  return { ...row, day: BigInt(Math.floor(Date.parse(`${d}T00:00:00Z`) / 86_400_000)) }
 }

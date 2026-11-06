@@ -1,32 +1,7 @@
-import { defineSchema, str, u256, u64 } from "@arkiv-network/sdk/schema"
+import { ARKIV_SDK_SCHEMAS } from "@fairtown/shared/arkiv"
 
 /**
- * Arkiv schemas the browser reads (contract 10, source of truth 9.2), namespace `fairtown.v1.`.
- * Temporary: mirrors contract 10 until S2 2.1 ships `@fairtown/shared/arkiv`; then import those.
+ * Arkiv schemas the browser reads (contract 10), namespace `fairtown.v1.`: the shared ones S2 writes with (D-110's
+ * temporary copy typed `day` as u64 and `seller` as str; S2 writes `day` as a "YYYY-MM-DD" str and `seller` as addr).
  */
-export const PriceSchema = defineSchema("fairtown.v1.price", {
-  sector: str().indexed(),
-  commodity: str().indexed(),
-  grade: str().indexed(),
-  market: str().indexed(),
-  place: str().indexed(),
-  currency: str().indexed(),
-  lotId: u256().indexed(),
-  finalClearingPerUnit: u256().indexed(),
-  avgPerUnit: u256().indexed(),
-  soldUnits: u256().indexed(),
-  day: u64().indexed(),
-  tx: str(),
-})
-
-export const ReputationSchema = defineSchema("fairtown.v1.reputation", {
-  seller: str().indexed(),
-  tier: str().indexed(),
-  cleanLots: u64().indexed(),
-  noShows: u64().indexed(),
-  day: u64().indexed(),
-  lastLotId: u256().optional(),
-  tx: str().optional(),
-})
-
-export const SCHEMAS = { price: PriceSchema, reputation: ReputationSchema } as const
+export const SCHEMAS = { price: ARKIV_SDK_SCHEMAS.price, reputation: ARKIV_SDK_SCHEMAS.reputation } as const
