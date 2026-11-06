@@ -21,6 +21,8 @@
   "dependencies": {
     "@arkiv-network/sdk": "1.0.1",
     "@fairtown/shared": "workspace:*",
+    "@fontsource/atkinson-hyperlegible": "^5",
+    "@fontsource/jersey-10": "^5",
     "@tanstack/react-query": "^5.106.1",
     "@yudiel/react-qr-scanner": "2.6.0",
     "easystarjs": "0.4.4",

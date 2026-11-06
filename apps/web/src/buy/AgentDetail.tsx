@@ -49,16 +49,12 @@ function NoShow({ lot, agentId, tokenAmount }: { lot: LotState; agentId: string;
   if (lot.deadlineBlock === undefined || !["sold", "truck_booked"].includes(lot.status)) return null
   if (!noShowReportable(lot, block))
     return (
-      <p className="text-sm text-slate-300">
+      <p className="text-sm text-ink-soft">
         You can report a no-show after the pickup deadline, in {countdown(lot.deadlineBlock, block)}.
       </p>
     )
   return (
-    <button
-      className="rounded bg-red-700 px-4 py-2 font-bold"
-      disabled={report.isPending}
-      onClick={() => report.mutate()}
-    >
+    <button className="rpg-btn rpg-btn-danger" disabled={report.isPending} onClick={() => report.mutate()}>
       Seller didn't come
     </button>
   )
@@ -68,10 +64,10 @@ function Purchase({ lot, agentId }: { lot: LotState; agentId: string }) {
   const block = useTown((s) => s.town.block)
   const winners = useWinners(lot)
   const [reporting, setReporting] = useState(false)
-  if (!winners) return <li className="rounded bg-slate-800 p-3">Lot {lot.lotId} · checking the result…</li>
+  if (!winners) return <li className="rpg-well p-3">Lot {lot.lotId} · checking the result…</li>
   const mine = winners.find((w) => w.buyer.toLowerCase() === agentId.toLowerCase())
   return (
-    <li className="space-y-2 rounded bg-slate-800 p-3">
+    <li className="rpg-well space-y-2 p-3">
       <p>
         Lot {lot.lotId} · {lot.qty} {lot.unit} {lot.commodity} from {lot.sellerName} ·{" "}
         {mine ? (STATUS_WORDS[lot.status] ?? lot.status) : "Not won"}
@@ -83,7 +79,7 @@ function Purchase({ lot, agentId }: { lot: LotState; agentId: string }) {
           {reporting ? (
             <ReportProblem buyerId={agentId} lotId={lot.lotId} tokenAmount={mine.tokenAmount} />
           ) : (
-            <button className="rounded bg-slate-700 px-4 py-2" onClick={() => setReporting(true)}>
+            <button className="rpg-btn rpg-btn-quiet" onClick={() => setReporting(true)}>
               Report a problem
             </button>
           )}
@@ -132,18 +128,18 @@ export function AgentDetail({ agentId }: { agentId: string }) {
     <section aria-label={name} className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-2xl font-bold">{name}</h2>
-        <span className={`rounded px-2 text-sm ${d?.paused ? "bg-amber-700" : "bg-emerald-800"}`}>
+        <span className={`rpg-badge ${d?.paused ? "bg-coin text-ink" : "bg-moss text-parchment-light"}`}>
           {d?.paused ? "Paused" : "Active"}
         </span>
         <AddressLink address={agentId} />
-        <Link className="ml-auto text-sky-300 underline" to={`/town?select=agent:${agentId}`}>
+        <Link className="ml-auto text-harbour underline" to={`/town?select=agent:${agentId}`}>
           Watch in town
         </Link>
       </div>
       {view.isError && <p role="alert">We could not load this buyer's settings.</p>}
-      {d?.persona && <p className="text-slate-300">{d.persona}</p>}
+      {d?.persona && <p className="text-ink-soft">{d.persona}</p>}
       {m && (
-        <div className="space-y-1 rounded bg-slate-900 p-3">
+        <div className="rpg-window space-y-1 p-4">
           <p>
             {(m.commodities ?? []).join(", ")}
             {m.maxPerUnit && ` up to ${formatMoney(BigInt(m.maxPerUnit), currency)} per unit`}
@@ -152,12 +148,12 @@ export function AgentDetail({ agentId }: { agentId: string }) {
             {m.place && ` · ${m.place}`}
           </p>
           {d?.budget && <p>Budget {formatMoney(BigInt(d.budget), currency)}</p>}
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-ink-soft">
             {m.avoidNoShowSellers === false ? "Buys from any seller" : "Avoids sellers with no-shows"}
           </p>
           <div className="flex gap-2 pt-2">
             <button
-              className="rounded bg-slate-700 px-4 py-2"
+              className="rpg-btn rpg-btn-quiet"
               disabled={patch.isPending}
               onClick={() => patch.mutate({ paused: !d?.paused })}
             >
@@ -165,7 +161,7 @@ export function AgentDetail({ agentId }: { agentId: string }) {
             </button>
             {!editing && (
               <button
-                className="rounded bg-slate-700 px-4 py-2"
+                className="rpg-btn rpg-btn-quiet"
                 onClick={() => {
                   setMaxText(m.maxPerUnit ? asInput(m.maxPerUnit) : "")
                   setAvoid(m.avoidNoShowSellers !== false)
@@ -180,19 +176,15 @@ export function AgentDetail({ agentId }: { agentId: string }) {
             <div className="space-y-2 pt-2">
               <label className="block">
                 Max price per unit
-                <input
-                  className="mt-1 w-full rounded bg-slate-800 p-2"
-                  value={maxText}
-                  onChange={(e) => setMaxText(e.target.value)}
-                />
+                <input className="rpg-input mt-2 w-full" value={maxText} onChange={(e) => setMaxText(e.target.value)} />
               </label>
-              {!max.ok && <p className="text-sm text-amber-300">{max.error}</p>}
+              {!max.ok && <p className="text-sm text-gold-ink">{max.error}</p>}
               <label className="block">
                 <input type="checkbox" checked={avoid} onChange={(e) => setAvoid(e.target.checked)} /> Avoid sellers
                 with no-shows
               </label>
               <button
-                className="rounded bg-emerald-700 px-4 py-2 font-bold disabled:opacity-50"
+                className="rpg-btn rpg-btn-go"
                 disabled={!max.ok || patch.isPending}
                 onClick={() =>
                   max.ok && patch.mutate({ mandate: { maxPerUnit: max.value.toString(), avoidNoShowSellers: avoid } })
@@ -206,7 +198,7 @@ export function AgentDetail({ agentId }: { agentId: string }) {
         </div>
       )}
       {d?.families && (
-        <section aria-label="Families" className="rounded bg-slate-900 p-3">
+        <section aria-label="Families" className="rpg-window p-4">
           <h3 className="font-bold">Families buying together</h3>
           <ul>
             {d.families.map((f) => (
@@ -219,7 +211,7 @@ export function AgentDetail({ agentId }: { agentId: string }) {
       )}
       <section aria-label="Decisions">
         <h3 className="font-bold">Decisions</h3>
-        {(agent?.reasons ?? []).length === 0 && <p className="text-slate-300">No decisions yet.</p>}
+        {(agent?.reasons ?? []).length === 0 && <p className="text-ink-soft">No decisions yet.</p>}
         <ul className="list-disc pl-5">
           {[...(agent?.reasons ?? [])].reverse().map((r, i) => (
             <li key={i}>{r}</li>
@@ -229,7 +221,7 @@ export function AgentDetail({ agentId }: { agentId: string }) {
       <table className="w-full text-sm" aria-label="Bids">
         <caption className="text-left font-bold">Bids</caption>
         <thead>
-          <tr className="text-left text-slate-300">
+          <tr className="text-left text-ink-soft">
             <th>Lot</th>
             <th>Max</th>
             <th>Amount</th>
@@ -251,7 +243,7 @@ export function AgentDetail({ agentId }: { agentId: string }) {
       </table>
       <section aria-label="Purchases">
         <h3 className="font-bold">Purchases and handovers</h3>
-        {bought.length === 0 && <p className="text-slate-300">Nothing bought yet.</p>}
+        {bought.length === 0 && <p className="text-ink-soft">Nothing bought yet.</p>}
         <ul className="space-y-2">
           {bought.map((l) => (
             <Purchase key={l.lotId} lot={l} agentId={agentId} />

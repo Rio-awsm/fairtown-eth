@@ -11,6 +11,7 @@ import { LiveStatus } from "../sell/LiveStatus"
 import { MicButton } from "../sell/MicButton"
 import { SoldLots } from "../sell/SoldLots"
 import { DEMO_SELLERS, DURATION_BLOCKS, newLotCode, type DemoSeller } from "../sell/model"
+import { PixelPerson } from "../hud/PixelPerson"
 
 type Draft = z.infer<typeof LotDraft>
 const MAX_PHOTOS = 3
@@ -24,10 +25,13 @@ function Picker({ onPick }: { onPick(s: DemoSeller): void }) {
     <ul className="space-y-2">
       {DEMO_SELLERS.map((s) => (
         <li key={s.id}>
-          <button className="w-full rounded bg-slate-800 p-4 text-left" onClick={() => onPick(s)}>
-            <span className="block text-lg font-bold">{s.name}</span>
-            <span className="text-sm text-slate-300">
-              {s.what} · {s.place}
+          <button className="rpg-window rpg-card flex items-center gap-4 p-4" onClick={() => onPick(s)}>
+            <PixelPerson id={s.id} role="SELLER" size={36} />
+            <span>
+              <span className="block text-lg font-bold">{s.name}</span>
+              <span className="text-sm text-ink-soft">
+                {s.what} · {s.place}
+              </span>
             </span>
           </button>
         </li>
@@ -59,14 +63,14 @@ function Seller({ seller }: { seller: DemoSeller }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-300">Selling as {seller.name}</p>
+      <p className="text-sm text-ink-soft">Selling as {seller.name}</p>
       <div role="tablist" className="flex gap-2">
         {(["sell", "history"] as const).map((t) => (
           <button
             key={t}
             role="tab"
             aria-selected={tab === t}
-            className={`flex-1 rounded py-2 ${tab === t ? "bg-slate-700" : "bg-slate-900"}`}
+            className={`rpg-btn rpg-btn-sm flex-1 ${tab === t ? "" : "rpg-btn-quiet"}`}
             onClick={() => setTab(t)}
           >
             {t === "sell" ? "Sell" : "History"}
@@ -92,7 +96,7 @@ function Seller({ seller }: { seller: DemoSeller }) {
           <label className="block">
             <span className="block text-sm">What are you selling?</span>
             <textarea
-              className="mt-1 w-full rounded bg-slate-800 p-3 text-lg"
+              className="rpg-input mt-2 w-full text-lg"
               rows={3}
               placeholder="600 kg cod, landed 04:40, Bergen"
               value={text}
@@ -107,12 +111,12 @@ function Seller({ seller }: { seller: DemoSeller }) {
             onPhoto={(p) => setPhotos((prev) => [...prev, p].slice(0, MAX_PHOTOS))}
           />
           {drafting.isError && (
-            <p role="alert" className="text-sm text-amber-300">
+            <p role="alert" className="text-sm text-gold-ink">
               {plainError(drafting.error, "We could not read that just now. Please try again.")}
             </p>
           )}
           <button
-            className="w-full rounded bg-emerald-700 py-3 text-lg font-bold disabled:opacity-50"
+            className="rpg-btn rpg-btn-go w-full text-lg"
             disabled={text.trim() === "" || drafting.isPending}
             onClick={() => drafting.mutate()}
           >
@@ -128,8 +132,8 @@ function Seller({ seller }: { seller: DemoSeller }) {
 export function SellPage() {
   const [seller, setSeller] = useState<DemoSeller | null>(null)
   return (
-    <section className="mx-auto max-w-md space-y-3 p-3">
-      <h1 className="text-2xl font-bold">Sell</h1>
+    <section className="rpg-window mx-3 my-5 max-w-md space-y-4 p-4 sm:mx-auto">
+      <h1 className="rpg-banner">Sell</h1>
       {seller ? <Seller key={seller.id} seller={seller} /> : <Picker onPick={setSeller} />}
     </section>
   )

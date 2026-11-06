@@ -1,9 +1,11 @@
 import { GameObjects, type Scene } from "phaser"
 import { fs } from "../textScale"
 import type { Point } from "../map/anchors"
+import { TOWN_TEXT } from "../art/text"
+import { ART, BULB_COLOURS } from "../art/textures"
 
 /** Scene effects for S3 1.3. Durations divide by the replay speed. Weather and lights are static, so baselines are stable. */
-const TEXT = { fontFamily: "monospace", color: "#f8fafc", stroke: "#0f172a", strokeThickness: 2, resolution: 3 }
+const TEXT = { ...TOWN_TEXT, strokeThickness: 2 }
 const DEPTH = { overlay: 5, effect: 35 } as const
 
 function arc(
@@ -31,28 +33,42 @@ function arc(
   })
 }
 
+/** A gold coin that spins (scaleX) while it flies. */
+function coin(scene: Scene, at: Point, speed: number) {
+  const c = scene.add.image(at.x, at.y, ART.coin).setDepth(DEPTH.effect)
+  const spin = scene.tweens.add({
+    targets: c,
+    scaleX: { from: 1, to: 0.2 },
+    duration: 140 / speed,
+    yoyo: true,
+    repeat: -1,
+  })
+  // The spin repeats forever, so it must end with the coin or it keeps the scene animating.
+  c.once("destroy", () => spin.remove())
+  return c
+}
+
 export function coinArc(scene: Scene, from: Point, to: Point, speed: number): void {
-  const coin = scene.add.circle(from.x, from.y, 2, 0xfacc15).setStrokeStyle(1, 0xa16207).setDepth(DEPTH.effect)
-  arc(scene, coin, from, to, 500 / speed)
+  arc(scene, coin(scene, from, speed), from, to, 500 / speed)
 }
 
 export function refundCoins(scene: Scene, from: Point, to: Point, label: string, speed: number): void {
   for (let i = 0; i < 3; i++) {
-    const coin = scene.add.circle(from.x, from.y, 2, 0xfacc15).setStrokeStyle(1, 0xa16207).setDepth(DEPTH.effect)
-    scene.time.delayedCall((i * 120) / speed, () => arc(scene, coin, from, to, 600 / speed))
+    const c = coin(scene, from, speed)
+    scene.time.delayedCall((i * 120) / speed, () => arc(scene, c, from, to, 600 / speed))
   }
   if (label) floatText(scene, from, `${label} back`, "#fca5a5", speed)
 }
 
 export function moveCrate(scene: Scene, from: Point, to: Point, speed: number): void {
-  const crate = scene.add.rectangle(from.x, from.y, 6, 6, 0x92400e).setStrokeStyle(1, 0x451a03).setDepth(DEPTH.effect)
+  const crate = scene.add.image(from.x, from.y, ART.crate).setDepth(DEPTH.effect)
   scene.tweens.add({ targets: crate, x: to.x, y: to.y, duration: 700 / speed, onComplete: () => crate.destroy() })
 }
 
 export function vaultDoor(scene: Scene, at: Point, speed: number): void {
   const door = scene.add
-    .rectangle(at.x, at.y - 10, 14, 10, 0x67e8f9)
-    .setStrokeStyle(1, 0x0e7490)
+    .rectangle(at.x, at.y - 14, 22, 22, 0xc7d6de)
+    .setStrokeStyle(2, 0x2a1f33)
     .setDepth(DEPTH.effect)
   scene.tweens.add({
     targets: door,
@@ -67,8 +83,8 @@ export function vaultDoor(scene: Scene, at: Point, speed: number): void {
 export function magnifier(scene: Scene, at: Point, speed: number): void {
   const glass = scene.add.container(at.x + 10, at.y - 12).setDepth(DEPTH.effect)
   glass.add([
-    scene.add.circle(0, 0, 4).setStrokeStyle(1.5, 0xf8fafc),
-    scene.add.line(0, 0, 3, 3, 7, 7, 0xf8fafc).setLineWidth(1.5),
+    scene.add.circle(0, 0, 4, 0xbfe6f2, 0.5).setStrokeStyle(1.5, 0x2a1f33),
+    scene.add.line(0, 0, 3, 3, 7, 7, 0x7a4b2a).setLineWidth(2),
   ])
   scene.time.delayedCall(1500 / speed, () => glass.destroy())
 }
@@ -93,40 +109,54 @@ export class Sky {
   storm(key: string, at: Point, label: string): void {
     this.weather.get(key)?.destroy()
     const c = this.scene.add.container(at.x, at.y - 40).setDepth(DEPTH.effect)
-    for (const [dx, dy, r] of [
-      [-14, 0, 7],
-      [-4, -4, 9],
-      [8, 0, 7],
-      [16, 2, 5],
-    ] as const)
-      c.add(this.scene.add.circle(dx, dy, r, 0x64748b).setAlpha(0.9))
-    for (let i = 0; i < 9; i++)
-      c.add(this.scene.add.line(0, 0, -18 + i * 4, 8, -21 + i * 4, 16, 0x93c5fd).setLineWidth(1))
-    c.add(this.scene.add.text(0, -12, label, { ...TEXT, fontSize: fs(4) }).setOrigin(0.5, 1))
+    c.add(this.scene.add.image(-12, 0, ART.cloud))
+    c.add(this.scene.add.image(14, 4, ART.cloud).setScale(0.8))
+    // Fixed raindrops, not particles: storm baselines must match frame for frame.
+    for (let i = 0; i < 14; i++) c.add(this.scene.add.image(-26 + i * 4, 14 + ((i * 5) % 9), ART.drop))
+    c.add(this.scene.add.text(0, -10, label, { ...TEXT, fontSize: fs(4) }).setOrigin(0.5, 1))
     this.weather.set(key, c)
   }
 
   quiet(key: string, at: Point, label: string): void {
     this.weather.get(key)?.destroy()
     const c = this.scene.add.container(at.x, at.y - 40).setDepth(DEPTH.effect)
-    c.add(this.scene.add.rectangle(0, 20, 120, 60, 0x0f172a).setAlpha(0.35))
-    c.add(this.scene.add.text(0, -4, label, { ...TEXT, fontSize: fs(4), color: "#cbd5e1" }).setOrigin(0.5, 1))
+    c.add(this.scene.add.rectangle(0, 20, 120, 60, 0x2a1f33).setAlpha(0.3))
+    c.add(this.scene.add.text(0, -4, label, { ...TEXT, fontSize: fs(4), color: "#e6e2da" }).setOrigin(0.5, 1))
     this.weather.set(key, c)
   }
 
   festival(key: string, at: Point, label: string): void {
     this.lights.get(key)?.destroy()
-    const c = this.scene.add.container(at.x, at.y + 4).setDepth(DEPTH.effect)
-    const colours = [0xfacc15, 0xf97316, 0xec4899, 0x22c55e, 0x38bdf8]
-    for (let i = 0; i < 15; i++)
-      c.add(this.scene.add.circle(-56 + i * 8, Math.sin(i / 2) * 2, 1.5, colours[i % colours.length]!))
-    c.add(this.scene.add.text(0, -4, label, { ...TEXT, fontSize: fs(4), color: "#fde68a" }).setOrigin(0.5, 1))
+    // Along the roof, below the building's sign.
+    const c = this.scene.add.container(at.x, at.y + 22).setDepth(DEPTH.effect)
+    // A string of bulbs sagging between two posts, each with a soft glow.
+    const wire = this.scene.add.graphics().lineStyle(1, 0x2a1f33)
+    wire.beginPath()
+    for (let i = 0; i <= 15; i++) wire.lineTo(-60 + i * 8, Math.sin((i / 15) * Math.PI) * 4)
+    wire.strokePath()
+    c.add(wire)
+    for (let i = 0; i < 15; i++) {
+      const x = -56 + i * 8
+      const y = Math.sin(((i + 0.5) / 15) * Math.PI) * 4 + 2
+      c.add(this.scene.add.image(x, y, ART.glow).setScale(0.35).setBlendMode("ADD").setAlpha(0.7))
+      c.add(this.scene.add.image(x, y, ART.bulb(i % BULB_COLOURS.length)))
+    }
+    c.add(this.scene.add.text(0, 14, label, { ...TEXT, fontSize: fs(4), color: "#ffe08a" }).setOrigin(0.5, 0))
     this.lights.set(key, c)
   }
 
   setNight(on: boolean, size: { w: number; h: number }): void {
-    this.night ??= this.scene.add.rectangle(size.w / 2, size.h / 2, size.w, size.h, 0x020617).setDepth(DEPTH.overlay)
-    this.night.setAlpha(on ? 0.35 : 0)
+    this.night ??= this.scene.add.rectangle(size.w / 2, size.h / 2, size.w, size.h, 0x1b1f4a).setDepth(DEPTH.overlay)
+    this.night.setAlpha(on ? 0.45 : 0)
+    for (const glow of this.nightLights) glow.setVisible(on)
+  }
+
+  private nightLights: GameObjects.Image[] = []
+  /** Window and lamp glows, shown only at night. */
+  setNightLights(lights: GameObjects.Image[]): void {
+    this.nightLights = lights
+    const on = (this.night?.alpha ?? 0) > 0
+    for (const l of lights) l.setVisible(on)
   }
 
   private tint: GameObjects.Graphics | undefined
@@ -144,14 +174,16 @@ export class Sky {
   plaque(key: string, at: Point, text: string): void {
     this.plaques.get(key)?.destroy()
     const t = this.scene.add
-      .text(at.x, at.y + 2, text, {
+      // Hung above the building's sign so both stay readable.
+      .text(at.x, at.y - 10, text, {
         ...TEXT,
         fontSize: fs(4),
-        color: "#0f172a",
-        stroke: "#fef3c7",
-        backgroundColor: "#fde68a",
+        color: "#2a1f33",
+        strokeThickness: 0,
+        backgroundColor: "#f8eccb",
+        padding: { x: 3, y: 2 },
       })
-      .setOrigin(0.5, 0)
+      .setOrigin(0.5, 1)
       .setDepth(DEPTH.effect)
     this.plaques.set(key, t)
   }

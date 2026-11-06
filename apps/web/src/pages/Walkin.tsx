@@ -11,13 +11,15 @@ import { ApiClientError } from "../net/apiClient"
 import { useTown } from "../state/townStore"
 import { DEFAULT_BUDGET, SLIDER_STEPS, apiMaxPerUnit, checkAmount, maxUnits, priceAt, tickPlan } from "../walkin/model"
 import { clearSession, loadSession, saveSession, type WalkinSession } from "../walkin/session"
+import type { PersonLook } from "../game/art/people"
+import { PixelPerson } from "../hud/PixelPerson"
 
 const AVATARS = [
-  { id: "chef", label: "Chef", colour: "bg-sky-400" },
-  { id: "farmer", label: "Farmer", colour: "bg-emerald-400" },
-  { id: "trader", label: "Trader", colour: "bg-amber-400" },
-  { id: "visitor", label: "Visitor", colour: "bg-fuchsia-400" },
-] as const
+  { id: "chef", label: "Chef", look: { role: "STORAGE", skin: 1, hair: 0, style: "cap" } },
+  { id: "farmer", label: "Farmer", look: { role: "SELLER", skin: 3, hair: 2, style: "short" } },
+  { id: "trader", label: "Trader", look: { role: "BUYER", skin: 2, hair: 5, style: "bun" } },
+  { id: "visitor", label: "Visitor", look: { role: "HUMAN", skin: 0, hair: 3, style: "long" } },
+] as const satisfies readonly { id: string; label: string; look: PersonLook }[]
 const NAME_MAX = 32
 type Placed = { lotId: string; q: bigint; amount: bigint }
 const offline = (e: unknown) => e instanceof ApiClientError && e.code === "network"
@@ -43,20 +45,16 @@ function Join({ onJoined }: { onJoined(s: WalkinSession): void }) {
     <div className="space-y-3">
       <label className="block">
         <span className="block">Your name</span>
-        <input
-          className="mt-1 w-full rounded bg-slate-800 p-3 text-lg"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <input className="rpg-input mt-2 w-full text-lg" value={name} onChange={(e) => setName(e.target.value)} />
       </label>
-      {tooLong && <p className="text-sm text-amber-300">Use 32 letters or fewer</p>}
+      {tooLong && <p className="text-sm text-gold-ink">Use 32 letters or fewer</p>}
       <fieldset>
         <legend className="mb-1">Pick a look</legend>
         <div className="grid grid-cols-4 gap-2">
           {AVATARS.map((a) => (
             <label
               key={a.id}
-              className={`rounded p-2 text-center ${avatar === a.id ? "bg-slate-600" : "bg-slate-800"}`}
+              className={`rpg-window rpg-card p-2 text-center ${avatar === a.id ? "bg-coin-light" : ""}`}
             >
               <input
                 type="radio"
@@ -65,21 +63,21 @@ function Join({ onJoined }: { onJoined(s: WalkinSession): void }) {
                 checked={avatar === a.id}
                 onChange={() => setAvatar(a.id)}
               />
-              <span className={`mx-auto mb-1 block h-8 w-8 rounded-full ${a.colour}`} aria-hidden />
+              <PixelPerson look={a.look} size={36} className="mx-auto mb-1 block" />
               {a.label}
             </label>
           ))}
         </div>
       </fieldset>
       {join.isError && (
-        <p role="alert" className="text-amber-300">
+        <p role="alert" className="text-gold-ink">
           {offline(join.error)
             ? "No connection. Check your signal and try again."
             : "We could not let you in just now. Please try again."}
         </p>
       )}
       <button
-        className="w-full rounded bg-emerald-700 py-3 text-lg font-bold disabled:opacity-50"
+        className="rpg-btn rpg-btn-go w-full text-lg"
         disabled={trimmed === "" || tooLong || join.isPending}
         onClick={() => join.mutate()}
       >
@@ -93,12 +91,12 @@ function LotList({ onPick }: { onPick(lotId: string): void }) {
   const lots = useTown((s) => s.town.lots)
   const block = useTown((s) => s.town.block)
   const open = Object.values(lots).filter((l) => l.status === "open" && l.endBlock > block)
-  if (open.length === 0) return <p className="text-slate-300">No lots are open right now. Watch the big screen.</p>
+  if (open.length === 0) return <p className="text-ink-soft">No lots are open right now. Watch the big screen.</p>
   return (
     <ul className="space-y-2">
       {open.map((l) => (
         <li key={l.lotId}>
-          <button className="w-full rounded bg-slate-800 p-3 text-left" onClick={() => onPick(l.lotId)}>
+          <button className="rpg-window rpg-card p-3" onClick={() => onPick(l.lotId)}>
             Lot {l.lotId} · {l.qty} {l.unit} {l.commodity} · {l.clearingPerUnit ? "now" : "from"}{" "}
             {lotPerUnit(l, l.clearingPerUnit ?? l.floorPerUnit)} · ends in {countdown(l.endBlock, block)}
           </button>
@@ -135,7 +133,7 @@ function BidForm({
     onSuccess: (_, value) => onPlaced({ lotId: lot.lotId, q, amount: value }),
   })
   return (
-    <section aria-label={`Bid on Lot ${lot.lotId}`} className="space-y-3 rounded bg-slate-900 p-3">
+    <section aria-label={`Bid on Lot ${lot.lotId}`} className="rpg-window space-y-3 p-4">
       <h2 className="text-lg font-bold">
         Lot {lot.lotId} · {lot.qty} {lot.unit} {lot.commodity} from {lot.sellerName}
       </h2>
@@ -157,33 +155,33 @@ function BidForm({
       <label className="block">
         <span className="block">How much to spend ({currency})</span>
         <input
-          className="mt-1 w-full rounded bg-slate-800 p-3 text-lg"
+          className="rpg-input mt-2 w-full text-lg"
           inputMode="decimal"
           value={amountText}
           onChange={(e) => setAmountText(e.target.value)}
         />
       </label>
-      {amountText !== "" && !amount.ok && <p className="text-sm text-amber-300">{amount.error}</p>}
+      {amountText !== "" && !amount.ok && <p className="text-sm text-gold-ink">{amount.error}</p>}
       {amount.ok && (
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-ink-soft">
           About {maxUnits(amount.value, perUnit).toString()} {lot.unit} at most
         </p>
       )}
       {bid.isError && (
-        <p role="alert" className="text-amber-300">
+        <p role="alert" className="text-gold-ink">
           {offline(bid.error)
             ? "No connection. Check your signal and try again."
             : "We could not place your bid. Please try again."}
         </p>
       )}
       <button
-        className="w-full rounded bg-emerald-700 py-3 text-lg font-bold disabled:opacity-50"
+        className="rpg-btn rpg-btn-go w-full text-lg"
         disabled={!amount.ok || bid.isPending}
         onClick={() => amount.ok && bid.mutate(amount.value)}
       >
         Place bid
       </button>
-      <button className="w-full rounded bg-slate-700 py-2" onClick={onBack}>
+      <button className="rpg-btn rpg-btn-quiet w-full" onClick={onBack}>
         Other lots
       </button>
       <TestMoneyBadge />
@@ -208,7 +206,7 @@ function Result({ placed, session, onAgain }: { placed: Placed; session: WalkinS
   if (!lot) return null
   const clearingQ96 = toQ96(BigInt(lot.clearingPerUnit ?? lot.floorPerUnit))
   return (
-    <section aria-label="Your bid" className="space-y-2 rounded bg-emerald-950 p-3">
+    <section aria-label="Your bid" className="rpg-window space-y-2 bg-meadow-tint p-4">
       <p>
         Your bid is in: up to {lotPerUnit(lot, apiMaxPerUnit(placed.q).toString())},{" "}
         {lotMoney(lot, placed.amount.toString())} to spend.
@@ -222,8 +220,8 @@ function Result({ placed, session, onAgain }: { placed: Placed; session: WalkinS
       ) : (
         <p>Waiting for the result…</p>
       )}
-      <p className="text-sm text-slate-300">Watch the big screen for your name.</p>
-      <button className="w-full rounded bg-slate-700 py-2" onClick={onAgain}>
+      <p className="text-sm text-ink-soft">Watch the big screen for your name.</p>
+      <button className="rpg-btn rpg-btn-quiet w-full" onClick={onAgain}>
         Bid again
       </button>
       <TestMoneyBadge />
@@ -240,7 +238,7 @@ function Market({ session, onLeave }: { session: WalkinSession; onLeave(): void 
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-lg">Hi {session.name}</p>
-        <button className="text-sm text-slate-300 underline" onClick={onLeave}>
+        <button className="text-sm text-ink-soft underline" onClick={onLeave}>
           Leave
         </button>
       </div>
@@ -257,7 +255,7 @@ function Market({ session, onLeave }: { session: WalkinSession; onLeave(): void 
         <BidForm lot={lot} session={session} onPlaced={setPlaced} onBack={() => setLotId(null)} />
       ) : (
         <>
-          {lotId && <p className="text-amber-300">That auction has closed. Pick another lot.</p>}
+          {lotId && <p className="text-gold-ink">That auction has closed. Pick another lot.</p>}
           <LotList onPick={setLotId} />
         </>
       )}
@@ -269,8 +267,8 @@ function Market({ session, onLeave }: { session: WalkinSession; onLeave(): void 
 export function WalkinPage() {
   const [session, setSession] = useState<WalkinSession | null>(() => loadSession())
   return (
-    <section className="mx-auto max-w-md space-y-3 p-3">
-      <h1 className="text-2xl font-bold">Walk in</h1>
+    <section className="rpg-window mx-3 my-5 max-w-md space-y-4 p-4 sm:mx-auto">
+      <h1 className="rpg-banner">Walk in</h1>
       {session ? (
         <Market
           session={session}

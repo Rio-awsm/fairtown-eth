@@ -16,7 +16,7 @@ const EMPTY: BuyerForm = {
   budget: "",
   avoidNoShowSellers: true,
 }
-const field = "mt-1 w-full rounded bg-slate-800 p-2"
+const field = "rpg-input mt-2 w-full"
 
 /** New buyer agent: mandate and budget in plain money (S3 3.1). */
 export function CreateBuyer({ onCreated }: { onCreated(agentId: string): void }) {
@@ -39,11 +39,11 @@ export function CreateBuyer({ onCreated }: { onCreated(agentId: string): void })
     setErrors({})
     create.mutate({ body: built.body })
   }
-  const err = (k: keyof BuyerForm) => errors[k] && <p className="text-sm text-amber-300">{errors[k]}</p>
+  const err = (k: keyof BuyerForm) => errors[k] && <p className="text-sm text-gold-ink">{errors[k]}</p>
   return (
     <form
       aria-label="New buyer"
-      className="space-y-3 rounded bg-slate-900 p-4"
+      className="rpg-window space-y-3 p-5"
       onSubmit={(e) => {
         e.preventDefault()
         submit()
@@ -147,15 +147,11 @@ export function CreateBuyer({ onCreated }: { onCreated(agentId: string): void })
         Avoid sellers with no-shows
       </label>
       {create.isError && (
-        <p role="alert" className="text-amber-300">
+        <p role="alert" className="text-gold-ink">
           We could not create the buyer. Please try again.
         </p>
       )}
-      <button
-        type="submit"
-        className="w-full rounded bg-emerald-700 py-3 font-bold disabled:opacity-50"
-        disabled={create.isPending}
-      >
+      <button type="submit" className="rpg-btn rpg-btn-go w-full" disabled={create.isPending}>
         Create buyer
       </button>
     </form>

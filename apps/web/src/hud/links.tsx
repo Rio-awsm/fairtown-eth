@@ -7,7 +7,7 @@ export const explorerAddress = (address: string) => `${env.explorerUrl}/address/
 
 export function TxLink({ tx }: { tx: string }) {
   return (
-    <a href={explorerTx(tx)} target="_blank" rel="noreferrer" className="font-mono text-sky-300 underline" title={tx}>
+    <a href={explorerTx(tx)} target="_blank" rel="noreferrer" className="font-mono text-harbour underline" title={tx}>
       {shortAddress(tx)}
     </a>
   )
@@ -19,7 +19,7 @@ export function AddressLink({ address }: { address: string }) {
       href={explorerAddress(address)}
       target="_blank"
       rel="noreferrer"
-      className="font-mono text-sky-300 underline"
+      className="font-mono text-harbour underline"
       title={address}
     >
       {shortAddress(address)}

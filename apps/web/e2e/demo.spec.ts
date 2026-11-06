@@ -23,8 +23,12 @@ test("demo mode keeps LIVE or REPLAY and TEST MONEY on screen", async ({ page })
 test("demo mode baseline at the storm", async ({ page }) => {
   await page.goto(`/town?demo=1&speed=50&until=${STORM}`)
   await replayDone(page)
+  // The HUD (which owns the D key) and the scene load lazily; under load a fast replay can finish first.
+  await mapReady(page)
+  await expect(page.getByRole("list", { name: "World clock" })).toBeVisible()
   // The camera director is on in demo mode; turn it off so the camera rests on the whole town.
   await page.keyboard.press("d")
+  await page.waitForFunction(() => window.__TOWN__?.ui.director === false)
   await page.waitForTimeout(1500)
   await page.addStyleTag({ content: "[data-hud] { visibility: hidden !important; }" })
   await expect(page.locator("#game-container canvas")).toHaveScreenshot("demo-storm.png", { maxDiffPixelRatio: 0.01 })

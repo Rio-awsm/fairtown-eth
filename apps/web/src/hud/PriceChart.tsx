@@ -43,6 +43,6 @@ export function PriceChart({
       plot?.destroy()
     }
   }, [priceLog, currency])
-  if (priceLog.length === 0) return <p className="text-xs text-slate-400">No price ticks yet.</p>
+  if (priceLog.length === 0) return <p className="text-xs text-ink-soft">No price ticks yet.</p>
   return <div ref={host} aria-label="Clearing price chart" />
 }

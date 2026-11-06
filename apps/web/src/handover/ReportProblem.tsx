@@ -21,12 +21,12 @@ export function ReportProblem({
   })
   if (send.isSuccess)
     return (
-      <p role="status" className="rounded bg-slate-800 p-3">
+      <p role="status" className="rpg-well p-3">
         Report sent. The held money waits until the goods are checked.
       </p>
     )
   return (
-    <section aria-label="Report a problem" className="space-y-2 rounded bg-slate-900 p-3">
+    <section aria-label="Report a problem" className="rpg-window space-y-2 p-4">
       <h2 className="text-lg font-bold">Report a problem</h2>
       <CameraCapture
         lotCode={lotCode}
@@ -34,10 +34,10 @@ export function ReportProblem({
         max={3}
         onPhoto={(p) => setPhotos((prev) => [...prev, p].slice(0, 3))}
       />
-      {photos.length === 0 && <p className="text-sm text-slate-300">Take at least one photo of the problem.</p>}
+      {photos.length === 0 && <p className="text-sm text-ink-soft">Take at least one photo of the problem.</p>}
       {send.isError && <p role="alert">We could not send the report. Please try again.</p>}
       <button
-        className="w-full rounded bg-red-700 py-3 font-bold disabled:opacity-50"
+        className="rpg-btn rpg-btn-danger w-full text-lg"
         disabled={photos.length === 0 || send.isPending}
         onClick={() => send.mutate()}
       >

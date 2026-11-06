@@ -96,15 +96,11 @@ export function MicButton({ onText, win = window, getMedia = (c) => navigator.me
   }
   return (
     <div>
-      <button
-        className="rounded bg-slate-700 px-4 py-3"
-        onClick={onClick}
-        disabled={busy === "listening" || busy === "sending"}
-      >
+      <button className="rpg-btn rpg-btn-quiet" onClick={onClick} disabled={busy === "listening" || busy === "sending"}>
         {label}
       </button>
       {error && (
-        <p role="alert" className="text-sm text-amber-300">
+        <p role="alert" className="text-sm text-gold-ink">
           {error}
         </p>
       )}

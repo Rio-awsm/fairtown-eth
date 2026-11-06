@@ -31,16 +31,19 @@ export function PriceWeatherToggle({ client = defaultLedger }: { client?: Ledger
     <div className="space-y-1">
       <button
         aria-pressed={on}
-        className={`rounded px-3 py-1 text-sm ${on ? "bg-sky-700" : "bg-slate-900/85"}`}
+        className={`rpg-btn rpg-btn-sm ${on ? "rpg-btn-info" : "rpg-btn-quiet"}`}
         onClick={() => setUi({ priceWeather: !on })}
       >
         Price weather
       </button>
       {on && (
-        <ul aria-label="Price weather legend" className="rounded bg-slate-900/85 p-2 text-xs">
+        <ul aria-label="Price weather legend" className="rpg-window p-3 text-xs">
           {(Object.keys(BAND_WORDS) as Band[]).map((b) => (
             <li key={b} className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 rounded" style={{ background: hex(BAND_COLOUR[b]) }} />
+              <span
+                className="inline-block h-3 w-3 shadow-[0_0_0_1px_#2a1f33]"
+                style={{ background: hex(BAND_COLOUR[b]) }}
+              />
               {BAND_WORDS[b]}
             </li>
           ))}

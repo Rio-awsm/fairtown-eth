@@ -7,6 +7,8 @@ const config: Types.Core.GameConfig = {
   height: 1080,
   backgroundColor: "#0b1220",
   pixelArt: true,
+  // Clicks on the HUD windows over the canvas must not also hit the building underneath.
+  input: { windowEvents: false },
   scale: { mode: Scale.FIT, autoCenter: Scale.CENTER_BOTH },
   scene: [Town],
 }

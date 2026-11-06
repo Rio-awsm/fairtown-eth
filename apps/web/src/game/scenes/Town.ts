@@ -6,7 +6,7 @@ import { focusFor } from "../director"
 import { stressCommands, stressWalk } from "../stress"
 import { GameObjects, Scene, Tilemaps } from "phaser"
 import { EventBus, type AgentProbe, type SceneProbe } from "../EventBus"
-import { AgentSprite, ensurePlaceholderTextures, STEP_MS } from "../agents/AgentSprite"
+import { AgentSprite, STEP_MS } from "../agents/AgentSprite"
 import {
   buildRoadGrid,
   buildWalkGrid,
@@ -23,7 +23,12 @@ import { AgentRoster } from "../agents/roster"
 import type { TownCommand } from "../commands"
 import { MARKET_BUILDINGS, TILE_LAYERS, anchorFor, parseTownMap, type Point, type TownMap } from "../map/anchors"
 import { BUILDING_SIGNS } from "../map/buildings"
-import { buildStubMap } from "../map/stub-map"
+import { buildStubMap, STUB_TILESET_NAME } from "../map/stub-map"
+import { footprintOf, layoutScenery } from "../map/scenery"
+import { BUILDING_SPRITE, chimneyAt, windowsAt } from "../art/buildings"
+import { SIGN_TEXT, TOWN_TEXT } from "../art/text"
+import { ART, TREE_KINDS, registerArt } from "../art/textures"
+import { fitZoom, glideAt, splitSign } from "./layout"
 import { Sky, coinArc, floatText, magnifier, moveCrate, refundCoins, vaultDoor } from "../effects/effects"
 import { StallView } from "../market/StallView"
 import { StallSlots, placeBuilding } from "../market/slots"
@@ -36,8 +41,8 @@ const SPRITES_KEY = "sprites"
 const SPRITES_URL = "/assets/sprites/sprites.json"
 const MAX_AGENTS = 80
 const VIEW = { width: 1920, height: 1080 }
-const DEPTH = { stall: 10, truck: 15, agent: 20, text: 30, toast: 40 } as const
-const TEXT = { fontFamily: "monospace", color: "#f8fafc", stroke: "#0f172a", strokeThickness: 2, resolution: 3 }
+const DEPTH = { building: 3, prop: 4, glow: 6, stall: 10, truck: 15, agent: 20, gate: 26, text: 30, toast: 40 } as const
+const TEXT = TOWN_TEXT
 
 /** The town: a Tiled map (S3 1.1) with stalls, pathing agents (S3 1.2) and trucks, driven by reducer commands. */
 export class Town extends Scene {
@@ -50,7 +55,7 @@ export class Town extends Scene {
   private readonly roster = new AgentRoster(MAX_AGENTS)
   private readonly pool: AgentSprite[] = []
   private readonly agents = new Map<string, AgentSprite>()
-  private readonly trucks = new Map<string, GameObjects.Rectangle>()
+  private readonly trucks = new Map<string, GameObjects.Image>()
   private readonly stalls = new Map<string, StallView>()
   private readonly slots = new StallSlots()
   private readonly seen = new Map<string, number>()
@@ -64,6 +69,10 @@ export class Town extends Scene {
   private focusUntil = 0
   private focusTimer: Phaser.Time.TimerEvent | undefined
   private unsubscribe: (() => void) | undefined
+  /** No drifting or bobbing: screenshot baselines (?until, ?relay=off) and reduced motion. */
+  private still = false
+  /** Tile layers waiting to be baked into the static town texture by drawWorld. */
+  private baseLayers: GameObjects.GameObject[] = []
 
   constructor() {
     super("Town")
@@ -75,12 +84,15 @@ export class Town extends Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor("#0b1220")
+    this.cameras.main.setBackgroundColor("#3f7d45")
     const params = new URLSearchParams(window.location.search)
+    this.still =
+      (env.exposeTown && (params.has("until") || params.get("relay") === "off")) ||
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
     this.speed = Math.max(1, Number(params.get("speed")) || 1)
     // ?demo=1: bigger town text for a projector (S3 5.1).
     setTextScale(params.get("demo") === "1" ? 1.6 : 1)
-    ensurePlaceholderTextures(this)
+    registerArt(this)
     const raw = (this.cache.tilemap.get(MAP_KEY) as { data?: unknown } | undefined)?.data
     if (raw === undefined) return this.fallback([`could not load ${MAP_URL}`])
     const result = parseTownMap(raw)
@@ -110,11 +122,16 @@ export class Town extends Scene {
 
   private drawTiles() {
     const map = this.make.tilemap({ key: MAP_KEY })
+    // Our generated tileset is painted in memory, so it matches the code even if the PNG is stale.
     const tilesets = map.tilesets
-      .map((t) => map.addTilesetImage(t.name, `tileset:${t.name}`))
+      .map((t) => map.addTilesetImage(t.name, t.name === STUB_TILESET_NAME ? ART.tileset : `tileset:${t.name}`))
       .filter((t): t is Tilemaps.Tileset => t !== null)
+    // Our generated map's building tiles only block walking; the painted building sprites draw them.
+    const ours = map.tilesets.some((t) => t.name === STUB_TILESET_NAME)
     for (const name of TILE_LAYERS) {
+      if (ours && name === "buildings") continue
       const layer = map.createLayer(name, tilesets)
+      if (layer && name !== "collision") this.baseLayers.push(layer)
       if (name === "collision") layer?.setVisible(false).setCollisionByExclusion([-1])
     }
   }
@@ -125,15 +142,19 @@ export class Town extends Scene {
     const stubRaw = buildStubMap()
     const stub = parseTownMap(stubRaw)
     if (!stub.ok) throw new Error(`fallback map is invalid: ${stub.problems.join("; ")}`)
-    const g = this.add.graphics()
-    g.fillStyle(0x1e293b)
-    for (const b of MARKET_BUILDINGS) {
-      const { label, entry } = stub.value.anchors.buildings[b]
-      g.fillRect(label.x - 64, label.y + 8, 128, entry.y - label.y - 16)
-    }
+    // Draw the stub layout with the painted tiles, so a broken map still looks like Fairtown.
+    this.cache.tilemap.add("town-fallback", { format: Tilemaps.Formats.TILED_JSON, data: stubRaw })
+    const map = this.make.tilemap({ key: "town-fallback" })
+    const tileset = map.addTilesetImage(STUB_TILESET_NAME, ART.tileset)
+    if (tileset)
+      for (const name of TILE_LAYERS) {
+        if (name === "collision" || name === "buildings") continue
+        const layer = map.createLayer(name, tileset)
+        if (layer) this.baseLayers.push(layer)
+      }
     this.begin(stub.value, stubRaw, problems)
     this.add
-      .text(8, stub.value.heightPx - 8, problems.slice(0, 6).join("\n"), { ...TEXT, fontSize: fs(7), color: "#fca5a5" })
+      .text(8, stub.value.heightPx - 8, problems.slice(0, 6).join("\n"), { ...TEXT, fontSize: fs(7), color: "#ffb4a8" })
       .setOrigin(0, 1)
       .setDepth(DEPTH.toast)
   }
@@ -146,25 +167,17 @@ export class Town extends Scene {
     this.people = createPathfinder(this.walkGrid)
     this.roads = createPathfinder(this.roadGrid)
 
-    const zoom = Math.min(VIEW.width / town.widthPx, VIEW.height / town.heightPx)
+    const zoom = fitZoom(VIEW, { w: town.widthPx, h: town.heightPx })
     this.baseZoom = zoom
-    this.cameras.main.setZoom(zoom).centerOn(town.widthPx / 2, town.heightPx / 2)
-    for (const b of MARKET_BUILDINGS) {
-      const { label } = town.anchors.buildings[b]
-      this.add
-        .text(label.x, label.y, BUILDING_SIGNS[b], { ...TEXT, fontSize: fs(8) })
-        .setOrigin(0.5, 1)
-        .setDepth(DEPTH.text)
-        .setInteractive({ useHandCursor: true })
-        .on("pointerdown", () => EventBus.emit("select", { kind: "building", id: b }))
-    }
-    const gate = town.anchors.gateSpawn
-    this.add
-      .text(gate.x, gate.y - 10, BUILDING_SIGNS.town_gate, { ...TEXT, fontSize: fs(8) })
-      .setOrigin(0.5, 1)
-      .setDepth(DEPTH.text)
+    // Bounds keep director close-ups from ever showing past the map edge.
+    this.cameras.main
+      .setBounds(0, 0, town.widthPx, town.heightPx)
+      .setZoom(zoom)
+      .centerOn(town.widthPx / 2, town.heightPx / 2)
+    this.drawWorld(town)
     this.toast = this.add
-      .text(town.widthPx / 2, 6, "", { ...TEXT, fontSize: fs(10) })
+      // Centred in the open sky right of the HUD windows.
+      .text(town.widthPx * 0.72, 8, "", { ...TEXT, fontSize: fs(10), strokeThickness: 4 })
       .setOrigin(0.5, 0)
       .setDepth(DEPTH.toast)
 
@@ -182,6 +195,12 @@ export class Town extends Scene {
       )
     })
     const offJump = EventBus.on("camera:jump", (b) => this.focus(b as Building, 6000, true))
+    // Keep the selected agent's name tag up while its panel is open.
+    const offSelect = townStore.subscribe((s, prev) => {
+      if (s.selection === prev.selection) return
+      if (prev.selection?.kind === "agent") this.agents.get(prev.selection.id)?.setSelected(false)
+      if (s.selection?.kind === "agent") this.agents.get(s.selection.id)?.setSelected(true)
+    })
     // Turning the director off sends the camera straight home.
     const offDirector = townStore.subscribe((s, prev) => {
       if (prev.ui.director && !s.ui.director) this.home()
@@ -195,6 +214,7 @@ export class Town extends Scene {
       this.unsubscribe?.()
       offWeather()
       offJump()
+      offSelect()
       offDirector()
       fps.remove()
     }
@@ -210,6 +230,177 @@ export class Town extends Scene {
     if (env.exposeTown && new URLSearchParams(window.location.search).get("stress") === "1") this.startStress()
   }
 
+  /** Buildings, signs, scenery, the gate, the boat, and the ambient life of the town. */
+  private drawWorld(town: TownMap) {
+    const glows: GameObjects.Image[] = []
+    const glow = (x: number, y: number, scale: number) => {
+      const g = this.add.image(x, y, ART.glow).setScale(scale).setBlendMode("ADD").setDepth(DEPTH.glow).setAlpha(0.85)
+      glows.push(g)
+    }
+    const select = (b: Building) => () => EventBus.emit("select", { kind: "building", id: b })
+    // Ground, buildings and scenery never change: they are drawn once into one texture (see bake).
+    const statics: GameObjects.GameObject[] = [...this.baseLayers]
+    for (const b of MARKET_BUILDINGS) {
+      const f = footprintOf(town, b)
+      const left = f.x + f.w / 2 - BUILDING_SPRITE.w / 2
+      const top = f.y + f.h - (BUILDING_SPRITE.h - 4)
+      statics.push(new GameObjects.Image(this, left, top, ART.building(b)).setOrigin(0, 0))
+      // The baked building cannot be clicked, so an invisible zone over it opens its panel.
+      this.add
+        .zone(left + 4, top + 8, BUILDING_SPRITE.w - 8, BUILDING_SPRITE.h - 12)
+        .setOrigin(0, 0)
+        .setInteractive({ useHandCursor: true })
+        .on("pointerdown", select(b))
+      for (const w of windowsAt(b)) glow(left + w.x, top + w.y, 0.7)
+      const chimney = chimneyAt(b)
+      if (chimney && !this.still)
+        this.add
+          .particles(left + chimney.x, top + chimney.y, ART.puff, {
+            speedY: { min: -14, max: -8 },
+            speedX: { min: 2, max: 6 },
+            scale: { start: 0.6, end: 1.3 },
+            alpha: { start: 0.75, end: 0 },
+            lifespan: 2600,
+            frequency: 700,
+          })
+          .setDepth(DEPTH.building + 0.5)
+      this.sign(town.anchors.buildings[b].label, BUILDING_SIGNS[b], select(b))
+    }
+
+    for (const p of layoutScenery(town, this.walkGrid, this.roadGrid)) {
+      const key =
+        p.kind === "tree"
+          ? ART.tree(p.variant % TREE_KINDS)
+          : p.kind === "pine"
+            ? ART.pine
+            : p.kind === "bush"
+              ? ART.bush
+              : ART.lamp
+      statics.push(new GameObjects.Image(this, p.x, p.y + 2, key).setOrigin(0.5, 1))
+      if (p.kind === "lamp") glow(p.x, p.y - 22, 1.1)
+    }
+
+    this.bake(town, statics)
+
+    const gate = town.anchors.gateSpawn
+    this.add
+      .image(gate.x, gate.y + 12, ART.gate)
+      .setOrigin(0.5, 1)
+      .setDepth(DEPTH.gate)
+    this.add
+      .text(gate.x, gate.y - 19, BUILDING_SIGNS.town_gate, { ...SIGN_TEXT, fontSize: fs(5), color: "#fffaea" })
+      .setOrigin(0.5, 0.5)
+      .setDepth(DEPTH.gate + 1)
+
+    // A boat moored off the Fish Dock, if that spot is water.
+    const dock = town.anchors.buildings.fish_dock.label
+    const mooring = { x: dock.x + 44, y: dock.y - 50 }
+    if (!isWalkable(this.walkGrid, mooring) && mooring.y > 0) {
+      const boat = this.add.image(mooring.x, mooring.y, ART.boat).setDepth(DEPTH.prop)
+      if (!this.still)
+        this.tweens.add({
+          targets: boat,
+          y: mooring.y + 1.5,
+          duration: 1400,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        })
+    }
+    this.sky.setNightLights(glows)
+    if (!this.still) this.ambient(town)
+  }
+
+  /**
+   * Draws the static town into one texture, in order, then drops the originals: one full-screen quad
+   * per frame instead of five tile layers, seven buildings and about sixty props (S3 5.1 frame budget).
+   */
+  private bake(town: TownMap, statics: GameObjects.GameObject[]) {
+    const base = this.add.renderTexture(0, 0, town.widthPx, town.heightPx).setOrigin(0, 0).setDepth(0)
+    base.draw(statics)
+    base.render()
+    for (const o of statics) o.destroy()
+    this.baseLayers = []
+  }
+
+  /** Water glints and drifting cloud shadows. Off for baselines and reduced motion. */
+  private ambient(town: TownMap) {
+    const water: Point[] = []
+    const roads = this.roadGrid
+    for (let y = 0; y < this.walkGrid.height; y++)
+      for (let x = 0; x < this.walkGrid.width; x++) {
+        const inBuilding = MARKET_BUILDINGS.some((b) => {
+          const f = footprintOf(town, b)
+          return x * 16 >= f.x - 16 && x * 16 < f.x + f.w + 16 && y * 16 >= f.y - 16 && y * 16 < f.y + f.h + 16
+        })
+        if (this.walkGrid.cells[y]![x] === 1 && roads.cells[y]![x] === 1 && !inBuilding)
+          water.push(centreOf(this.walkGrid, { x, y }))
+      }
+    if (water.length > 0)
+      this.add
+        .particles(0, 0, ART.sparkle, {
+          emitZone: {
+            type: "random",
+            source: {
+              getRandomPoint: (point: Phaser.Types.Math.Vector2Like) => {
+                const at = water[Math.floor(Math.random() * water.length)]!
+                point.x = at.x + (Math.random() - 0.5) * 14
+                point.y = at.y + (Math.random() - 0.5) * 14
+                return point
+              },
+            },
+          },
+          alpha: {
+            start: 0,
+            end: 1,
+            ease: "Sine.easeInOut",
+            yoyo: true,
+          } as unknown as Phaser.Types.GameObjects.Particles.EmitterOpOnEmitType,
+          scale: { min: 0.6, max: 1 },
+          lifespan: 1400,
+          frequency: 160,
+          quantity: 1,
+        })
+        .setDepth(DEPTH.prop - 0.5)
+    for (let i = 0; i < 2; i++) {
+      const cloud = this.add
+        .image(-120 - i * 520, 120 + i * 220, ART.cloud)
+        .setScale(4)
+        .setTint(0x000000)
+        .setAlpha(0.08)
+        .setDepth(DEPTH.text - 1)
+      this.tweens.add({
+        targets: cloud,
+        x: town.widthPx + 160,
+        duration: 70_000 + i * 15_000,
+        repeat: -1,
+        delay: i * 9000,
+      })
+    }
+  }
+
+  /** A wooden plaque: building name on top, the place it serves underneath. */
+  private sign(at: Point, text: string, onSelect: () => void) {
+    const { title, subtitle } = splitSign(text)
+    const c = this.add.container(at.x, at.y + 2).setDepth(DEPTH.text)
+    const head = this.add.text(0, 0, title, { ...SIGN_TEXT, fontSize: fs(6) }).setOrigin(0.5, 0.5)
+    const sub = subtitle
+      ? this.add.text(0, 0, subtitle, { ...SIGN_TEXT, fontSize: fs(4), color: "#5b4a63" }).setOrigin(0.5, 0.5)
+      : undefined
+    const w = Math.ceil(Math.max(head.width, sub?.width ?? 0) + 10)
+    const h = sub ? 19 : 12
+    head.setY(sub ? -3.5 : 0)
+    sub?.setY(5)
+    const g = this.add.graphics()
+    g.fillStyle(0x2a1f33).fillRect(-w / 2 - 1, -h / 2 - 1, w + 2, h + 2)
+    g.fillStyle(0x7a4b2a).fillRect(-w / 2, -h / 2, w, h)
+    g.fillStyle(0xf8eccb).fillRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2)
+    g.fillStyle(0xd9c08a).fillRect(-w / 2 + 1, h / 2 - 2, w - 2, 1)
+    g.fillStyle(0x2a1f33, 0.3).fillRect(-w / 2 + 1, h / 2 + 1, w, 2)
+    c.add([g, head, ...(sub ? [sub] : [])])
+    c.setSize(w, h).setInteractive({ useHandCursor: true }).on("pointerdown", onSelect)
+  }
+
   /** Stress mode (dev only): 60 agents and 18 stalls, with ten agents walking every second. */
   private startStress() {
     this.apply(stressCommands())
@@ -222,9 +413,7 @@ export class Town extends Scene {
     const now = this.time.now
     if (!force && now < this.focusUntil - holdMs / 2) return
     const at = anchorFor(this.town.anchors, building)
-    const cam = this.cameras.main
-    cam.pan(at.x, at.y, 600, "Sine.easeInOut", true)
-    cam.zoomTo(this.baseZoom * 1.6, 600, "Sine.easeInOut", true)
+    this.glide(at, this.baseZoom * 1.6)
     this.focusUntil = now + holdMs
     this.focusTimer?.remove()
     this.focusTimer = this.time.delayedCall(holdMs, () => this.home())
@@ -233,9 +422,20 @@ export class Town extends Scene {
   private home() {
     this.focusTimer?.remove()
     this.focusUntil = 0
+    this.glide({ x: this.town.widthPx / 2, y: this.town.heightPx / 2 }, this.baseZoom)
+  }
+
+  /**
+   * Ease zoom and centre together. One zoom effect re-centres every frame, so a glide that starts
+   * mid-way through another (D pressed during a close-up) still lands exactly, inside the bounds.
+   */
+  private glide(to: Point, zoom: number) {
     const cam = this.cameras.main
-    cam.pan(this.town.widthPx / 2, this.town.heightPx / 2, 600, "Sine.easeInOut", true)
-    cam.zoomTo(this.baseZoom, 600, "Sine.easeInOut", true)
+    const from = { x: cam.midPoint.x, y: cam.midPoint.y }
+    cam.zoomTo(zoom, 600, "Sine.easeInOut", true, (c: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+      const t = glideAt(progress)
+      c.centerOn(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t)
+    })
   }
 
   private apply(commands: TownCommand[]) {
@@ -298,7 +498,10 @@ export class Town extends Scene {
     const path = this.roads.findPath(from, anchorFor(this.town.anchors, c.to))
     if (path === null) return console.warn(`no road from ${c.from} to ${c.to}`)
     this.trucks.get(c.lotId)?.destroy()
-    const truck = this.add.rectangle(from.x, from.y, 12, 8, 0xf97316).setStrokeStyle(1, 0x0f172a).setDepth(DEPTH.truck)
+    const truck = this.add
+      .image(from.x, from.y + 2, ART.truck)
+      .setOrigin(0.5, 0.8)
+      .setDepth(DEPTH.truck)
     this.trucks.set(c.lotId, truck)
     const stepMs = STEP_MS / 2 / this.speed
     const step = (i: number) => {
@@ -308,6 +511,7 @@ export class Town extends Scene {
         if (this.trucks.get(c.lotId) === truck) this.trucks.delete(c.lotId)
         return
       }
+      if (next.x !== truck.x) truck.setFlipX(next.x < truck.x)
       this.tweens.add({ targets: truck, x: next.x, y: next.y, duration: stepMs, onComplete: () => step(i + 1) })
     }
     step(0)
@@ -469,11 +673,11 @@ export class Town extends Scene {
         return
       case "toast":
         this.see(`toast:${c.tone}`)
-        this.toast.setText(c.text).setColor(c.tone === "warn" ? "#fca5a5" : c.tone === "money" ? "#86efac" : "#f8fafc")
+        this.toast.setText(c.text).setColor(c.tone === "warn" ? "#ffb4a8" : c.tone === "money" ? "#c6f6a8" : "#fffaea")
         return
       case "setPhase":
         this.see("setPhase")
-        this.cameras.main.setBackgroundColor(c.phase === "night" || c.phase === "evening" ? "#050914" : "#0b1220")
+        this.cameras.main.setBackgroundColor(c.phase === "night" || c.phase === "evening" ? "#1b1f4a" : "#3f7d45")
         return
       default: {
         const unreachable: never = c

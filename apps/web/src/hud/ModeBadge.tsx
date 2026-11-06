@@ -4,16 +4,16 @@ export function ModeBadge({ mode }: { mode?: TownMode }) {
   const storeMode = useTown((s) => s.mode)
   const live = (mode ?? storeMode) === "live"
   return (
-    <span
-      className={`rounded px-2 py-0.5 text-xs font-bold tracking-wide ${live ? "bg-red-600 text-white" : "bg-amber-400 text-black"}`}
-    >
+    <span className={`rpg-badge gap-1.5 ${live ? "bg-brick text-parchment-light" : "bg-coin text-ink"}`}>
+      <span
+        aria-hidden="true"
+        className={`inline-block h-2 w-2 ${live ? "animate-pulse bg-parchment-light" : "bg-ink"}`}
+      />
       {live ? "LIVE" : "REPLAY"}
     </span>
   )
 }
 
 export function TestMoneyBadge() {
-  return (
-    <span className="rounded bg-emerald-700 px-2 py-0.5 text-xs font-bold tracking-wide text-white">TEST MONEY</span>
-  )
+  return <span className="rpg-badge bg-moss text-parchment-light">TEST MONEY</span>
 }

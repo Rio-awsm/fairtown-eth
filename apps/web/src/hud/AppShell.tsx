@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import { NavLink, Outlet, useLocation } from "react-router"
 import { queryClient } from "../net/queryClient"
 import { ModeBadge, TestMoneyBadge } from "./ModeBadge"
+import { TownMark } from "./TownMark"
 
 const LINKS = [
   ["/town", "Town"],
@@ -20,15 +21,18 @@ export function AppShell() {
   const fullScreen = useLocation().pathname === "/town"
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
+      <div className="flex min-h-screen flex-col text-ink">
         {!fullScreen && (
-          <header className="flex flex-wrap items-center gap-3 border-b border-slate-800 px-3 py-2">
-            <span className="font-bold">Fairtown</span>
+          <header className="rpg-planks relative z-10 flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2">
+            <span className="flex items-center gap-2 font-display text-xl font-bold text-parchment-light [text-shadow:0_2px_0_rgb(42_31_51/0.7)]">
+              <TownMark />
+              Fairtown
+            </span>
             <ModeBadge />
             <TestMoneyBadge />
-            <nav className="ml-auto flex flex-wrap gap-3 text-sm text-slate-300">
+            <nav aria-label="Pages" className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1 py-1 sm:ml-auto">
               {LINKS.map(([to, label]) => (
-                <NavLink key={to} to={to} className={({ isActive }) => (isActive ? "text-white" : "")}>
+                <NavLink key={to} to={to} className="rpg-tab">
                   {label}
                 </NavLink>
               ))}
@@ -36,7 +40,7 @@ export function AppShell() {
           </header>
         )}
         <main className="flex-1">
-          <Suspense fallback={<p className="p-4">Loading…</p>}>
+          <Suspense fallback={<p className="rpg-note m-4">Loading…</p>}>
             <Outlet />
           </Suspense>
         </main>

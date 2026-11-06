@@ -14,5 +14,5 @@ export function QrCode({ text, label }: { text: string; label: string }) {
     }
   }, [text])
   if (!src) return <p>Drawing the code…</p>
-  return <img src={src} alt={label} data-qr={text} className="mx-auto w-full max-w-80 rounded bg-white p-2" />
+  return <img src={src} alt={label} data-qr={text} className="rpg-well mx-auto w-full max-w-80 bg-white p-2" />
 }

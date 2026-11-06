@@ -8,9 +8,9 @@ export function BoardPage({ client = defaultLedger }: { client?: LedgerClient })
   return (
     <section className="mx-auto max-w-[1880px] space-y-3 p-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold">Public board</h1>
+        <h1 className="rpg-banner">Public board</h1>
         <span
-          className={`rounded px-2 py-0.5 text-xs font-bold ${client.mode === "live" ? "bg-sky-700" : "bg-amber-400 text-black"}`}
+          className={`rpg-badge ${client.mode === "live" ? "bg-harbour text-parchment-light" : "bg-coin text-ink"}`}
         >
           {client.mode === "live" ? "LIVE LEDGER · Arkiv Rabdi" : "MOCK LEDGER"}
         </span>

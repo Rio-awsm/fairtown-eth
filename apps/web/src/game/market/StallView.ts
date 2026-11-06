@@ -1,33 +1,25 @@
 import type { LotStatus } from "@fairtown/shared/keys"
 import { fs } from "../textScale"
 import { GameObjects, type Scene } from "phaser"
+import { GOOD_OF } from "../art/props"
+import { TOWN_TEXT } from "../art/text"
+import { ART } from "../art/textures"
 import type { TownCommand } from "../commands"
 import { countdown } from "./slots"
 
-const TEXT = { fontFamily: "monospace", color: "#f8fafc", stroke: "#0f172a", strokeThickness: 2, resolution: 3 }
-const ICON: Record<string, { glyph: string; colour: number }> = {
-  cod: { glyph: "F", colour: 0x38bdf8 },
-  haddock: { glyph: "F", colour: 0x38bdf8 },
-  tomato: { glyph: "T", colour: 0xef4444 },
-  onion: { glyph: "O", colour: 0xc084fc },
-  marigold: { glyph: "M", colour: 0xf59e0b },
-  rose: { glyph: "R", colour: 0xf43f5e },
-  truck_capacity: { glyph: "K", colour: 0xf97316 },
-  cargo_slot: { glyph: "A", colour: 0xf97316 },
-  storage_slot: { glyph: "V", colour: 0x67e8f9 },
-  gpu_hour: { glyph: "G", colour: 0x22c55e },
-}
-const STATUS_COLOUR: Partial<Record<LotStatus, number>> = {
-  open: 0x0f766e,
-  sold: 0x1d4ed8,
-  truck_booked: 0x1d4ed8,
-  picked_up: 0x4338ca,
-  delivered: 0x4338ca,
-  paid_in_full: 0xca8a04,
-  no_show_reported: 0xb91c1c,
-  disputed: 0x9a3412,
-  refunded: 0x7f1d1d,
-  relisted: 0x475569,
+const TEXT = { ...TOWN_TEXT, strokeThickness: 2 }
+/** Awning tint by status: green while open, blue when sold, gold when paid, red on trouble. */
+export const STATUS_COLOUR: Partial<Record<LotStatus, number>> = {
+  open: 0x5fc25a,
+  sold: 0x4d8fe0,
+  truck_booked: 0x4d8fe0,
+  picked_up: 0x8a6be0,
+  delivered: 0x8a6be0,
+  paid_in_full: 0xf2b33d,
+  no_show_reported: 0xe0483b,
+  disputed: 0xe07a2a,
+  refunded: 0xb03a3a,
+  relisted: 0xa3a9b0,
 }
 const STATUS_LABEL: Partial<Record<LotStatus, string>> = {
   open: "Open",
@@ -47,8 +39,8 @@ type Place = TownCommand & { kind: "placeStall" }
 /** One stall: icon, qty, floor or live price in the lot's currency, status, countdown and badges. */
 export class StallView extends GameObjects.Container {
   readonly seller: string
-  private readonly box: GameObjects.Rectangle
-  private readonly glow: GameObjects.Rectangle
+  private readonly box: GameObjects.Image
+  private readonly glow: GameObjects.Image
   private readonly title: GameObjects.Text
   private readonly price: GameObjects.Text
   private readonly status: GameObjects.Text
@@ -64,24 +56,38 @@ export class StallView extends GameObjects.Container {
     super(scene, at.x, at.y)
     this.seller = c.seller
     this.endBlock = c.endBlock
-    const icon = ICON[c.commodity] ?? { glyph: "?", colour: 0x94a3b8 }
-    this.glow = scene.add.rectangle(0, 0, 16, 14, 0xfde047).setAlpha(0)
-    this.box = scene.add.rectangle(0, 0, 12, 10, c.slot === null ? 0x475569 : 0x0f766e).setStrokeStyle(1, 0x0f172a)
-    const iconBox = scene.add.rectangle(0, 0, 6, 6, icon.colour)
-    const glyph = scene.add.text(0, 0, icon.glyph, { ...TEXT, fontSize: fs(5), strokeThickness: 1 }).setOrigin(0.5)
+    const good = GOOD_OF[c.commodity] ?? "unknown"
+    this.glow = scene.add.image(0, -2, ART.glow).setScale(1.1).setBlendMode("ADD").setAlpha(0)
+    const counter = scene.add.image(0, 6, ART.counter).setOrigin(0.5, 1)
+    this.box = scene.add
+      .image(0, -4, ART.awning)
+      .setOrigin(0.5, 0.5)
+      .setTint(c.slot === null ? (STATUS_COLOUR.relisted ?? 0xffffff) : (STATUS_COLOUR.open ?? 0xffffff))
+    const icon = scene.add.image(0, 1, ART.good(good)).setOrigin(0.5, 1)
     const dir = above ? -1 : 1
-    const oy = (n: number) => dir * (7 + n * 5)
+    // Line height follows the text size, so demo mode's bigger text never overlaps.
+    const line = Math.ceil(parseFloat(fs(4))) + 1
+    const oy = (n: number) => dir * ((above ? 10 : 8) + n * line)
     const origin = above ? 1 : 0
     this.title = scene.add
       .text(0, oy(0), `${c.qty} ${c.unit} ${c.commodity}`, { ...TEXT, fontSize: fs(4) })
       .setOrigin(0.5, origin)
     this.price = scene.add
-      .text(0, oy(1), c.floorLabel, { ...TEXT, fontSize: fs(4), color: "#a7f3d0" })
+      .text(0, oy(1), c.floorLabel, { ...TEXT, fontSize: fs(4), color: "#c6f6a8" })
       .setOrigin(0.5, origin)
     this.status = scene.add.text(0, oy(2), "Open", { ...TEXT, fontSize: fs(4) }).setOrigin(0.5, origin)
-    this.timer = scene.add.text(0, oy(3), "", { ...TEXT, fontSize: fs(4), color: "#fde68a" }).setOrigin(0.5, origin)
-    this.badge = scene.add.text(8, -8, "", { ...TEXT, fontSize: fs(4), backgroundColor: "#334155" }).setOrigin(0, 1)
-    this.add([this.glow, this.box, iconBox, glyph, this.title, this.price, this.status, this.timer, this.badge])
+    this.timer = scene.add.text(0, oy(3), "", { ...TEXT, fontSize: fs(4), color: "#ffe08a" }).setOrigin(0.5, origin)
+    // Beside the counter, clear of the label lines above or below the stall.
+    this.badge = scene.add
+      .text(12, 1, "", {
+        ...TEXT,
+        fontSize: fs(4),
+        strokeThickness: 0,
+        backgroundColor: "#3f7d45",
+        padding: { x: 2, y: 1 },
+      })
+      .setOrigin(0, 0.5)
+    this.add([this.glow, counter, icon, this.box, this.title, this.price, this.status, this.timer, this.badge])
     scene.add.existing(this)
   }
 
@@ -98,9 +104,9 @@ export class StallView extends GameObjects.Container {
   setStatus(status: LotStatus, deadlineBlock?: number): void {
     this.current = status
     this.deadline = deadlineBlock
-    this.box.setFillStyle(STATUS_COLOUR[status] ?? 0x0f766e).setAlpha(1)
+    this.box.setTint(STATUS_COLOUR[status] ?? 0xffffff).setAlpha(1)
     this.status.setText(this.noShow && status === "refunded" ? "No-show" : (STATUS_LABEL[status] ?? status))
-    this.glow.setAlpha(status === "paid_in_full" ? 0.6 : 0)
+    this.glow.setAlpha(status === "paid_in_full" ? 0.8 : 0)
     this.drawTimer()
   }
 
@@ -118,7 +124,7 @@ export class StallView extends GameObjects.Container {
   }
 
   fade(newFloor?: string): void {
-    this.box.setAlpha(0.4)
+    this.box.setAlpha(0.45)
     if (newFloor) this.price.setText(`relisted at ${newFloor}`)
   }
 
@@ -128,22 +134,22 @@ export class StallView extends GameObjects.Container {
 
   markNoShow(): void {
     this.noShow = true
-    this.badge.setText("No-show").setBackgroundColor("#7f1d1d")
+    this.badge.setText("No-show").setBackgroundColor("#a3322a")
     this.status.setText("No-show")
   }
 
   setRefundBadge(label: string): void {
-    this.badge.setText(label).setBackgroundColor("#9a3412")
+    this.badge.setText(label).setBackgroundColor("#b4561a")
   }
 
   private drawTimer(): void {
     if (this.current === "open")
-      return void this.timer.setText(`ends in ${countdown(this.endBlock, this.block)}`).setColor("#fde68a")
+      return void this.timer.setText(`ends in ${countdown(this.endBlock, this.block)}`).setColor("#ffe08a")
     if (this.deadline === undefined) return void this.timer.setText("")
     if (this.current === "no_show_reported")
-      return void this.timer.setText(`seller can answer ${countdown(this.deadline, this.block)}`).setColor("#fca5a5")
+      return void this.timer.setText(`seller can answer ${countdown(this.deadline, this.block)}`).setColor("#ffb4a8")
     if (this.current === "sold" || this.current === "truck_booked")
-      return void this.timer.setText(`pickup by ${countdown(this.deadline, this.block)}`).setColor("#fde68a")
+      return void this.timer.setText(`pickup by ${countdown(this.deadline, this.block)}`).setColor("#ffe08a")
     this.timer.setText("")
   }
 }

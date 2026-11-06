@@ -31,7 +31,7 @@ export const sellerName = (town: TownState, address: string) =>
   town.agents[address]?.name ??
   shortAddress(address)
 const Card = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <section aria-label={label} className="space-y-2 rounded bg-slate-900 p-3">
+  <section aria-label={label} className="rpg-window space-y-2 p-4">
     <h2 className="text-lg font-bold">{label}</h2>
     {children}
   </section>
@@ -43,7 +43,7 @@ export function LiveAuctions() {
   const open = Object.values(lots).filter((l) => l.status === "open" && l.endBlock > block)
   return (
     <Card label="Live auctions">
-      {open.length === 0 && <p className="text-slate-300">No auctions open right now.</p>}
+      {open.length === 0 && <p className="text-ink-soft">No auctions open right now.</p>}
       <ul className="space-y-1">
         {open.map((l) => (
           <li key={l.lotId}>
@@ -65,7 +65,7 @@ export function LatestClears({ client }: { client: LedgerClient }) {
       {q.isError && <p role="alert">{UNREACHABLE}</p>}
       <table aria-label="Latest clears" className="w-full text-sm [&_td]:py-1 [&_td]:pr-3 [&_th]:pr-3">
         <thead>
-          <tr className="text-left text-slate-300">
+          <tr className="text-left text-ink-soft">
             <th>Lot</th>
             <th>What</th>
             <th>Final</th>
@@ -100,7 +100,7 @@ export function SellerRecords({ client }: { client: LedgerClient }) {
       {q.isError && <p role="alert">{UNREACHABLE}</p>}
       <table aria-label="Seller records" className="w-full text-sm [&_td]:py-1 [&_td]:pr-3 [&_th]:pr-3">
         <thead>
-          <tr className="text-left text-slate-300">
+          <tr className="text-left text-ink-soft">
             <th>Seller</th>
             <th>Tier</th>
             <th>Clean lots</th>
@@ -109,7 +109,7 @@ export function SellerRecords({ client }: { client: LedgerClient }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.seller} className={r.noShows > 0n ? "text-red-300" : ""}>
+            <tr key={r.seller} className={r.noShows > 0n ? "text-brick" : ""}>
               <td>{sellerName(town, r.seller)}</td>
               <td>{r.tier === "proven" ? "Proven" : "New"}</td>
               <td>{r.cleanLots.toString()}</td>
@@ -130,7 +130,7 @@ export function PriceWeather({ client }: { client: LedgerClient }) {
   return (
     <Card label="Price weather">
       {q.isError && <p role="alert">{UNREACHABLE}</p>}
-      {weather.length === 0 && <p className="text-slate-300">No clears in the last 30 days.</p>}
+      {weather.length === 0 && <p className="text-ink-soft">No clears in the last 30 days.</p>}
       <ul className="space-y-2">
         {weather.map((w) => (
           <li key={`${w.market}|${w.commodity}|${w.currency}`} className="flex items-center gap-3">
@@ -138,10 +138,10 @@ export function PriceWeather({ client }: { client: LedgerClient }) {
               {BUILDING_SIGNS[w.market as Building] ?? w.market} · {w.commodity}
             </span>
             <span className="w-48 text-sm">{BAND_WORDS[w.band]}</span>
-            <span className="text-sm text-slate-300">
+            <span className="text-sm text-ink-soft">
               {money(w.latest, w.currency)} vs 30-day {money(w.average, w.currency)}
             </span>
-            <svg width="100" height="20" aria-hidden className="text-emerald-400">
+            <svg width="100" height="20" aria-hidden className="text-moss-ink">
               <polyline points={sparkPoints(w.series, 100, 20)} fill="none" stroke="currentColor" strokeWidth="2" />
             </svg>
           </li>
@@ -172,7 +172,7 @@ export function QueryBox({ client }: { client: LedgerClient }) {
         <label>
           Commodity
           <select
-            className="ml-2 rounded bg-slate-800 p-1"
+            className="rpg-input ml-2 min-h-0 p-1"
             value={commodity}
             onChange={(e) => {
               setCommodity(e.target.value)
@@ -188,7 +188,7 @@ export function QueryBox({ client }: { client: LedgerClient }) {
         <label>
           Place
           <select
-            className="ml-2 rounded bg-slate-800 p-1"
+            className="rpg-input ml-2 min-h-0 p-1"
             value={place}
             onChange={(e) => {
               setPlace(e.target.value)
@@ -202,7 +202,7 @@ export function QueryBox({ client }: { client: LedgerClient }) {
           </select>
         </label>
         {noShowSeller && (
-          <button className="rounded bg-slate-700 px-3 py-1" onClick={() => setQuery(sellerRecord(noShowSeller))}>
+          <button className="rpg-btn rpg-btn-quiet rpg-btn-sm" onClick={() => setQuery(sellerRecord(noShowSeller))}>
             {sellerName(town, noShowSeller)}'s record
           </button>
         )}
@@ -211,14 +211,14 @@ export function QueryBox({ client }: { client: LedgerClient }) {
       <pre
         tabIndex={0}
         aria-label="Query text"
-        className="overflow-x-auto rounded bg-black p-2 text-xs text-emerald-300"
+        className="rpg-well overflow-x-auto bg-ink p-3 text-xs text-meadow-tint"
       >
         {queryText(query)}
       </pre>
       {q.isError && <p role="alert">{UNREACHABLE}</p>}
       <table aria-label="Query results" className="w-full font-mono text-xs [&_td]:pr-4 [&_th]:pr-4">
         <thead>
-          <tr className="text-left text-slate-300">
+          <tr className="text-left text-ink-soft">
             {columns.map((c) => (
               <th key={c}>{c}</th>
             ))}
@@ -234,7 +234,7 @@ export function QueryBox({ client }: { client: LedgerClient }) {
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-slate-300">Raw values as stored: money in base units (6 decimals), days since 1970.</p>
+      <p className="text-xs text-ink-soft">Raw values as stored: money in base units (6 decimals), days since 1970.</p>
     </Card>
   )
 }

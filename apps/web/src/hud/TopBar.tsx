@@ -12,16 +12,18 @@ export function TopBar() {
   const setUi = useTown((s) => s.setUi)
   const active = Object.values(signals).filter((sig) => sig.expiresAtBlock > block)
   return (
-    <div className="flex items-center gap-3 rounded bg-slate-900/85 px-3 py-1.5 text-sm">
+    <div className="rpg-window flex items-center gap-3 px-3 py-2 text-sm">
       <ModeBadge />
       <TestMoneyBadge />
-      <span title="Latest block seen on the relay">Block {block}</span>
-      <span className="text-slate-400" title="Relay connection">
+      <span title="Latest block seen on the relay" className="font-display font-semibold">
+        Block {block}
+      </span>
+      <span className="text-ink-soft" title="Relay connection">
         {status}
       </span>
       <button
         aria-pressed={!muted}
-        className="rounded bg-slate-800 px-2 py-0.5 text-xs"
+        className="rpg-btn rpg-btn-quiet rpg-btn-sm min-h-7 text-xs"
         onClick={() => {
           if (muted) unlockAudio()
           saveMuted(!muted)
@@ -32,11 +34,7 @@ export function TopBar() {
       </button>
       <ul className="flex gap-2">
         {active.map((sig) => (
-          <li
-            key={sig.id}
-            className="rounded bg-indigo-900 px-2 py-0.5 text-xs"
-            title={`signal ${sig.kind} at ${sig.place}`}
-          >
+          <li key={sig.id} className="rpg-badge bg-plum-tint text-ink" title={`signal ${sig.kind} at ${sig.place}`}>
             {sig.label}
           </li>
         ))}

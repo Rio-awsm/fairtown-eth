@@ -28,32 +28,30 @@ function Confirm({ ticket, lot, receiver }: { ticket: TicketJson; lot: LotState;
   })
   if (confirm.isSuccess)
     return (
-      <p role="status" className="rounded bg-emerald-950 p-3 text-lg">
+      <p role="status" className="rpg-well bg-meadow-tint p-3 text-lg">
         Done. {lotMoney(lot, confirm.data.releasedToSeller)} released to {lot.sellerName}.
       </p>
     )
   return (
     <div className="space-y-3">
-      <section aria-label="Handover" className="space-y-3 rounded bg-slate-900 p-3">
+      <section aria-label="Handover" className="rpg-window space-y-3 p-4">
         <p className="text-xl font-bold">{describeTicket(ticket, lot)}</p>
-        <p className="rounded bg-amber-400 p-2 font-bold text-black">
-          Inspect first. Scanning means you accept the goods.
-        </p>
+        <p className="rpg-badge bg-coin p-2 font-bold text-ink">Inspect first. Scanning means you accept the goods.</p>
         {confirm.isError && (
-          <p role="alert" className="text-amber-300">
+          <p role="alert" className="text-gold-ink">
             {confirm.error instanceof ApiClientError && confirm.error.code === "network"
               ? "No connection. Check your signal and try again."
               : "We could not confirm the handover. Please try again."}
           </p>
         )}
         <button
-          className="w-full rounded bg-emerald-700 py-3 text-lg font-bold disabled:opacity-50"
+          className="rpg-btn rpg-btn-go w-full text-lg"
           disabled={confirm.isPending}
           onClick={() => confirm.mutate()}
         >
           Confirm
         </button>
-        <button className="w-full rounded bg-slate-700 py-3" onClick={() => setReporting(true)}>
+        <button className="rpg-btn rpg-btn-quiet w-full" onClick={() => setReporting(true)}>
           Report a problem
         </button>
       </section>
@@ -76,15 +74,11 @@ export function ScanPage() {
     body = (
       <div className="space-y-2">
         <p>Who is receiving the goods?</p>
-        {receivers.length === 0 && <p className="text-slate-300">Waiting for the town…</p>}
+        {receivers.length === 0 && <p className="text-ink-soft">Waiting for the town…</p>}
         {receivers.map((a) => (
-          <button
-            key={a.agentId}
-            className="block w-full rounded bg-slate-800 p-3 text-left"
-            onClick={() => setReceiver(a)}
-          >
+          <button key={a.agentId} className="rpg-window rpg-card p-3" onClick={() => setReceiver(a)}>
             <span className="block font-bold">{a.ensName ?? a.name}</span>
-            <span className="text-sm text-slate-300">{ROLE_WORDS[a.role] ?? a.role}</span>
+            <span className="text-sm text-ink-soft">{ROLE_WORDS[a.role] ?? a.role}</span>
           </button>
         ))}
       </div>
@@ -103,7 +97,7 @@ export function ScanPage() {
           />
         </Suspense>
         {cameraError && (
-          <p role="alert" className="text-amber-300">
+          <p role="alert" className="text-gold-ink">
             {cameraError}
           </p>
         )}
@@ -117,10 +111,10 @@ export function ScanPage() {
         <Confirm ticket={read.ticket} lot={checked.lot} receiver={receiver} />
       ) : (
         <div className="space-y-2">
-          <p role="alert" className="rounded bg-red-950 p-3">
+          <p role="alert" className="rpg-well bg-brick-tint p-3">
             {checked.ok ? "" : checked.error}
           </p>
-          <button className="w-full rounded bg-slate-700 py-3" onClick={() => setText(null)}>
+          <button className="rpg-btn rpg-btn-quiet w-full" onClick={() => setText(null)}>
             Scan again
           </button>
         </div>
@@ -128,9 +122,9 @@ export function ScanPage() {
   }
 
   return (
-    <section className="mx-auto max-w-md space-y-3 p-3">
-      <h1 className="text-2xl font-bold">Handover</h1>
-      {receiver && <p className="text-sm text-slate-300">Receiving as {receiver.ensName ?? receiver.name}</p>}
+    <section className="rpg-window mx-3 my-5 max-w-md space-y-4 p-4 sm:mx-auto">
+      <h1 className="rpg-banner">Handover</h1>
+      {receiver && <p className="text-sm text-ink-soft">Receiving as {receiver.ensName ?? receiver.name}</p>}
       {body}
     </section>
   )

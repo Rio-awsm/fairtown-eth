@@ -12,18 +12,18 @@ export function WalkinQr({ publicUrl = env.publicWebUrl, shown: controlled, onSh
   const url = `${publicUrl ?? window.location.origin}/walkin`
   if (!shown)
     return (
-      <button className="rounded bg-slate-900/85 px-2 py-1 text-xs" onClick={() => setShown(true)}>
+      <button className="rpg-btn rpg-btn-quiet rpg-btn-sm" onClick={() => setShown(true)}>
         Show join QR
       </button>
     )
   return (
-    <div className="w-44 space-y-1 rounded bg-slate-900/90 p-2 text-center text-sm">
+    <div className="rpg-window w-44 space-y-1 p-3 text-center text-sm">
       <QrCode text={url} label="Scan to join and bid" />
       <p className="font-bold">Scan to join and bid</p>
       {!publicUrl && env.exposeTown && (
-        <p className="text-xs text-amber-300">Set PUBLIC_WEB_URL so phones can open this.</p>
+        <p className="text-xs text-gold-ink">Set PUBLIC_WEB_URL so phones can open this.</p>
       )}
-      <button className="text-xs text-slate-300 underline" onClick={() => setShown(false)}>
+      <button className="text-xs text-ink-soft underline" onClick={() => setShown(false)}>
         Hide
       </button>
     </div>

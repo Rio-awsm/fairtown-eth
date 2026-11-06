@@ -5,6 +5,7 @@ import { useTown } from "../state/townStore"
 import { formatMoney } from "../money/format"
 import { AddressLink } from "./links"
 import { asCurrency } from "./model"
+import { PixelPerson } from "./PixelPerson"
 
 const AgentDetails = z.looseObject({
   persona: z.string().optional(),
@@ -23,11 +24,14 @@ export function AgentPanel({ agentId }: { agentId: string }) {
   const max = details?.mandate?.maxPerUnit
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-bold">{agent?.ensName ?? agent?.name ?? agentId}</h2>
-      <p className="text-sm text-slate-300">
+      <div className="flex items-center gap-3">
+        <PixelPerson id={agentId} role={agent?.role ?? "NONE"} size={40} />
+        <h2 className="text-xl">{agent?.ensName ?? agent?.name ?? agentId}</h2>
+      </div>
+      <p className="text-sm text-ink-soft">
         {agent?.role ?? "Agent"} · {agent?.building ?? "unknown"} · <AddressLink address={agentId} />
       </p>
-      {view.isError && <p className="text-xs text-red-300">Agent details unavailable</p>}
+      {view.isError && <p className="text-xs text-brick">Agent details unavailable</p>}
       {details?.persona && <p className="text-sm">{details.persona}</p>}
       {details?.mandate?.commodities && (
         <p className="text-sm" title="GET /api/agents/:agentId mandate">
@@ -37,12 +41,12 @@ export function AgentPanel({ agentId }: { agentId: string }) {
       )}
       {details?.budget && currency && (
         <p className="text-sm">
-          <span className="text-slate-400">Budget </span>
+          <span className="text-ink-soft">Budget </span>
           <span title="GET /api/agents/:agentId budget">{formatMoney(BigInt(details.budget), currency)}</span>
         </p>
       )}
       <section aria-label="Reasons">
-        <h3 className="text-xs text-slate-400">Recent reasons</h3>
+        <h3 className="text-xs text-ink-soft">Recent reasons</h3>
         <ul className="list-disc pl-4 text-sm">
           {(agent?.reasons ?? []).map((r, i) => (
             <li key={i}>{r}</li>

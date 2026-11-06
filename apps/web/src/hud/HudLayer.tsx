@@ -19,9 +19,13 @@ function Panel() {
   return (
     <aside
       aria-label="Details"
-      className="pointer-events-auto absolute top-2 right-2 bottom-12 w-96 overflow-auto rounded bg-slate-900/95 p-3"
+      className="rpg-window pointer-events-auto absolute top-3 right-3 bottom-16 w-96 overflow-auto p-4"
     >
-      <button className="float-right text-slate-400" onClick={() => select(null)} aria-label="Close">
+      <button
+        className="rpg-btn rpg-btn-quiet rpg-btn-sm float-right ml-2 min-w-8"
+        onClick={() => select(null)}
+        aria-label="Close"
+      >
         ✕
       </button>
       {selection.kind === "lot" && <LotPanel lotId={selection.id} />}
@@ -58,15 +62,15 @@ export function HudLayer() {
   }, [select, setUi])
   return (
     <div className="pointer-events-none absolute inset-0">
-      <div className="pointer-events-auto absolute top-2 left-2 space-y-2">
+      <div className="pointer-events-auto absolute top-4 left-4 space-y-4">
         <TopBar />
         <WorldClock />
         <PriceWeatherToggle />
       </div>
-      <div className="pointer-events-auto absolute bottom-12 left-2">
+      <div className="pointer-events-auto absolute bottom-20 left-4">
         <WalkinQr shown={qr} onShownChange={(v) => setUi({ qr: v })} />
       </div>
-      <div className="pointer-events-auto absolute right-2 bottom-2 left-2">
+      <div className="pointer-events-auto absolute right-4 bottom-4 left-4">
         <Ticker />
       </div>
       <Panel />

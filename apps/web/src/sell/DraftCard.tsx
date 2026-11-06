@@ -50,14 +50,14 @@ export function DraftCard({ draft, sellerId, confirming, error, onConfirm }: Pro
   )
   const suggested = formatPerUnit(BigInt(draft.suggestedFloorPerUnit), draft.currency, draft.unit)
   return (
-    <section aria-label="Your listing" className="space-y-3 rounded bg-slate-900 p-3">
+    <section aria-label="Your listing" className="rpg-window space-y-3 p-4">
       <div className="flex items-start justify-between">
         <h2 className="text-xl font-bold">
           {draft.qty} {draft.unit} {draft.commodity}
         </h2>
-        <span className="rounded bg-slate-700 px-2 py-0.5 text-xs">{TIER[draft.payoutPreview.tier]}</span>
+        <span className="rpg-badge bg-parchment-deep">{TIER[draft.payoutPreview.tier]}</span>
       </div>
-      <p className="text-sm text-slate-300">
+      <p className="text-sm text-ink-soft">
         {draft.place} · Grade {draft.grade} · {Math.round(draft.gradeReport.confidence * 100)}% sure
       </p>
       <label className="block text-sm">
@@ -65,30 +65,30 @@ export function DraftCard({ draft, sellerId, confirming, error, onConfirm }: Pro
           Lowest price per {draft.unit} ({draft.currency})
         </span>
         <input
-          className="mt-1 w-full rounded bg-slate-800 p-3 text-lg"
+          className="rpg-input mt-2 w-full text-lg"
           inputMode="decimal"
           value={floorText}
           onChange={(e) => setFloorText(e.target.value)}
         />
       </label>
-      {!floor.ok && <p className="text-sm text-amber-300">{floor.error}</p>}
-      <p className="text-xs text-slate-300">
+      {!floor.ok && <p className="text-sm text-gold-ink">{floor.error}</p>}
+      <p className="text-xs text-ink-soft">
         We suggest {suggested}, a little under recent prices so buyers come quickly.
         {draft.reference &&
           ` Reference price ${formatMoney(BigInt(draft.reference.perUnit), draft.currency)} (${draft.reference.source}, ${draft.reference.date}).`}
       </p>
-      {advice.data && <p className="text-sm text-sky-200">{advice.data.advice}</p>}
-      <p role="status" aria-label="What you will receive" className="rounded bg-emerald-950 p-2 text-sm">
+      {advice.data && <p className="text-sm text-harbour">{advice.data.advice}</p>}
+      <p role="status" aria-label="What you will receive" className="rpg-well bg-meadow-tint p-3 text-sm">
         {preview}
       </p>
       <TestMoneyBadge />
       {error && (
-        <p role="alert" className="text-sm text-amber-300">
+        <p role="alert" className="text-sm text-gold-ink">
           {error}
         </p>
       )}
       <button
-        className="w-full rounded bg-emerald-700 py-3 text-lg font-bold disabled:opacity-50"
+        className="rpg-btn rpg-btn-go w-full text-lg"
         disabled={!floor.ok || confirming}
         onClick={() => floor.ok && onConfirm(floor.value)}
       >

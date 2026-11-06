@@ -7,7 +7,11 @@ import { connectTown } from "./state/connectTown"
 import { exposeTown } from "./state/exposeTown"
 import { townStore } from "./state/townStore"
 import { setActiveRelay } from "./state/activeRelay"
+import "@fontsource/jersey-10/400.css"
+import "@fontsource/atkinson-hyperlegible/400.css"
+import "@fontsource/atkinson-hyperlegible/700.css"
 import "./index.css"
+import { loadFonts } from "./fonts"
 
 async function startMockApi() {
   const { worker } = await import("./mocks/browser")
@@ -22,6 +26,9 @@ async function startMockApi() {
 
 async function boot(root: HTMLElement) {
   if (env.api.mode === "mock") await startMockApi()
+  // Before the relay starts: Phaser bakes text when it is created, so the pixel font must be ready,
+  // and the HUD's keys must be listening before a fast replay can finish.
+  await loadFonts(document)
   // Outside React, so StrictMode's double effects never open a second relay connection.
   const params = new URLSearchParams(window.location.search)
   const speed = Number(params.get("speed")) || 1

@@ -91,48 +91,44 @@ export function CameraCapture({
         <div className="space-y-2">
           <div className="relative overflow-hidden rounded">
             <video ref={video} autoPlay playsInline muted className="w-full" aria-label="Camera" />
-            <p className="absolute top-2 left-2 rounded bg-black/70 px-2 py-1 text-sm">
+            <p className="rpg-badge absolute top-3 left-3 bg-parchment px-2 py-1 text-sm text-ink">
               Hold the code {lotCode} in the photo
             </p>
             <p
-              className="absolute right-2 bottom-2 rounded bg-amber-400 px-3 py-1 font-mono text-3xl text-black"
+              className="rpg-badge absolute right-3 bottom-3 bg-coin px-3 py-1 font-mono text-3xl text-ink"
               aria-hidden
             >
               {lotCode}
             </p>
           </div>
           <div className="flex gap-2">
-            <button
-              className="flex-1 rounded bg-emerald-700 py-3 font-bold"
-              onClick={() => void take()}
-              disabled={count >= max}
-            >
+            <button className="rpg-btn rpg-btn-go flex-1" onClick={() => void take()} disabled={count >= max}>
               Take photo
             </button>
-            <button className="rounded bg-slate-700 px-4 py-3" onClick={close}>
+            <button className="rpg-btn rpg-btn-quiet" onClick={close}>
               Done
             </button>
           </div>
         </div>
       ) : (
         <button
-          className="w-full rounded bg-slate-700 py-3"
+          className="rpg-btn rpg-btn-quiet w-full"
           onClick={() => void open()}
           disabled={count >= max || state === "opening"}
         >
           Open camera
         </button>
       )}
-      <p className="text-xs text-slate-300">
+      <p className="text-xs text-ink-soft">
         {count} of {max} photos
       </p>
       {state === "blocked" && (
-        <p role="alert" className="text-sm text-amber-300">
+        <p role="alert" className="text-sm text-gold-ink">
           The camera is blocked. Allow it for this site in your phone settings, then try again.
         </p>
       )}
       {state === "unsupported" && (
-        <p role="alert" className="text-sm text-amber-300">
+        <p role="alert" className="text-sm text-gold-ink">
           This browser cannot open the camera here. Open the secure link (https) on your phone.
         </p>
       )}

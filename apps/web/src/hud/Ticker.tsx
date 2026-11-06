@@ -4,12 +4,15 @@ import { useTown } from "../state/townStore"
 export function Ticker() {
   const lines = useTown((s) => s.ticker)
   return (
-    <ul
-      className="flex gap-6 overflow-hidden rounded bg-slate-900/85 px-3 py-1.5 text-sm whitespace-nowrap"
-      aria-label="Ticker"
-    >
-      {lines.slice(0, 6).map((l) => (
-        <li key={l.id}>{l.text}</li>
+    <ul className="rpg-window flex gap-6 overflow-hidden px-4 py-2 text-sm whitespace-nowrap" aria-label="Ticker">
+      {lines.slice(0, 6).map((l, i) => (
+        <li key={l.id} className={i === 0 ? "font-bold" : "text-ink-soft"}>
+          <span
+            aria-hidden="true"
+            className="mr-2 inline-block h-2 w-2 bg-coin align-middle shadow-[0_0_0_1px_#2a1f33]"
+          />
+          {l.text}
+        </li>
       ))}
     </ul>
   )

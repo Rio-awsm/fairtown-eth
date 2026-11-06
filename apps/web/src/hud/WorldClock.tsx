@@ -12,15 +12,17 @@ export function WorldClock() {
       aria-label="World clock"
       className={
         focus
-          ? "fixed top-16 left-1/2 z-10 grid -translate-x-1/2 grid-cols-4 gap-6 rounded bg-slate-900/95 p-6 text-xl"
-          : "grid grid-cols-4 gap-2 rounded bg-slate-900/85 p-2 text-sm"
+          ? "rpg-window fixed top-16 left-1/2 z-10 grid -translate-x-1/2 grid-cols-4 gap-6 p-6 text-xl"
+          : "rpg-window grid grid-cols-4 gap-3 px-3 py-2 text-sm"
       }
     >
       {rows.map((r) => (
         <li key={r.id} className="min-w-28">
-          <span className="block text-xs text-slate-400">{r.city}</span>
-          <span className={`block font-mono ${focus ? "text-6xl" : "text-lg"}`}>{r.time}</span>
-          <span className="block text-xs text-amber-300">
+          <span className="block font-display text-xs font-semibold text-ink-soft">{r.city}</span>
+          <span className={`block font-display font-bold tabular-nums ${focus ? "text-6xl" : "text-2xl"}`}>
+            {r.time}
+          </span>
+          <span className="block text-xs text-gold-ink">
             {r.nextExpiry ? `Lot ${r.nextExpiry.lotId} ends in ${r.nextExpiry.label}` : "nothing open"}
           </span>
         </li>

@@ -27,19 +27,19 @@ function gradeOf(view: unknown) {
 
 function Grade({ lotId }: { lotId: string }) {
   const view = useQuery({ queryKey: ["lot", lotId], queryFn: () => api.lot({ params: { lotId } }) })
-  if (view.isPending) return <p className="text-xs text-slate-400">Loading grade report…</p>
+  if (view.isPending) return <p className="text-xs text-ink-soft">Loading grade report…</p>
   if (view.isError) {
     const code = view.error instanceof ApiClientError ? view.error.code : "error"
-    return <p className="text-xs text-red-300">Grade report unavailable ({code})</p>
+    return <p className="text-xs text-brick">Grade report unavailable ({code})</p>
   }
   const grade = gradeOf(view.data)
-  if (!grade) return <p className="text-xs text-slate-400">No grade report</p>
+  if (!grade) return <p className="text-xs text-ink-soft">No grade report</p>
   return (
     <p className="text-sm" title="GET /api/lots/:lotId">
       Grade {grade.grade}
       {grade.confidence !== undefined && ` · ${Math.round(grade.confidence * 100)}% confidence`}
       {grade.standard && ` · ${grade.standard}`}
-      {grade.tee_verified === true && <span className="ml-2 rounded bg-emerald-700 px-1.5 text-xs">Verified</span>}
+      {grade.tee_verified === true && <span className="rpg-badge ml-2 bg-moss text-parchment-light">Verified</span>}
     </p>
   )
 }
@@ -50,7 +50,7 @@ const hasOpenDeadline = (lot: LotState) => lot.progress > 0 && lot.progress < 5 
 function Row({ label, value, source }: { label: string; value: string | undefined; source: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-slate-400">{label}</dt>
+      <dt className="text-ink-soft">{label}</dt>
       <dd title={source}>{value ?? "—"}</dd>
     </div>
   )
@@ -72,8 +72,8 @@ export function LotPanel({ lotId }: { lotId: string }) {
       </h2>
       <p className="text-sm">
         {lot.sellerName}
-        {seller && <span className="ml-2 rounded bg-slate-700 px-1.5 text-xs">{seller.proven ? "Proven" : "New"}</span>}
-        <span className="ml-2 text-slate-400">{lot.place}</span>
+        {seller && <span className="rpg-badge ml-2 bg-parchment-deep">{seller.proven ? "Proven" : "New"}</span>}
+        <span className="ml-2 text-ink-soft">{lot.place}</span>
       </p>
       <Grade lotId={lotId} />
       <dl className="text-sm">
@@ -92,7 +92,7 @@ export function LotPanel({ lotId }: { lotId: string }) {
       <PriceChart priceLog={lot.priceLog} currency={lot.currency} />
       <table className="w-full text-xs" aria-label="Bids">
         <thead>
-          <tr className="text-left text-slate-400">
+          <tr className="text-left text-ink-soft">
             <th>Bidder</th>
             <th>Max</th>
             <th>Amount</th>
@@ -154,13 +154,13 @@ export function LotPanel({ lotId }: { lotId: string }) {
         <p className="flex flex-wrap gap-2 text-xs">
           {lot.parentLotId !== "0" && (
             <>
-              <span className="text-slate-400">Parent</span>
+              <span className="text-ink-soft">Parent</span>
               <button className="underline" onClick={() => select({ kind: "lot", id: lot.parentLotId })}>
                 Lot {lot.parentLotId}
               </button>
             </>
           )}
-          {children.length > 0 && <span className="text-slate-400">Next</span>}
+          {children.length > 0 && <span className="text-ink-soft">Next</span>}
           {children.map((c) => (
             <button key={c.lotId} className="underline" onClick={() => select({ kind: "lot", id: c.lotId })}>
               Lot {c.lotId}

@@ -45,7 +45,7 @@ export function ShowCode({ lot, sellerId }: { lot: LotState; sellerId: string })
       <div className="space-y-2">
         <p>Who is collecting?</p>
         {parties.map((p) => (
-          <button key={p.buyer} className="w-full rounded bg-slate-700 py-3" onClick={() => setChosen(p)}>
+          <button key={p.buyer} className="rpg-btn rpg-btn-quiet w-full" onClick={() => setChosen(p)}>
             {nameOf(town, p.buyer)}
           </button>
         ))}
@@ -55,7 +55,7 @@ export function ShowCode({ lot, sellerId }: { lot: LotState; sellerId: string })
     return (
       <div role="alert" className="space-y-2">
         <p>We could not make a code just now.</p>
-        <button className="rounded bg-slate-700 px-4 py-2" onClick={() => mutate(party)}>
+        <button className="rpg-btn rpg-btn-quiet" onClick={() => mutate(party)}>
           Try again
         </button>
       </div>
@@ -67,7 +67,7 @@ export function ShowCode({ lot, sellerId }: { lot: LotState; sellerId: string })
     return (
       <div className="space-y-2">
         <p role="alert">This code has expired.</p>
-        <button className="w-full rounded bg-amber-400 py-3 font-bold text-black" onClick={() => mutate(party)}>
+        <button className="rpg-btn w-full text-lg" onClick={() => mutate(party)}>
           New code
         </button>
       </div>
@@ -76,9 +76,9 @@ export function ShowCode({ lot, sellerId }: { lot: LotState; sellerId: string })
   return (
     <div className="space-y-2 text-center">
       <QrCode text={ticket.data.qrText} label={`Handover code for Lot ${lot.lotId}`} />
-      <p className="text-amber-300">Expires in {countdown(Number(ticket.data.ticket.expiryBlock), town.block)}</p>
+      <p className="text-gold-ink">Expires in {countdown(Number(ticket.data.ticket.expiryBlock), town.block)}</p>
       <p className="text-sm">Show this to {nameOf(town, party.buyer)} or their truck. It works once.</p>
-      <a className="text-sky-300 underline" href={fallback}>
+      <a className="text-harbour underline" href={fallback}>
         Open without the camera
       </a>
     </div>

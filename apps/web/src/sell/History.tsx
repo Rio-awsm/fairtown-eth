@@ -27,7 +27,7 @@ export function History({ sellerId }: { sellerId: string }) {
     <section aria-label="History" className="space-y-3">
       <ul className="space-y-1">
         {lots.map((l) => (
-          <li key={l.lotId} className="rounded bg-slate-900 p-2">
+          <li key={l.lotId} className="rpg-window p-3">
             Lot {l.lotId} · {l.qty} {l.unit} {l.commodity} · {STATUS_WORDS[l.status] ?? l.status}
           </li>
         ))}
@@ -39,7 +39,7 @@ export function History({ sellerId }: { sellerId: string }) {
           </li>
         ))}
       </ul>
-      {lots.length === 0 && <p className="text-slate-300">Nothing sold yet.</p>}
+      {lots.length === 0 && <p className="text-ink-soft">Nothing sold yet.</p>}
     </section>
   )
 }

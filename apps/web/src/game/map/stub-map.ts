@@ -1,18 +1,23 @@
+import { GID, TILE, TILE_NAMES, grassAt } from "../art/tiles"
 import type { MarketBuilding } from "./anchors"
 import type { TiledMap } from "./tiled"
 
 /**
- * A generated stand-in for town.tmj until the hand-built Tiled map lands, and the fallback layout
- * when the real map fails to load. 60 × 34 tiles of 16 px, drawn at 2× to fill 1920 × 1080.
+ * The generated town.tmj (until a hand-built Tiled map lands), and the fallback layout when the
+ * real map fails to load. 60 × 34 tiles of 16 px, drawn at 2× to fill 1920 × 1080.
+ * Tiles come from src/game/art/tiles.ts; buildings and props are sprites drawn by the scene.
  */
 export const STUB_W = 60
 export const STUB_H = 34
-export const TILE = 16
-export const STUB_TILESET_IMAGE = "../tiles/fairtown-stub.png"
+export { TILE }
+export const STUB_TILESET_NAME = "fairtown-town"
+export const STUB_TILESET_IMAGE = "../tiles/fairtown-town.png"
 
-/** Tile ids in fairtown-stub.png, left to right (gid = index + 1). */
-export const STUB_TILES = { grass: 1, water: 2, road: 3, wall: 4, roof: 5, decor: 6, block: 7 } as const
-export const STUB_TILE_COLOURS = ["#4a7c3f", "#2b6cb0", "#a0896b", "#8b5e3c", "#b33a3a", "#e0b13a", "#ff00ff"] as const
+/** Tile ids the layout uses (gid = index + 1 in fairtown-town.png). */
+export const STUB_TILES = GID
+
+/** Top-left tile and size of each building footprint, shared with the building sprites. */
+export const BUILDING_FOOTPRINT = { w: 8, h: 5 } as const
 
 /** Top-left tile of each 8 × 5 building, after the source of truth 13 sketch. */
 const BUILDING_AT: Record<MarketBuilding, [number, number]> = {
@@ -24,8 +29,8 @@ const BUILDING_AT: Record<MarketBuilding, [number, number]> = {
   harvest_hall: [4, 24],
   neighbourhood_pool: [46, 24],
 }
-const BW = 8
-const BH = 5
+const BW = BUILDING_FOOTPRINT.w
+const BH = BUILDING_FOOTPRINT.h
 
 type Grid = number[]
 const grid = (fill = 0): Grid => new Array<number>(STUB_W * STUB_H).fill(fill)
@@ -36,13 +41,16 @@ const px = (tiles: number) => tiles * TILE
 
 export function buildStubMap() {
   const ground = grid(STUB_TILES.grass)
+  for (let y = 0; y < STUB_H; y++) for (let x = 0; x < STUB_W; x++) ground[y * STUB_W + x] = grassAt(x, y)
+  rect(ground, 0, 4, 30, 1, STUB_TILES.shore)
   const water = grid()
   const roads = grid()
   const buildings = grid()
   const decor = grid()
   const collision = grid()
 
-  rect(water, 0, 0, 30, 4, STUB_TILES.water)
+  rect(water, 0, 0, 30, 3, STUB_TILES.water)
+  rect(water, 0, 3, 30, 1, STUB_TILES.water_edge)
   rect(collision, 0, 0, 30, 4, STUB_TILES.block)
   rect(roads, 0, 22, STUB_W, 1, STUB_TILES.road)
   rect(roads, 30, 4, 1, STUB_H - 4, STUB_TILES.road)
@@ -51,8 +59,8 @@ export function buildStubMap() {
     rect(buildings, bx, by, BW, 2, STUB_TILES.roof)
     rect(collision, bx, by, BW, BH, STUB_TILES.block)
   }
-  rect(decor, 8, 3, 3, 1, STUB_TILES.decor) // boat at the Bergen dock
-  rect(decor, 28, 31, 5, 1, STUB_TILES.decor) // town gate
+  rect(decor, 7, 1, 2, 4, STUB_TILES.planks) // jetty at the Bergen dock
+  rect(decor, 28, 31, 5, 1, STUB_TILES.planks) // town gate threshold
 
   let id = 1
   const point = (name: string, tx: number, ty: number) => ({
@@ -121,14 +129,14 @@ export function buildStubMap() {
     tilesets: [
       {
         firstgid: 1,
-        name: "fairtown-stub",
+        name: STUB_TILESET_NAME,
         image: STUB_TILESET_IMAGE,
-        imagewidth: TILE * STUB_TILE_COLOURS.length,
+        imagewidth: TILE * TILE_NAMES.length,
         imageheight: TILE,
         tilewidth: TILE,
         tileheight: TILE,
-        tilecount: STUB_TILE_COLOURS.length,
-        columns: STUB_TILE_COLOURS.length,
+        tilecount: TILE_NAMES.length,
+        columns: TILE_NAMES.length,
         margin: 0,
         spacing: 0,
       },

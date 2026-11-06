@@ -12,8 +12,8 @@ export function BuildingPanel({ building }: { building: Building }) {
     <div className="space-y-3">
       <h2 className="text-lg font-bold">{BUILDING_SIGNS[building]}</h2>
       <section aria-label="Open lots">
-        <h3 className="text-xs text-slate-400">Open lots</h3>
-        {open.length === 0 && <p className="text-sm text-slate-400">No open lots</p>}
+        <h3 className="text-xs text-ink-soft">Open lots</h3>
+        {open.length === 0 && <p className="text-sm text-ink-soft">No open lots</p>}
         {open.map((l) => (
           <button key={l.lotId} className="block underline" onClick={() => select({ kind: "lot", id: l.lotId })}>
             Lot {l.lotId} · {l.commodity} · floor {lotPerUnit(l, l.floorPerUnit)}
@@ -21,8 +21,8 @@ export function BuildingPanel({ building }: { building: Building }) {
         ))}
       </section>
       <section aria-label="Recent clears">
-        <h3 className="text-xs text-slate-400">Recent clears</h3>
-        {clears.length === 0 && <p className="text-sm text-slate-400">No clears yet</p>}
+        <h3 className="text-xs text-ink-soft">Recent clears</h3>
+        {clears.length === 0 && <p className="text-sm text-ink-soft">No clears yet</p>}
         {clears.map((l) => (
           <button key={l.lotId} className="block underline" onClick={() => select({ kind: "lot", id: l.lotId })}>
             Lot {l.lotId} · {l.commodity} · avg {l.avgPerUnit ? lotPerUnit(l, l.avgPerUnit) : "—"}
@@ -30,8 +30,8 @@ export function BuildingPanel({ building }: { building: Building }) {
         ))}
       </section>
       <section aria-label="Reference">
-        <h3 className="text-xs text-slate-400">Reference</h3>
-        {references.length === 0 && <p className="text-sm text-slate-400">No reference yet</p>}
+        <h3 className="text-xs text-ink-soft">Reference</h3>
+        {references.length === 0 && <p className="text-sm text-ink-soft">No reference yet</p>}
         {references.map((r) => {
           const c = asCurrency(r.currency)
           return (

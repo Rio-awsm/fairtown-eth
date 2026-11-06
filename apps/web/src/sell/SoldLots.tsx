@@ -21,7 +21,7 @@ function NoShowAnswer({ lot, sellerId }: { lot: LotState; sellerId: string }) {
   })
   if (send.isSuccess) return <p role="status">Proof sent. It will be checked before any money moves.</p>
   return (
-    <section aria-label="No-show reported" className="space-y-2 rounded bg-red-950 p-3">
+    <section aria-label="No-show reported" className="rpg-window space-y-2 bg-brick-tint p-4">
       <p className="font-bold">
         The buyer says you didn't hand over. Answer in{" "}
         {lot.deadlineBlock !== undefined ? countdown(lot.deadlineBlock, block) : "—"}
@@ -35,7 +35,7 @@ function NoShowAnswer({ lot, sellerId }: { lot: LotState; sellerId: string }) {
       />
       {send.isError && <p role="alert">We could not send your proof. Please try again.</p>}
       <button
-        className="w-full rounded bg-amber-400 py-3 font-bold text-black disabled:opacity-50"
+        className="rpg-btn w-full text-lg"
         disabled={photos.length === 0 || !lot.noShowBuyer || send.isPending}
         onClick={() => send.mutate()}
       >
@@ -48,7 +48,7 @@ function NoShowAnswer({ lot, sellerId }: { lot: LotState; sellerId: string }) {
 export function SoldLot({ lot, sellerId }: { lot: LotState; sellerId: string }) {
   const [showing, setShowing] = useState(false)
   return (
-    <div className="space-y-2 rounded bg-slate-900 p-3">
+    <div className="rpg-window space-y-2 p-4">
       <p>
         Lot {lot.lotId} · {lot.qty} {lot.unit} {lot.commodity} · {STATUS_WORDS[lot.status] ?? lot.status}
       </p>
@@ -57,7 +57,7 @@ export function SoldLot({ lot, sellerId }: { lot: LotState; sellerId: string }) 
       ) : showing ? (
         <ShowCode lot={lot} sellerId={sellerId} />
       ) : (
-        <button className="w-full rounded bg-amber-400 py-3 font-bold text-black" onClick={() => setShowing(true)}>
+        <button className="rpg-btn w-full text-lg" onClick={() => setShowing(true)}>
           Show handover code
         </button>
       )}

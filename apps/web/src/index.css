@@ -1,13 +1,315 @@
 @import "tailwindcss";
 
-/* Dark page behind everything, so nothing ever sits on the browser's default white. */
-html,
-body {
-  background-color: #020617;
-  color: #f1f5f9;
+/*
+ * Fairtown look: a daylight pixel market town. Parchment windows with a notched ink border and a
+ * hard drop shadow sit on a grass field. Jersey 10 (one weight) for display, Atkinson Hyperlegible
+ * for reading. Every text colour below holds 4.5:1 on parchment and on parchment-deep.
+ */
+@theme {
+  --font-display: "Jersey 10", "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #2a1f33;
+  --color-ink-soft: #5b4a63;
+  --color-parchment: #f8eccb;
+  --color-parchment-light: #fffaea;
+  --color-parchment-deep: #efdcab;
+  --color-parchment-edge: #d9c08a;
+  --color-field: #fffbef;
+
+  --color-meadow: #6db55a;
+  --color-moss: #346b3a;
+  --color-moss-ink: #2b5f31;
+  --color-meadow-tint: #dcefc8;
+
+  --color-harbour: #245a99;
+  --color-harbour-tint: #d4e6f6;
+  --color-brick: #a3322a;
+  --color-brick-tint: #f7d6cc;
+  --color-timber: #7a4b2a;
+  --color-plank: #9c6b3f;
+  --color-coin: #f2b33d;
+  --color-coin-light: #ffd36e;
+  --color-gold-ink: #7d5200;
+  --color-plum: #6b3fa0;
+  --color-plum-tint: #e7dcf5;
+}
+
+@layer base {
+  html,
+  body {
+    /* A grass field behind every page, drawn as one 32 px pixel tile. */
+    background-color: #5fa94e;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect width='32' height='32' fill='%235fa94e'/%3E%3Cpath fill='%2367b356' d='M0 0h16v16H0zM16 16h16v16H16z'/%3E%3Cpath fill='%234c9140' d='M5 6h1v2H5zM6 5h1v2H6zM7 6h1v2H7zM22 22h1v2h-1zM23 21h1v2h-1zM24 22h1v2h-1zM26 7h1v1h-1zM10 25h1v1h-1z'/%3E%3Cpath fill='%23f7e08a' d='M27 4h1v1h-1zM13 20h1v1h-1z'/%3E%3C/svg%3E");
+    background-size: 64px 64px;
+    image-rendering: pixelated;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  /* Jersey 10 has one weight: never fake a bold, and match its small x-height to the body face. */
+  html {
+    font-synthesis: none;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size-adjust: 0.56;
+    letter-spacing: 0.02em;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-harbour);
+    outline-offset: 5px;
+  }
+}
+
+@layer components {
+  /* The window every panel and card uses: notched 3 px ink border, bevel, hard shadow. */
+  .rpg-window {
+    background-color: var(--color-parchment);
+    color: var(--color-ink);
+    box-shadow:
+      inset 3px 3px 0 0 var(--color-parchment-light),
+      inset -3px -3px 0 0 var(--color-parchment-edge),
+      0 -3px 0 0 var(--color-ink),
+      0 3px 0 0 var(--color-ink),
+      -3px 0 0 0 var(--color-ink),
+      3px 0 0 0 var(--color-ink),
+      0 9px 0 0 rgb(42 31 51 / 0.28);
+  }
+
+  /* A quieter inset well inside a window: lists, stats, code. */
+  .rpg-well {
+    background-color: var(--color-parchment-deep);
+    color: var(--color-ink);
+    box-shadow:
+      inset 2px 2px 0 0 var(--color-parchment-edge),
+      0 -2px 0 0 rgb(42 31 51 / 0.55),
+      0 2px 0 0 rgb(42 31 51 / 0.55),
+      -2px 0 0 0 rgb(42 31 51 / 0.55),
+      2px 0 0 0 rgb(42 31 51 / 0.55);
+  }
+
+  /* A card you can pick (use with rpg-window): lifts on hover, sinks when pressed. */
+  .rpg-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    transition: transform 150ms ease-out;
+  }
+  .rpg-card:hover {
+    transform: translateY(-2px);
+  }
+  .rpg-card:active,
+  .rpg-card[aria-pressed="true"],
+  .rpg-card[aria-current="true"] {
+    transform: translateY(2px);
+    background-color: var(--color-coin-light);
+  }
+
+  .rpg-btn {
+    --btn-bg: var(--color-coin);
+    --btn-fg: var(--color-ink);
+    --btn-hi: var(--color-coin-light);
+    --btn-lo: #c88a1e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-display);
+    font-size-adjust: 0.56;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--btn-fg);
+    background-color: var(--btn-bg);
+    box-shadow:
+      inset 3px 3px 0 0 var(--btn-hi),
+      inset -3px -3px 0 0 var(--btn-lo),
+      0 -3px 0 0 var(--color-ink),
+      0 3px 0 0 var(--color-ink),
+      -3px 0 0 0 var(--color-ink),
+      3px 0 0 0 var(--color-ink),
+      0 7px 0 0 rgb(42 31 51 / 0.35);
+    transition:
+      transform 90ms ease-out,
+      filter 120ms ease-out;
+  }
+  .rpg-btn:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+  .rpg-btn:active:not(:disabled),
+  .rpg-btn[aria-pressed="true"] {
+    transform: translateY(3px);
+    box-shadow:
+      inset 3px 3px 0 0 var(--btn-lo),
+      0 -3px 0 0 var(--color-ink),
+      0 3px 0 0 var(--color-ink),
+      -3px 0 0 0 var(--color-ink),
+      3px 0 0 0 var(--color-ink);
+  }
+  .rpg-btn:disabled {
+    --btn-bg: var(--color-parchment-edge);
+    --btn-hi: var(--color-parchment-deep);
+    --btn-lo: #bfa46e;
+    --btn-fg: var(--color-ink-soft);
+    cursor: not-allowed;
+  }
+  .rpg-btn-go {
+    --btn-bg: var(--color-moss);
+    --btn-fg: var(--color-parchment-light);
+    --btn-hi: #4f8a52;
+    --btn-lo: #24502a;
+  }
+  .rpg-btn-info {
+    --btn-bg: var(--color-harbour);
+    --btn-fg: var(--color-parchment-light);
+    --btn-hi: #3d78be;
+    --btn-lo: #173f6e;
+  }
+  .rpg-btn-danger {
+    --btn-bg: var(--color-brick);
+    --btn-fg: var(--color-parchment-light);
+    --btn-hi: #c4483c;
+    --btn-lo: #7a231d;
+  }
+  .rpg-btn-quiet {
+    --btn-bg: var(--color-parchment-deep);
+    --btn-fg: var(--color-ink);
+    --btn-hi: var(--color-parchment-light);
+    --btn-lo: var(--color-parchment-edge);
+  }
+  .rpg-btn-sm {
+    min-height: 2rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  .rpg-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    font-family: var(--font-display);
+    font-size-adjust: 0.56;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    line-height: 1.25rem;
+    box-shadow:
+      0 -2px 0 0 var(--color-ink),
+      0 2px 0 0 var(--color-ink),
+      -2px 0 0 0 var(--color-ink),
+      2px 0 0 0 var(--color-ink);
+  }
+
+  .rpg-input {
+    background-color: var(--color-field);
+    color: var(--color-ink);
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    box-shadow:
+      inset 2px 2px 0 0 var(--color-parchment-edge),
+      0 -2px 0 0 var(--color-ink),
+      0 2px 0 0 var(--color-ink),
+      -2px 0 0 0 var(--color-ink),
+      2px 0 0 0 var(--color-ink);
+  }
+  .rpg-input::placeholder {
+    color: var(--color-ink-soft);
+  }
+
+  /* The wooden top bar: planks with dark seams. */
+  .rpg-planks {
+    background-color: var(--color-plank);
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 14px, rgb(42 31 51 / 0.35) 14px 16px),
+      repeating-linear-gradient(90deg, transparent 0 94px, rgb(42 31 51 / 0.25) 94px 96px);
+    box-shadow:
+      inset 0 3px 0 0 #b9844f,
+      0 3px 0 0 var(--color-ink),
+      0 8px 0 0 rgb(42 31 51 / 0.25);
+  }
+
+  /* Page title: a hanging parchment banner. */
+  .rpg-banner {
+    display: inline-block;
+    padding: 0.25rem 1rem 0.375rem;
+    font-family: var(--font-display);
+    font-size-adjust: 0.56;
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--color-ink);
+    background-color: var(--color-parchment);
+    box-shadow:
+      inset 0 -4px 0 0 var(--color-parchment-edge),
+      0 -3px 0 0 var(--color-ink),
+      0 3px 0 0 var(--color-ink),
+      -3px 0 0 0 var(--color-ink),
+      3px 0 0 0 var(--color-ink),
+      0 8px 0 0 rgb(42 31 51 / 0.28);
+  }
+
+  /* Plain text set straight on the grass gets a parchment backing so it always reads. */
+  .rpg-note {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    background-color: rgb(248 236 203 / 0.92);
+    color: var(--color-ink);
+  }
+
+  /* Nav tab in the wooden top bar. */
+  .rpg-tab {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0.25rem 0.75rem;
+    font-family: var(--font-display);
+    font-size-adjust: 0.56;
+    font-weight: 400;
+    color: var(--color-parchment-light);
+    text-shadow: 0 2px 0 rgb(42 31 51 / 0.6);
+    white-space: nowrap;
+  }
+  .rpg-tab:hover {
+    background-color: rgb(42 31 51 / 0.25);
+  }
+  .rpg-tab[aria-current="page"] {
+    color: var(--color-ink);
+    text-shadow: none;
+    background-color: var(--color-coin);
+    box-shadow:
+      inset 2px 2px 0 0 var(--color-coin-light),
+      inset -2px -2px 0 0 #c88a1e,
+      0 -2px 0 0 var(--color-ink),
+      0 2px 0 0 var(--color-ink),
+      -2px 0 0 0 var(--color-ink),
+      2px 0 0 0 var(--color-ink);
+  }
 }
 
 /* ?demo=1 (S3 5.1): everything sized in rem grows for a projector. */
 html.demo {
   font-size: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rpg-card,
+  .rpg-btn {
+    transition: none;
+  }
+  .rpg-card:hover {
+    transform: none;
+  }
 }
