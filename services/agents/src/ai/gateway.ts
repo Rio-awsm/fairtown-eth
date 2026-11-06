@@ -1,4 +1,4 @@
-import { generateText, Output, type ModelMessage } from "ai"
+import { APICallError, generateText, Output, type ModelMessage } from "ai"
 import pLimit from "p-limit"
 import { z } from "zod"
 import { AI_ROLES, targetFor, type AiConfig, type AiRole } from "./config"
@@ -16,7 +16,7 @@ export type DecideInput<T> = {
 }
 export type DecideResult<T> = { value: T; trace?: AiTrace; attempt: 1 | 2 | 3; ms: number }
 
-export type AiErrorCode = "timeout" | "invalid_output" | "provider_error" | "mock_error"
+export type AiErrorCode = "timeout" | "invalid_output" | "provider_error" | "rate_limited" | "mock_error"
 export class AiError extends Error {
   constructor(
     readonly code: AiErrorCode,
@@ -36,7 +36,15 @@ export type GatewayOptions = {
   fetch?: FetchLike
   concurrency?: number
   defaultTimeoutMs?: number
+  maxRpm?: number // overrides LLM_MAX_RPM
+  now?: () => number
 }
+
+// Provider errors are not "bad JSON": never retry them as such. Status only, because messages can carry URLs or key ids.
+const apiError = (role: AiRole, e: unknown) =>
+  APICallError.isInstance(e) ? new AiError(e.statusCode === 429 ? "rate_limited" : "provider_error", `${role}: provider HTTP ${e.statusCode ?? "error"}`) : undefined
+
+const BIDDER_RPM_SHARE = 0.8 // the seller flow (listing, vision) always keeps headroom
 
 export type AiGateway = ReturnType<typeof createGateway>
 
@@ -47,6 +55,27 @@ export function createGateway(opts: GatewayOptions) {
   const baseFetch = opts.fetch ?? fetch
   const limit = pLimit(opts.concurrency ?? 4)
   const defaultTimeoutMs = opts.defaultTimeoutMs ?? 4000
+  const maxRpm = opts.maxRpm ?? config.LLM_MAX_RPM
+  const now = opts.now ?? Date.now
+  const sent: number[] = []
+
+  // One sliding minute for every role, since they share one key. Bidders never wait (rules decide); listing and vision wait.
+  async function slot(role: AiRole, signal: AbortSignal) {
+    if (!maxRpm) return
+    const cap = role === "bidder" ? Math.max(1, Math.floor(maxRpm * BIDDER_RPM_SHARE)) : maxRpm
+    for (;;) {
+      const t = now()
+      while (sent.length && sent[0]! <= t - 60_000) sent.shift()
+      if (sent.length < cap) {
+        sent.push(t)
+        return
+      }
+      if (role === "bidder") throw new AiError("rate_limited", `bidder: LLM_MAX_RPM budget used`)
+      await new Promise((r) => setTimeout(r, Math.min(250, sent[0]! + 60_000 - t)))
+      if (signal.aborted) throw signal.reason
+    }
+  }
+
   const counters = Object.fromEntries(AI_ROLES.map((r) => [r, emptyCounters()])) as Record<AiRole, Counters>
 
   async function run<T>(role: AiRole, input: DecideInput<T>, signal: AbortSignal): Promise<Omit<DecideResult<T>, "ms">> {
@@ -69,6 +98,7 @@ export function createGateway(opts: GatewayOptions) {
     ]
 
     // 1. Native structured output.
+    await slot(role, signal)
     try {
       const r = await generateText({
         model,
@@ -82,6 +112,8 @@ export function createGateway(opts: GatewayOptions) {
       if (parsed.success) return { value: parsed.data, trace, attempt: 1 }
     } catch (e) {
       if (signal.aborted) throw e
+      const api = apiError(role, e)
+      if (api) throw api
     }
 
     // 2. Plain JSON with an extractor, then 3. one retry that shows the model its error.
@@ -90,6 +122,7 @@ export function createGateway(opts: GatewayOptions) {
     let lastError = "no output"
     for (const attempt of [2, 3] as const) {
       const prompt = attempt === 2 ? ask : `${ask}\n\nYour previous answer was invalid (${lastError}). Return only valid JSON.`
+      await slot(role, signal)
       try {
         const r = await generateText({ model, system: input.system, messages: messages(prompt), abortSignal: signal, maxRetries: 0 })
         const parsed = input.schema.safeParse(extractJson(r.text))
@@ -97,6 +130,8 @@ export function createGateway(opts: GatewayOptions) {
         lastError = parsed.error.issues.map((i) => `${i.path.join(".") || "root"}: ${i.message}`).join("; ")
       } catch (e) {
         if (signal.aborted) throw e
+        const api = apiError(role, e)
+        if (api) throw api
         lastError = (e as Error).message.slice(0, 200)
       }
     }

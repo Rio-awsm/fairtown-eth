@@ -35,6 +35,7 @@ export const AiConfig = z.object({
   STT_BASE_URL: z.string().url().optional(),
   STT_MODEL: z.string().optional(),
   STT_LANGUAGE: z.string().default("en-US"),
+  LLM_MAX_RPM: z.coerce.number().int().positive().optional(), // team LiteLLM key: 60
 })
 export type AiConfig = z.infer<typeof AiConfig>
 

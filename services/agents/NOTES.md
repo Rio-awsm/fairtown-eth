@@ -28,3 +28,14 @@
 **Live result.** `pnpm -F relay test:live`: backfill from the v1 deployment block to a real WebSocket client, 82 envelopes, no errors; S1's smoke lot 1 reached `paid_in_full` through handover and delivered, lots 2 to 10 `sold`.
 
 **Not built:** an Arkiv watcher. Arkiv watch events carry no attributes and the TownEvent union has no Arkiv entity event; S3 reads prices and reputation from Arkiv directly with `arkiv/queries.md`.
+
+## 2026-11-06, S2 5.1 LLM bidder
+
+**Built:** `src/strategies/llm.ts` (persona prompt under 150 words from bio and kind, compact observation in display units, `BidAdvice` schema converted to a bigint `Decision` in code, 10-block cache, rule fallback, stats), `marketContext` (reference from `references.json`, last clears from Arkiv `price`, 30 s cache, survives Arkiv errors), `src/eval/bidderEval.ts` and `pnpm -F agents eval [n]` (report in `eval/report.{json,md}`, mock run in `eval/report-mock.*`). Runtime: strategies with `parallel: true` decide all agents on a lot at once, then bids execute in order; rules stay sequential. `index.ts` uses the LLM when `MOCK_AI=0`.
+
+**Gotchas found live:**
+- **The team LiteLLM key allows 60 requests/min across all roles.** The first live eval (200 decisions at once) "failed" with 40% invalid output: every one was an HTTP 429 that the gateway's JSON-retry loop swallowed, and its 2 retries made the overload worse. Fixes (D-66): `APICallError` maps to `rate_limited` (429) or `provider_error` and is never retried as bad JSON; optional `LLM_MAX_RPM` sliding window shared by all roles, bidder capped at 80% and falls back to rules at once, listing and vision wait. **Set `LLM_MAX_RPM=60` in `.env`.**
+- LiteLLM's 429 body includes a hashed key id; gateway errors now carry the status code only.
+- At 60 RPM a busy town can't ask the model for every agent every tick: hard passes skip the model, the cache absorbs repeats, and the rest fall back to rules. Expect a mix of LLM and rule reasons on a crowded lot.
+- The guide's "cache for 2 blocks" assumed 2 s blocks; at 200 ms it is 10 blocks (D-64).
+- First reasons leaned on "I'll bid the reference price" with no symbol; the prompt now asks for the symbol and one deciding fact.

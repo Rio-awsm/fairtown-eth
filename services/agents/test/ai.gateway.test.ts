@@ -13,7 +13,7 @@ type Seen = { path: string; body: Record<string, unknown>; auth?: string }
 let server: Server
 let base = ""
 let seen: Seen[] = []
-let replies: Array<string | { delayMs: number; content: string }> = []
+let replies: Array<string | { delayMs: number; content: string } | { status: number }> = []
 let extra: { trace?: unknown; resKey?: string } = {}
 let inFlight = 0
 let maxInFlight = 0
@@ -47,6 +47,11 @@ async function handler(req: IncomingMessage, res: ServerResponse) {
   }
   seen.push({ path, body: JSON.parse(raw), auth: req.headers.authorization })
   const next = replies.shift() ?? GOOD
+  if (typeof next === "object" && "status" in next) {
+    res.writeHead(next.status, { "content-type": "application/json" })
+    res.end(JSON.stringify({ error: { message: "Rate limit exceeded for api_key: abc123. Current limit: 60", type: "rate_limit" } }))
+    return
+  }
   inFlight++
   maxInFlight = Math.max(maxInFlight, inFlight)
   const { delayMs, content } = typeof next === "string" ? { delayMs: 0, content: next } : next
@@ -206,5 +211,40 @@ describe("extractJson", () => {
     expect(extractJson('noise {"a":{"b":"}"}} tail {"c":1}')).toEqual({ a: { b: "}" } })
     expect(extractJson("no json")).toBeUndefined()
     expect(extractJson("{broken")).toBeUndefined()
+  })
+})
+
+describe("AI gateway: provider errors and the shared RPM budget", () => {
+  it("maps 429 to rate_limited with one request and no retry, and hides the provider message", async () => {
+    replies = [{ status: 429 }]
+    const g = createGateway({ config: live() })
+    const e = await g.decide("bidder", ask).catch((x) => x)
+    expect(e).toBeInstanceOf(AiError)
+    expect(e.code).toBe("rate_limited")
+    expect(e.message).not.toContain("abc123")
+    expect(seen).toHaveLength(1)
+  })
+
+  it("maps 5xx to provider_error without the JSON retries", async () => {
+    replies = [{ status: 500 }]
+    const e = await createGateway({ config: live() }).decide("listing", ask).catch((x) => x)
+    expect(e.code).toBe("provider_error")
+    expect(seen).toHaveLength(1)
+  })
+
+  it("gives bidders 80% of LLM_MAX_RPM and makes them fall back at once; listing waits for the window", async () => {
+    let t = 1_000_000
+    const g = createGateway({ config: live({ LLM_MAX_RPM: "5" }), now: () => t })
+    for (let i = 0; i < 4; i++) await g.decide("bidder", ask)
+    const e = await g.decide("bidder", ask).catch((x) => x)
+    expect(e.code).toBe("rate_limited")
+    expect(seen).toHaveLength(4)
+    await g.decide("listing", ask) // fifth slot is the seller flow's
+    const waiting = g.decide("listing", { ...ask, timeoutMs: 5000 })
+    await new Promise((r) => setTimeout(r, 300))
+    expect(seen).toHaveLength(5)
+    t += 60_001
+    await waiting
+    expect(seen).toHaveLength(6)
   })
 })

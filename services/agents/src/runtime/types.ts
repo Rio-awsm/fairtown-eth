@@ -59,4 +59,6 @@ export type Observation = {
   lot: LotObservation
 }
 
-export type Strategy = { name: string; decide(o: Observation): Decision | Promise<Decision> }
+// parallel: all agents on a lot decide at once (LLM latency), then bids execute in order. Rules stay sequential,
+// so each agent sees the clearing the previous bid moved.
+export type Strategy = { name: string; parallel?: boolean; decide(o: Observation): Decision | Promise<Decision> }

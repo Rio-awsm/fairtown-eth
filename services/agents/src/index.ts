@@ -17,12 +17,14 @@ import { AgentRuntime } from "./runtime/runtime"
 import { Wallets } from "./runtime/wallets"
 import { SellerDirectory } from "./sellers"
 import { buildApp } from "./server"
+import { createLlmStrategy, marketContext } from "./strategies/llm"
 import { ruleStrategy } from "./strategies/rule"
 
 const root = fileURLToPath(new URL("../../../", import.meta.url))
 const { env } = loadEnv(`${root}.env`)
 const config = parseConfig(env)
-const ai = createGateway({ config: parseAiConfig(env) })
+const aiConfig = parseAiConfig(env)
+const ai = createGateway({ config: aiConfig })
 
 if (!config.AGENT_MNEMONIC && config.CHAIN_MODE !== "fake") throw new Error("AGENT_MNEMONIC is required outside CHAIN_MODE=fake")
 const wallets = new Wallets(config.AGENT_MNEMONIC ?? generateMnemonic(english))
@@ -44,11 +46,20 @@ const ledger = new LedgerWriter({
   onError: (e, event) => log("arkiv write failed", { event, err: e instanceof Error ? e.message : String(e) }),
 })
 const publisher = new RelayPublisher(`http://localhost:${config.RELAY_PORT}`, config.RELAY_INTERNAL_TOKEN)
+// MOCK_AI=1: rules decide (FakeAi has no bidder). Otherwise the LLM advises and rules are the fallback.
+const strategy = aiConfig.MOCK_AI
+  ? ruleStrategy
+  : createLlmStrategy({
+      ai,
+      context: marketContext({ references: listing.references, arkiv }),
+      ...(fake ? { blockMs: FAKE_BLOCK_MS } : {}),
+      onFallback: (code, a) => log("bidder fell back to rules", { code, agent: a.name }),
+    })
 const runtime = new AgentRuntime({
   chain,
   wallets,
   publisher,
-  strategy: ruleStrategy,
+  strategy,
   ledger,
   gradeFor: (_id, uri) => drafts.get(uri.split("/").pop() ?? "")?.grade.grade,
   nameOf: (a: Address) => sellers.byAddr(a)?.name,

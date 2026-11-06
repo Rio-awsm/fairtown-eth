@@ -213,13 +213,32 @@ export class AgentRuntime {
           endBlock: lot.endBlock,
           blocksLeft: lot.endBlock - block,
         }
-        for (const a of this.agents.values()) {
-          if (!BIDDERS.has(a.role) || a.paused || !a.mandate || a.currency !== obsLot.currency) continue
-          if (!a.mandate.commodities.includes(obsLot.commodity as (typeof a.mandate.commodities)[number])) continue
+        const key = t.lotId.toString()
+        const observe = (a: RuntimeAgent) => {
           const ex = this.ex(a.agentId)
-          const key = t.lotId.toString()
-          const o = { agent: a, budgetLeft: this.budgetLeft(a), exposureOnLot: ex.onLot.get(key) ?? 0n, myBestOnLot: ex.best.get(key) ?? 0n, lot: obsLot }
-          const d = await this.o.strategy.decide(o)
+          return { ex, o: { agent: a, budgetLeft: this.budgetLeft(a), exposureOnLot: ex.onLot.get(key) ?? 0n, myBestOnLot: ex.best.get(key) ?? 0n, lot: { ...obsLot } } }
+        }
+        const eligible = [...this.agents.values()].filter(
+          (a) =>
+            BIDDERS.has(a.role) &&
+            !a.paused &&
+            a.mandate &&
+            a.currency === obsLot.currency &&
+            a.mandate.commodities.includes(obsLot.commodity as (typeof a.mandate.commodities)[number]),
+        )
+        const { strategy } = this.o
+        const pre = strategy.parallel
+          ? await Promise.all(
+              eligible.map(async (a) => {
+                const x = observe(a)
+                return { ...x, d: await strategy.decide(x.o) }
+              }),
+            )
+          : []
+        for (const [i, a] of eligible.entries()) {
+          const p = pre[i]
+          const { ex, o } = p ?? observe(a)
+          const d = p ? p.d : await strategy.decide(o)
           if (d.action === "pass" && o.myBestOnLot > obsLot.clearingPerUnit) continue // quietly still winning
           const result = await this.executor.execute(d, o, ex)
           if (result.status === "bid") this.bids.set(result.bidId.toString(), { agent: a.agentId, amount: result.amount, lotId: t.lotId })

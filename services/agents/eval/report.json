@@ -1,0 +1,2024 @@
+{
+  "provider": "bidder=gemini-2.5-flash-lite",
+  "n": 200,
+  "schemaValid": 1,
+  "fallbackRate": 0,
+  "p50Ms": 1210,
+  "p95Ms": 1745,
+  "fallbacks": {
+    "timeout": 0,
+    "invalid_output": 0,
+    "provider_error": 0,
+    "rate_limited": 0,
+    "mock_error": 0,
+    "unusable": 0
+  },
+  "actions": {
+    "bid": 191,
+    "pass": 9
+  },
+  "guardrails": {
+    "accepted": 157,
+    "clamped": 34,
+    "rejected": 0
+  },
+  "thresholds": {
+    "schemaValid": 0.98,
+    "fallbackMax": 0.1,
+    "p95MsMax": 4000
+  },
+  "pass": true,
+  "samples": [
+    {
+      "id": "case-001",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "I will bid, aiming for the reference price. €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-002",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "I'll bid because the price is fair and the quality is good. €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-003",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "I'll bid to secure this lot of fresh haddock at reference price.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-004",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "This fresh_a cod is a good buy at the reference €8.3.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-005",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "Fresh A grade haddock at reference price is a safe bet.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-006",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "Fresh A grade haddock at reference price, I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-007",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7575001",
+      "reason": "I'll bid for the cod; fresh_a is good and the clock is ticking. €7.50",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-008",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8000000",
+      "reason": "Fresh A grade, I'll bid my max for this haddock. €8.00",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-009",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6060001",
+      "reason": "Fresh A grade haddock, I will bid €6.00",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-010",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "50501",
+      "reason": "New seller, I'll risk it for a good deal.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-011",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Clock is low, grade is good, I'll pay the reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-012",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1850000",
+      "reason": "Grade is good and time is short, I'll pay $1.85.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-013",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1950000",
+      "reason": "Good grade and time left, I'll bid $1.95",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-014",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "The grade is good and time is short, so I'll pay the reference.",
+      "guardrail": "clamped: price clamped to mandate max",
+      "source": "llm"
+    },
+    {
+      "id": "case-015",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "Clearing price is $1.80, well under my $2.00 max. I'll bid.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-016",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "New seller, will bid low to test.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-017",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1000000",
+      "reason": "My best bid is $1.00/kg for 2000 kg, as the grade is good and seller is new.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-018",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "910000",
+      "reason": "grade is good, I will bid $0.91 per kg.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-019",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4200000",
+      "reason": "Good grade and plenty of time left, I'll bid €4.20",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-020",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "pass",
+      "reason": "Grade NA is too low for my mandate.",
+      "guardrail": "n/a",
+      "source": "llm"
+    },
+    {
+      "id": "case-021",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4390000",
+      "reason": "400 blocks left, I'll bid close to reference for bloom_a.",
+      "guardrail": "clamped: price clamped to mandate max, amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-022",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "I'll bid $0.40/kg for 3000kg. Clearing is okay for grade 1.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-023",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "The grade is poor, so I'll go near the floor.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-024",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "350000",
+      "reason": "grade is low, so I will not pay the reference price. $0.35",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-025",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "New seller, I'll bid the floor to test the waters. $0.40",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-026",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "New seller, low floor. I'll bid $0.40/kg.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-027",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "343401",
+      "reason": "Grade 2 okay, I'll bid near the floor $0.34",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-028",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "I'll bid to secure this lot, aiming for a good price. $0.40",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-029",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "I will bid $0.40 per kg for these tomatoes.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-030",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "343401",
+      "reason": "Grade is class_2, will bid low for profit $",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-031",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8100000",
+      "reason": "The grade is fresh_a and time is high, I will bid €8.00.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-032",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7044000",
+      "reason": "I'll bid on this lot, grade is good and clock is long. €7.00",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-033",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7044000",
+      "reason": "I'll bid for this lot as the grade is good and the clock is long. €6.98",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-034",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8200000",
+      "reason": "Fresh_a cod, I'll bid near the reference €8.20",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-035",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6954000",
+      "reason": "Fresh_a grade is good, I will bid €6.75.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-036",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8400000",
+      "reason": "Fresh_A grade haddock is good, I'll bid €8.40.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-037",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7680000",
+      "reason": "Good grade cod, I will bid €7.68. €8000 budget.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-038",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7000000",
+      "reason": "Fresh A grade haddock, I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-039",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6624000",
+      "reason": "The grade is fresh_a and the clock is running, I'll bid €6.56.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-040",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "56200",
+      "reason": "Grade NA, I'll wait for better.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-041",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "New seller, I'll bid the reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-042",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Good grade, lots of time left, I'll bid close to reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-043",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1852200",
+      "reason": "New seller, I'll bid to test clearing price $1.85",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-044",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1940000",
+      "reason": "Want this good grade, I'll bid $1.94",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-045",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1990000",
+      "reason": "Time is short, grade is good, buying at reference $1.99",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-046",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Good grade and time left, I'll pay reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-047",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "993600",
+      "reason": "I'll bid near reference, grade is good $0.95",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-048",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "940000",
+      "reason": "Grade is good, willing to pay close to reference.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-049",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4400000",
+      "reason": "Grade is good, so I'll bid near reference for these roses.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-050",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "pass",
+      "reason": "Grade is na, I need bloom_a. I'll pass for now.",
+      "guardrail": "n/a",
+      "source": "llm"
+    },
+    {
+      "id": "case-051",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4350000",
+      "reason": "Grade is good, I'll bid near reference. €",
+      "guardrail": "clamped: price clamped to mandate max, amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-052",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "446600",
+      "reason": "New seller, I'll start low at $0.44",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-053",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "446600",
+      "reason": "grade 2 means I must be cautious with my bid $",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-054",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "pass",
+      "reason": "It's grade class_2 and I don't want to risk it at this time.",
+      "guardrail": "n/a",
+      "source": "llm"
+    },
+    {
+      "id": "case-055",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "431600",
+      "reason": "New seller, I'll bid low and see. $0.40",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-056",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "431600",
+      "reason": "New seller, grade 2, bidding near floor $0.40",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-057",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "389360",
+      "reason": "New seller, I'll bid low to test them. $0.35",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-058",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "450000",
+      "reason": "My budget is $1000, I'll bid $0.45 for the tomatoes.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-059",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "416600",
+      "reason": "Low grade, I will bid near floor for a good deal. $0.41",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-060",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "374360",
+      "reason": "New seller, I'll bid low to test the waters. $0.35",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-061",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8799999",
+      "reason": "Low on time, I will bid close to the reference at $8.30.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-062",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8355999",
+      "reason": "I'll bid for this lot as the grade is good and price is below reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-063",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8355999",
+      "reason": "The grade is fresh_a and time is still high, I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-064",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8589999",
+      "reason": "Good grade, I'll pay near reference to secure this lot.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-065",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "9100000",
+      "reason": "Fresh_a grade is good, I'll bid my max for 400kg.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-066",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8145999",
+      "reason": "Fresh A grade haddock, I'll pay €7.10/kg.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-067",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8000000",
+      "reason": "Fresh cod is good, I will bid near the reference. €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-068",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7375999",
+      "reason": "Fresh A haddock for €7.32 feels right.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-069",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7940000",
+      "reason": "I will bid; fresh_a grade is good",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-070",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "70000",
+      "reason": "Price is low for this lot, I'll bid. $",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-071",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2072799",
+      "reason": "Grade is good, time is short. I'll bid $2.05",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-072",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2072799",
+      "reason": "High grade and decent time left, I'll pay near reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-073",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "New seller, I'll bid the reference $2.00.",
+      "guardrail": "clamped: price clamped to mandate max",
+      "source": "llm"
+    },
+    {
+      "id": "case-074",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1900000",
+      "reason": "At $1.90, this is a good deal for verified hours.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-075",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1932799",
+      "reason": "New seller, I'll bid 1.92 for the verified grade.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-076",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Grade is good and time is short, I'll pay reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-077",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1106399",
+      "reason": "Good grade and decent time left, I'll bid near the reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-078",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "966399",
+      "reason": "Reference is $0.95, I'll bid.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-079",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4543999",
+      "reason": "Strong grade and plenty of time left, I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-080",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "pass",
+      "reason": "Grade is NA, I need at least bloom_a.",
+      "guardrail": "n/a",
+      "source": "llm"
+    },
+    {
+      "id": "case-081",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4400000",
+      "reason": "Low grade bloom_a for €4.40 max.",
+      "guardrail": "clamped: price clamped to mandate max, amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-082",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "503399",
+      "reason": "The grade is good and time is running out, so I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-083",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "503399",
+      "reason": "I'll bid $0.50/kg, good grade for the price.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-084",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "485639",
+      "reason": "Grade is low, but I'll risk it for this price. $0.47",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-085",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "468399",
+      "reason": "I'll bid near the floor, hoping for a good deal.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-086",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "468399",
+      "reason": "New seller, I will bid low to test the market $0.40",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-087",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "450639",
+      "reason": "New seller, new lot, I'll test with a low bid $0.35",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-088",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "433399",
+      "reason": "I will bid near the floor for grade 1 tomatoes. $0.41",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-089",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "433399",
+      "reason": "Grade 2 is ok, will bid $0.43/kg",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-090",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "415639",
+      "reason": "New seller, I'll bid low to test the market. $0.35",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-091",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "High grade, short clock, I'll bid reference. €8.30",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-092",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "I'll bid for this haddock, the quality is good and the price is right.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-093",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "pass",
+      "reason": "I'll pass, the reference price is too high for this lot.",
+      "guardrail": "n/a",
+      "source": "llm"
+    },
+    {
+      "id": "case-094",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "I'll bid €8.30 on the fresh_a cod, based on reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-095",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "grade is fresh_a and time is short, I will bid €6.50",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-096",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7500000",
+      "reason": "Fresh_a grade is good, I'll bid €7.50.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-097",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7575001",
+      "reason": "Good grade, I'll bid to clear at €7.50.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-098",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "Fresh A grade haddock, I'll bid near reference €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-099",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6060001",
+      "reason": "I'll bid at the clearing price. New seller.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-100",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "50501",
+      "reason": "new seller, I'll test the waters at the floor for $0.05",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-101",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "Clearing price is low. I'll take it!",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-102",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1980000",
+      "reason": "Grade is good, I will bid $1.98 to secure this lot.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-103",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1820000",
+      "reason": "Grade is good and time is short, I'll bid $1.82",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-104",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "I'll bid $1.80 because it's the floor price.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-105",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Grade is good, I'll bid close to reference.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-106",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "New seller, I'll start low at $1.80",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-107",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "950000",
+      "reason": "New seller, I'll bid the reference $",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-108",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "950000",
+      "reason": "Grade 1 and new seller, I'll pay reference $0.95.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-109",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4040001",
+      "reason": "Best grade, low price, I'll take it! €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-110",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "pass",
+      "reason": "grade na not good enough for me",
+      "guardrail": "n/a",
+      "source": "llm"
+    },
+    {
+      "id": "case-111",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4040001",
+      "reason": "New seller, I'll bid low to test the waters. €4.04/kg",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-112",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "Good grade and time left, I'll pay the clearing price.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-113",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "Grade is low, I'll take a chance on this one.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-114",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "380000",
+      "reason": "The time is short and the reference is ok, I'll bid $0.38",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-115",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "Best grade, I'll bid the floor: $0.40 per kg.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-116",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "The clearing price is low, I will bid $0.40",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-117",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "343401",
+      "reason": "I'll bid on grade class 2 tomatoes, $0.34 is the floor.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-118",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "Grade is good, I will bid $0.40.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-119",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "404001",
+      "reason": "New seller, I will test their price. $0.40/kg",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-120",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "343401",
+      "reason": "new seller, will bid low to test",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-121",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "I'll bid near reference for good grade and short clock €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-122",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7044000",
+      "reason": "I'll bid for the haddock, the grade is perfect and the clock is short.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-123",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7044000",
+      "reason": "I will bid on this lot as it meets my quality and quantity needs.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-124",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "Fresh cod, I will bid up to reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-125",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6954000",
+      "reason": "Fresh A grade is solid, I'll bid near reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-126",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6954000",
+      "reason": "Fresh_a grade and good time left, I'll bid €6.75.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-127",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7680000",
+      "reason": "New seller, I will bid €7.50 for this cod.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-128",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6624000",
+      "reason": "Clearing is a bit high for fresh grade, but I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-129",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6624000",
+      "reason": "Fresh A grade, I'll bid near clearing. €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-130",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "56200",
+      "reason": "Want this lot and grade is NA, I will bid $0.055",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-131",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "High grade and short clock, I'll pay $2.00.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-132",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1980000",
+      "reason": "Grade is good, I'll pay close to reference. $1.98",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-133",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1852200",
+      "reason": "Clearing price is close to reference, I'll bid $1.85",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-134",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1852200",
+      "reason": "I'll bid $1.85 because the grade is good and time is short.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-135",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Good grade and short clock, I'll pay the reference $",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-136",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1867200",
+      "reason": "Good grade and low price, I'll pay $1.85.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-137",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "993600",
+      "reason": "New seller, will bid near reference to test him. $",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-138",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "950000",
+      "reason": "Grade is good, going for it. $0.95",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-139",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4400000",
+      "reason": "Good grade and time left, I'll bid €4.40.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-140",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "pass",
+      "reason": "Grade na is too low for me.",
+      "guardrail": "n/a",
+      "source": "llm"
+    },
+    {
+      "id": "case-141",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4080000",
+      "reason": "New seller, I'll try a bit over clearing.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-142",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "446600",
+      "reason": "New seller, I'll start with a cautious bid of $0.44.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-143",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "446600",
+      "reason": "This is class 2, I will not pay the reference $0.38.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-144",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "404360",
+      "reason": "Grade is low, passing on this one",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-145",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "431600",
+      "reason": "Bidding near floor for class_1 tomatoes. $",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-146",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "431600",
+      "reason": "Grade 2 tomato, I'll bid near floor $0.40",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-147",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "389360",
+      "reason": "Buying at the floor for class 2 tomatoes. $0.34",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-148",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "420000",
+      "reason": "Class 1 tomatoes, I will bid $0.42 for 3000kg.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-149",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "416600",
+      "reason": "Price is good, I'll bid $0.41",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-150",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "374360",
+      "reason": "grade 2 is fine, I will bid $0.36",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-151",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8799999",
+      "reason": "I'll bid near the reference for good quality cod with time left.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-152",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "9400000",
+      "reason": "Good grade and seller record mean I'll bid my max €9.40",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-153",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8355999",
+      "reason": "I'll bid full mandate at reference. New seller.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-154",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8589999",
+      "reason": "Good grade, I'll pay reference plus a bit. €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-155",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8145999",
+      "reason": "fresh_a grade and short clock, I'll bid €7.00",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-156",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8145999",
+      "reason": "Fresh_a grade is good, but reference is low",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-157",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7819999",
+      "reason": "Fresh A cod is good, I'll bid near the clearing €.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-158",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7375999",
+      "reason": "Fresh grade A haddock for a good price, I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-159",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7375999",
+      "reason": "Passing. Haddock grade fresh_a is good, but reference is €6.5. I bid €7.20.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-160",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "63799",
+      "reason": "grade na, I'll risk a small bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-161",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2072799",
+      "reason": "New seller, clearing is close to reference. I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-162",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2072799",
+      "reason": "New seller, but grade is good and time is short. I'll bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-163",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1950000",
+      "reason": "Best grade and short clock, I'll bid $1.95.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-164",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1940000",
+      "reason": "Clock is ticking, grade is good, I'll pay $1.94.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-165",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1932799",
+      "reason": "New seller, low clearing price, I'll take a chance. $",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-166",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1950000",
+      "reason": "New seller, I will bid $1.95 per gpu_hour.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-167",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1106399",
+      "reason": "Grade is good and time is short, I'll bid $1.10.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-168",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1000000",
+      "reason": "This grade is good and time is short, so I bid $1.00.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-169",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4543999",
+      "reason": "The grade is good and the price is close to the reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-170",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "pass",
+      "reason": "grade is na, I need bloom_a.",
+      "guardrail": "n/a",
+      "source": "llm"
+    },
+    {
+      "id": "case-171",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4123999",
+      "reason": "new seller, I'll try a low bid to start",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-172",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "503399",
+      "reason": "The grade is good and the clock is short, so I'll pay near the reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-173",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "550000",
+      "reason": "This grade 2 tomato is below my max, I'll start bidding. $",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-174",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "485639",
+      "reason": "It's a new seller, I'll start with a bid of $0.39.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-175",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "468399",
+      "reason": "It's a good price for grade class_1, I'll bid $0.40.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-176",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "468399",
+      "reason": "New seller, I'll bid low to test the waters. $0.40",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-177",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "450639",
+      "reason": "grade is low, I'll start low $0.35",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-178",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "433399",
+      "reason": "Good grade, low floor, I'll bid $0.41",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-179",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "433399",
+      "reason": "The clearing price is low, I'll bid $0.43",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-180",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "415639",
+      "reason": "Bid for class 2, want to secure for family",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-181",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "New seller, I'll start with a bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-182",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6060001",
+      "reason": "The low price and good grade mean I must bid.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-183",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "It's fresh_a haddock, I'll pay the reference price. €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-184",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "Fresh grade and new seller, I'll bid up to reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-185",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "Fresh A grade haddock at reference price, I'll bid €6.50.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-186",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7800000",
+      "reason": "Fresh_A grade is good, I will bid €7.80.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-187",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8000000",
+      "reason": "Fresh A cod, want 600kg. €",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-188",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "6500000",
+      "reason": "Fresh A grade haddock, I'll bid near reference.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-189",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "6060001",
+      "reason": "Fresh grade A, I'll bid €6.06 per kg for the haddock",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-190",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "50501",
+      "reason": "new seller, I'll test them with a small bid $0.05",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-191",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Grade is verified, I'll pay up to reference. $",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-192",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "New seller, low floor, I'll take a chance! $1.80",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-193",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "I'll bid $1.80 because the clearing price is low.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-194",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "Low price and short clock, I'll take it!",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-195",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "New seller and decent grade, I'll step up. $2.00",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-196",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1818001",
+      "reason": "New seller and low price, I'll risk it for $1.80.",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-197",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "950000",
+      "reason": "I will bid because the grade is good and the time is short $",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-198",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "950000",
+      "reason": "High grade, will bid to reference $0.95.",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-199",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4040001",
+      "reason": "High grade and low price: I'll take it!",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-200",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "pass",
+      "reason": "Grade NA is too low for me.",
+      "guardrail": "n/a",
+      "source": "llm"
+    }
+  ]
+}

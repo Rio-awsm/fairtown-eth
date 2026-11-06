@@ -1,0 +1,2031 @@
+{
+  "provider": "mock (FakeAi)",
+  "n": 200,
+  "schemaValid": 1,
+  "fallbackRate": 0,
+  "p50Ms": 0,
+  "p95Ms": 0,
+  "fallbacks": {
+    "timeout": 0,
+    "invalid_output": 0,
+    "provider_error": 0,
+    "mock_error": 0,
+    "unusable": 0
+  },
+  "actions": {
+    "bid": 200
+  },
+  "guardrails": {
+    "accepted": 168,
+    "clamped": 32,
+    "rejected": 0
+  },
+  "thresholds": {
+    "schemaValid": 0.98,
+    "fallbackMax": 0.1,
+    "p95MsMax": 4000
+  },
+  "pass": true,
+  "samples": [
+    {
+      "id": "case-001",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8450000",
+      "reason": "Fair at 8.45, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-002",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7700000",
+      "reason": "Fair at 7.7, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-003",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7700000",
+      "reason": "Fair at 7.7, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-004",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "Fair at 8.3, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-005",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7550000",
+      "reason": "Fair at 7.55, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-006",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7550000",
+      "reason": "Fair at 7.55, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-007",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7750000",
+      "reason": "Fair at 7.75, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-008",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7000000",
+      "reason": "Fair at 7, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-009",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7000000",
+      "reason": "Fair at 7, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-010",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "60000",
+      "reason": "Fair at 0.06, below my 0.07 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-011",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Fair at 2, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-012",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Fair at 2, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-013",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1875000",
+      "reason": "Fair at 1.875, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-014",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1875000",
+      "reason": "Fair at 1.875, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-015",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1900000",
+      "reason": "Fair at 1.9, below my 2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-016",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1900000",
+      "reason": "Fair at 1.9, below my 2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-017",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1050000",
+      "reason": "Fair at 1.05, below my 1.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-018",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "950000",
+      "reason": "Fair at 0.95, below my 1 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-019",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4400000",
+      "reason": "Fair at 4.4, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-020",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "bid",
+      "maxPerUnit": "3150000",
+      "reason": "Fair at 3.15, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-021",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4100000",
+      "reason": "Fair at 4.1, below my 4.2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-022",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "475000",
+      "reason": "Fair at 0.475, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-023",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "475000",
+      "reason": "Fair at 0.475, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-024",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "445000",
+      "reason": "Fair at 0.445, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-025",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "450000",
+      "reason": "Fair at 0.45, below my 0.5 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-026",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "450000",
+      "reason": "Fair at 0.45, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-027",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "420000",
+      "reason": "Fair at 0.42, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-028",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "425000",
+      "reason": "Fair at 0.425, below my 0.45 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-029",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "425000",
+      "reason": "Fair at 0.425, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-030",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "395000",
+      "reason": "Fair at 0.395, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-031",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8712499",
+      "reason": "Fair at 8.712499, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-032",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8191999",
+      "reason": "Fair at 8.191999, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-033",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8191999",
+      "reason": "Fair at 8.191999, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-034",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8517499",
+      "reason": "Fair at 8.517499, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-035",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7996999",
+      "reason": "Fair at 7.996999, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-036",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7996999",
+      "reason": "Fair at 7.996999, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-037",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7802499",
+      "reason": "Fair at 7.802499, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-038",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7281999",
+      "reason": "Fair at 7.281999, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-039",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7281999",
+      "reason": "Fair at 7.281999, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-040",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "62849",
+      "reason": "Fair at 0.062849, below my 0.07 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-041",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2054599",
+      "reason": "Fair at 2.054599, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-042",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2054599",
+      "reason": "Fair at 2.054599, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-043",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1892099",
+      "reason": "Fair at 1.892099, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-044",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1892099",
+      "reason": "Fair at 1.892099, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-045",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1924599",
+      "reason": "Fair at 1.924599, below my 2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-046",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1924599",
+      "reason": "Fair at 1.924599, below my 2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-047",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1092299",
+      "reason": "Fair at 1.092299, below my 1.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-048",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "962299",
+      "reason": "Fair at 0.962299, below my 1 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-049",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4507999",
+      "reason": "Fair at 4.507999, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-050",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "bid",
+      "maxPerUnit": "3640499",
+      "reason": "Fair at 3.640499, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-051",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4117999",
+      "reason": "Fair at 4.117999, below my 4.2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-052",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "496299",
+      "reason": "Fair at 0.496299, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-053",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "496299",
+      "reason": "Fair at 0.496299, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-054",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "475479",
+      "reason": "Fair at 0.475479, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-055",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "463799",
+      "reason": "Fair at 0.463799, below my 0.5 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-056",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "463799",
+      "reason": "Fair at 0.463799, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-057",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "442979",
+      "reason": "Fair at 0.442979, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-058",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "431299",
+      "reason": "Fair at 0.431299, below my 0.45 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-059",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "431299",
+      "reason": "Fair at 0.431299, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-060",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "410479",
+      "reason": "Fair at 0.410479, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-061",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "9062499",
+      "reason": "Fair at 9.062499, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-062",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8847999",
+      "reason": "Fair at 8.847999, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-063",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8847999",
+      "reason": "Fair at 8.847999, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-064",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8807499",
+      "reason": "Fair at 8.807499, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-065",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8592999",
+      "reason": "Fair at 8.592999, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-066",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8592999",
+      "reason": "Fair at 8.592999, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-067",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7872499",
+      "reason": "Fair at 7.872499, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-068",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7657999",
+      "reason": "Fair at 7.657999, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-069",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7657999",
+      "reason": "Fair at 7.657999, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-070",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "66649",
+      "reason": "Fair at 0.066649, below my 0.07 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-071",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2127399",
+      "reason": "Fair at 2.127399, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-072",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2127399",
+      "reason": "Fair at 2.127399, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-073",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1914899",
+      "reason": "Fair at 1.914899, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-074",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1914899",
+      "reason": "Fair at 1.914899, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-075",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1957399",
+      "reason": "Fair at 1.957399, below my 2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-076",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1957399",
+      "reason": "Fair at 1.957399, below my 2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-077",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1148699",
+      "reason": "Fair at 1.148699, below my 1.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-078",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "978699",
+      "reason": "Fair at 0.978699, below my 1 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-079",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4651999",
+      "reason": "Fair at 4.651999, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-080",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "bid",
+      "maxPerUnit": "4294499",
+      "reason": "Fair at 4.294499, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-081",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4141999",
+      "reason": "Fair at 4.141999, below my 4.2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-082",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "524699",
+      "reason": "Fair at 0.524699, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-083",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "524699",
+      "reason": "Fair at 0.524699, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-084",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "516119",
+      "reason": "Fair at 0.516119, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-085",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "482199",
+      "reason": "Fair at 0.482199, below my 0.5 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-086",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "482199",
+      "reason": "Fair at 0.482199, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-087",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "473619",
+      "reason": "Fair at 0.473619, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-088",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "439699",
+      "reason": "Fair at 0.439699, below my 0.45 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-089",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "439699",
+      "reason": "Fair at 0.439699, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-090",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "431119",
+      "reason": "Fair at 0.431119, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-091",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8450000",
+      "reason": "Fair at 8.45, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-092",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7700000",
+      "reason": "Fair at 7.7, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-093",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7700000",
+      "reason": "Fair at 7.7, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-094",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "Fair at 8.3, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-095",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7550000",
+      "reason": "Fair at 7.55, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-096",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7550000",
+      "reason": "Fair at 7.55, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-097",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7750000",
+      "reason": "Fair at 7.75, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-098",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7000000",
+      "reason": "Fair at 7, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-099",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7000000",
+      "reason": "Fair at 7, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-100",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "60000",
+      "reason": "Fair at 0.06, below my 0.07 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-101",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Fair at 2, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-102",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Fair at 2, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-103",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1875000",
+      "reason": "Fair at 1.875, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-104",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1875000",
+      "reason": "Fair at 1.875, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-105",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1900000",
+      "reason": "Fair at 1.9, below my 2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-106",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1900000",
+      "reason": "Fair at 1.9, below my 2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-107",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1050000",
+      "reason": "Fair at 1.05, below my 1.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-108",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "950000",
+      "reason": "Fair at 0.95, below my 1 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-109",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4400000",
+      "reason": "Fair at 4.4, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-110",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "bid",
+      "maxPerUnit": "3150000",
+      "reason": "Fair at 3.15, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-111",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4100000",
+      "reason": "Fair at 4.1, below my 4.2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-112",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "475000",
+      "reason": "Fair at 0.475, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-113",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "475000",
+      "reason": "Fair at 0.475, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-114",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "445000",
+      "reason": "Fair at 0.445, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-115",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "450000",
+      "reason": "Fair at 0.45, below my 0.5 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-116",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "450000",
+      "reason": "Fair at 0.45, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-117",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "420000",
+      "reason": "Fair at 0.42, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-118",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "425000",
+      "reason": "Fair at 0.425, below my 0.45 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-119",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "425000",
+      "reason": "Fair at 0.425, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-120",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "395000",
+      "reason": "Fair at 0.395, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-121",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8712499",
+      "reason": "Fair at 8.712499, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-122",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8191999",
+      "reason": "Fair at 8.191999, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-123",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8191999",
+      "reason": "Fair at 8.191999, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-124",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8517499",
+      "reason": "Fair at 8.517499, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-125",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7996999",
+      "reason": "Fair at 7.996999, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-126",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7996999",
+      "reason": "Fair at 7.996999, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-127",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7802499",
+      "reason": "Fair at 7.802499, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-128",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7281999",
+      "reason": "Fair at 7.281999, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-129",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7281999",
+      "reason": "Fair at 7.281999, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-130",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "62849",
+      "reason": "Fair at 0.062849, below my 0.07 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-131",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2054599",
+      "reason": "Fair at 2.054599, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-132",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2054599",
+      "reason": "Fair at 2.054599, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-133",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1892099",
+      "reason": "Fair at 1.892099, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-134",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1892099",
+      "reason": "Fair at 1.892099, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-135",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1924599",
+      "reason": "Fair at 1.924599, below my 2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-136",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1924599",
+      "reason": "Fair at 1.924599, below my 2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-137",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1092299",
+      "reason": "Fair at 1.092299, below my 1.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-138",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "962299",
+      "reason": "Fair at 0.962299, below my 1 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-139",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4507999",
+      "reason": "Fair at 4.507999, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-140",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "bid",
+      "maxPerUnit": "3640499",
+      "reason": "Fair at 3.640499, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-141",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4117999",
+      "reason": "Fair at 4.117999, below my 4.2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-142",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "496299",
+      "reason": "Fair at 0.496299, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-143",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "496299",
+      "reason": "Fair at 0.496299, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-144",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "475479",
+      "reason": "Fair at 0.475479, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-145",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "463799",
+      "reason": "Fair at 0.463799, below my 0.5 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-146",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "463799",
+      "reason": "Fair at 0.463799, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-147",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "442979",
+      "reason": "Fair at 0.442979, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-148",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "431299",
+      "reason": "Fair at 0.431299, below my 0.45 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-149",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "431299",
+      "reason": "Fair at 0.431299, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-150",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "410479",
+      "reason": "Fair at 0.410479, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-151",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "9062499",
+      "reason": "Fair at 9.062499, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-152",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8847999",
+      "reason": "Fair at 8.847999, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-153",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8847999",
+      "reason": "Fair at 8.847999, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-154",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8807499",
+      "reason": "Fair at 8.807499, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-155",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "8592999",
+      "reason": "Fair at 8.592999, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-156",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "8592999",
+      "reason": "Fair at 8.592999, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-157",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7872499",
+      "reason": "Fair at 7.872499, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-158",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7657999",
+      "reason": "Fair at 7.657999, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-159",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7657999",
+      "reason": "Fair at 7.657999, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-160",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "66649",
+      "reason": "Fair at 0.066649, below my 0.07 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-161",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2127399",
+      "reason": "Fair at 2.127399, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-162",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2127399",
+      "reason": "Fair at 2.127399, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-163",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1914899",
+      "reason": "Fair at 1.914899, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-164",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1914899",
+      "reason": "Fair at 1.914899, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-165",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1957399",
+      "reason": "Fair at 1.957399, below my 2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-166",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1957399",
+      "reason": "Fair at 1.957399, below my 2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-167",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1148699",
+      "reason": "Fair at 1.148699, below my 1.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-168",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "978699",
+      "reason": "Fair at 0.978699, below my 1 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-169",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4651999",
+      "reason": "Fair at 4.651999, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-170",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "bid",
+      "maxPerUnit": "4294499",
+      "reason": "Fair at 4.294499, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-171",
+      "agent": "Amstel Bloemen",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4141999",
+      "reason": "Fair at 4.141999, below my 4.2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-172",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "524699",
+      "reason": "Fair at 0.524699, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-173",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "524699",
+      "reason": "Fair at 0.524699, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-174",
+      "agent": "Mile 12 Cooperative",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "516119",
+      "reason": "Fair at 0.516119, below my 0.55 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-175",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "482199",
+      "reason": "Fair at 0.482199, below my 0.5 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-176",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "482199",
+      "reason": "Fair at 0.482199, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-177",
+      "agent": "Shanti Niwas",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "473619",
+      "reason": "Fair at 0.473619, below my 0.5 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-178",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #9",
+      "action": "bid",
+      "maxPerUnit": "439699",
+      "reason": "Fair at 0.439699, below my 0.45 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-179",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #11",
+      "action": "bid",
+      "maxPerUnit": "439699",
+      "reason": "Fair at 0.439699, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-180",
+      "agent": "Eko Court Residents",
+      "lot": "tomato #12",
+      "action": "bid",
+      "maxPerUnit": "431119",
+      "reason": "Fair at 0.431119, below my 0.45 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-181",
+      "agent": "Hanse Kitchen Group",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8450000",
+      "reason": "Fair at 8.45, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-182",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7700000",
+      "reason": "Fair at 7.7, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-183",
+      "agent": "Hanse Kitchen Group",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7700000",
+      "reason": "Fair at 7.7, below my 9.4 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-184",
+      "agent": "Fjord Processing",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "8300000",
+      "reason": "Fair at 8.3, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-185",
+      "agent": "Fjord Processing",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7550000",
+      "reason": "Fair at 7.55, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-186",
+      "agent": "Fjord Processing",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7550000",
+      "reason": "Fair at 7.55, below my 9.1 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-187",
+      "agent": "Oslo Fiskehall",
+      "lot": "cod #1",
+      "action": "bid",
+      "maxPerUnit": "7750000",
+      "reason": "Fair at 7.75, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-188",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #13",
+      "action": "bid",
+      "maxPerUnit": "7000000",
+      "reason": "Fair at 7, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-189",
+      "agent": "Oslo Fiskehall",
+      "lot": "haddock #14",
+      "action": "bid",
+      "maxPerUnit": "7000000",
+      "reason": "Fair at 7, below my 8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-190",
+      "agent": "Gulf Produce",
+      "lot": "truck_capacity #3",
+      "action": "bid",
+      "maxPerUnit": "60000",
+      "reason": "Fair at 0.06, below my 0.07 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-191",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Fair at 2, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-192",
+      "agent": "Atlas Labs",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "2000000",
+      "reason": "Fair at 2, below my 2.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-193",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1875000",
+      "reason": "Fair at 1.875, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-194",
+      "agent": "Kestrel AI",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1875000",
+      "reason": "Fair at 1.875, below my 1.95 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-195",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #4",
+      "action": "bid",
+      "maxPerUnit": "1900000",
+      "reason": "Fair at 1.9, below my 2 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-196",
+      "agent": "Vector Mind",
+      "lot": "gpu_hour #5",
+      "action": "bid",
+      "maxPerUnit": "1900000",
+      "reason": "Fair at 1.9, below my 2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-197",
+      "agent": "Dadar Flower Traders",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "1050000",
+      "reason": "Fair at 1.05, below my 1.2 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-198",
+      "agent": "Pune Phool Mandi",
+      "lot": "marigold #6",
+      "action": "bid",
+      "maxPerUnit": "950000",
+      "reason": "Fair at 0.95, below my 1 cap",
+      "guardrail": "clamped: amount clamped to budget and exposure cap",
+      "source": "llm"
+    },
+    {
+      "id": "case-199",
+      "agent": "Bloom & Co",
+      "lot": "rose #7",
+      "action": "bid",
+      "maxPerUnit": "4400000",
+      "reason": "Fair at 4.4, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    },
+    {
+      "id": "case-200",
+      "agent": "Bloom & Co",
+      "lot": "cargo_slot #8",
+      "action": "bid",
+      "maxPerUnit": "3150000",
+      "reason": "Fair at 3.15, below my 4.8 cap",
+      "guardrail": "accepted",
+      "source": "llm"
+    }
+  ]
+}
