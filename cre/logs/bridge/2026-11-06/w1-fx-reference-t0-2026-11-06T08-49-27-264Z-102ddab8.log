@@ -1,0 +1,33 @@
+# w1-fx-reference trigger 0 (timer W1 FX), SIMULATION
+# cre workflow simulate ./w1-fx-reference --target local-simulation --non-interactive --trigger-index 0 --broadcast
+# exit 0
+Initializing...
+✗ Credential validation failed
+✗ authentication required: credential validation failed: authentication failed: unable to retrieve organization info. Your account may not be fully set up yet — please try again in a few minutes: Post "https://api.cre.chain.link/graphql": context deadline exceeded
+# retry after a pre-run failure
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: 5b27dd8963591023191c8f94994ff8fb7d22a0fb35399ba2c9450b5b501e81e8
+  Config hash: 050426b17d7fa94f14e6d40af7473be250a8b8cd6064174d9c59e96a29d7eac7
+2026-11-06T14:19:16Z [SIMULATION] Simulator Initialized
+2026-11-06T14:19:16Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T14:19:17Z [USER LOG] W1 fx: source https://api.frankfurter.dev/v2/rates?base=USD&quotes=EUR,NOK,INR,KES,NGN dates [EUR=2026-11-06,NOK=2026-11-06,INR=2026-11-06,KES=2026-11-06,NGN=2026-11-06] asOf 1793954956
+2026-11-06T14:19:19Z [USER LOG] W1 fx EUR = 0.88913000 per USD (perUsdE8 88913000): written 0x134f535d8ebab7ff674441d9d27b03eeda95900d56b7579a3fd5f1ee63819a15
+2026-11-06T14:19:21Z [USER LOG] W1 fx NOK = 9.27740000 per USD (perUsdE8 927740000): written 0xc708cce11c1e762add31f19789f249cd4859efcccb12ddb5491e375d51fdacf8
+2026-11-06T14:19:22Z [USER LOG] W1 fx INR = 94.44000000 per USD (perUsdE8 9444000000): written 0xf1a03587159827c328b5d571e3bb6c897f7a2b055eff23fd960b876cac5f1093
+2026-11-06T14:19:25Z [USER LOG] W1 fx KES = 129.81000000 per USD (perUsdE8 12981000000): written 0xeeac861dd40eabb8a44e3c3a5a4b3cb9de21b1e3d38d3a36342d956114bc4b95
+2026-11-06T14:19:27Z [USER LOG] W1 fx NGN = 1345.41000000 per USD (perUsdE8 134541000000): written 0xbb5560a9c68068eac6d5769d574fdf0237a68c79e35d0833c7c87f4bcc4260e8
+✓ Workflow Simulation Result:
+"W1 fx: 5 written, 0 unconfirmed, 0 failed, 0 skipped"
+2026-11-06T14:19:27Z [SIMULATION] Execution finished signal received
+2026-11-06T14:19:27Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯
