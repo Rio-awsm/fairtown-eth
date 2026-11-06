@@ -8,6 +8,9 @@ test("the board shows clears, seller records and a live query over the mock ledg
   await page.goto("/board?speed=50")
   await ready(page)
   await expect(page.getByText("MOCK LEDGER")).toBeVisible()
+  // The board wears the landing's look: its top bar, with this page marked.
+  await expect(page.getByRole("link", { name: "PUBLIC BOARD" })).toHaveAttribute("aria-current", "page")
+  await expect(page.getByRole("link", { name: "OPEN THE TOWN" })).toHaveAttribute("href", "/town")
 
   const clears = page.getByRole("table", { name: "Latest clears" })
   await expect(clears.locator("tbody tr")).toHaveCount(6)

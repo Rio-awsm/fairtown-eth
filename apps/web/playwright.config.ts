@@ -9,10 +9,16 @@ writeQrVideo(mockQrText(mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS)), QR_VIDE
 
 const MOCKS = { VITE_RELAY_URL: "mock", VITE_API_URL: "mock", PUBLIC_WEB_URL: "https://fairtown.example" }
 const viewport = { width: 1920, height: 1080 }
+// The 3D town (D-43) on the machine's GPU, as on the demo laptop. Headless Chromium otherwise draws
+// WebGL in software (SwiftShader), where the town drops to its light mode and runs far slower.
+const GPU = process.platform === "darwin" ? ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"] : []
 
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: true,
+  // Each /town page loads 74 models and compiles its shaders on the one GPU: more than two at once
+  // starve each other, and their load and frame times stop meaning anything.
+  workers: 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
@@ -58,7 +64,8 @@ export default defineConfig({
         viewport: { width: 1440, height: 900 },
         baseURL: "http://localhost:8081",
         permissions: ["camera"],
-        launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] },
+        // "Watch in town" opens the 3D town, so the buyer console runs on the GPU too.
+        launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", ...GPU] },
       },
     },
     {
@@ -66,17 +73,19 @@ export default defineConfig({
       name: "perf",
       testMatch: /perf\.spec\.ts/,
       dependencies: ["dev", "mobile", "scan", "buy", "prod"],
-      use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081" },
+      // No trace: its screencast records every frame and would be measured as the town's cost.
+      use: {
+        trace: "off", ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081", launchOptions: { args: GPU } },
     },
     {
       name: "dev",
       testIgnore: /(prod|sell|handover|buy|walkin|perf)\.spec\.ts/,
-      use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081" },
+      use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8081", launchOptions: { args: GPU } },
     },
     {
       name: "prod",
       testMatch: /prod\.spec\.ts/,
-      use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8082" },
+      use: { ...devices["Desktop Chrome"], viewport, baseURL: "http://localhost:8082", launchOptions: { args: GPU } },
     },
   ],
   webServer: [

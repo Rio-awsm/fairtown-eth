@@ -24,9 +24,10 @@ test("/control reaches the mock API through the MSW service worker", async ({ pa
   await expect(page.getByText("API ok")).toBeVisible()
 })
 
-test("/ redirects to /town", async ({ page }) => {
+test("/ is the landing hero", async ({ page }) => {
   await page.goto("/")
-  await expect(page).toHaveURL(/\/town$/)
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole("heading", { level: 1, name: /One Fair Price/ })).toBeVisible()
 })
 
 test("/town shows the walk-in QR pointing phones at /walkin on the public address", async ({ page }) => {
