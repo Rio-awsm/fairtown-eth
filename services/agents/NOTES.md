@@ -92,3 +92,14 @@
 - Arkiv `readonly` blocks patches by anyone, but the owner can still delete (Arkiv lifecycle skill, flags table); why-arkiv.md says so.
 
 **Arkiv numbers:** seed 186 writes in 1,206 s (about 6.5 s each, one writer queue), 0 retried, 0 failed. Price query about 260 to 300 ms from Mumbai.
+
+## 2026-11-06, S2 8.1 0G verifiable grading (with LiteLLM fallback)
+
+**Built:** vision on the 0G Router with a fallback to the LiteLLM vision model (`src/ai/gateway.ts`, `visionFallbackFor` in `src/ai/config.ts`), a pause after 402 or repeated failures, `src/ai/verification.ts` (badge states), untrusted-grade flag in `src/listing/grade.ts` (floor ignores it), draft `trace.verification`, lot `details` on Arkiv with request id, provider, model, badge state and fallback reason, `vision` in `/api/health`, `pnpm -F agents probe:0g`. `.env`: `VISION_BASE_URL=https://router-api.0g.ai/v1`, `VISION_MODEL=0gm-1.0-35b-a3b`, `VISION_EXTRA_BODY` with `verify_tee`, temperature 0.2 and thinking off, `VISION_TRUST_MODE=private`.
+
+**Found live:**
+- Only one image model on the Router is TEE-attested: `0gm-1.0-35b-a3b` (TeeML, TDX, dstack). The `gemini-*`, `gpt-*`, `claude-*` image models are not attested.
+- `tee_verified` never appears in `x_0g_trace`, with `verify_tee: true` in the body and with trust mode `private` or `verified` (5 calls, 2026-11-06). The docs say it should. Badge stays "logged"; worth asking at the 0G booth.
+- Billing is reported in `usd` micro units (`total_cost_usd_micro`), not neuron as the docs example says.
+- The model thinks by default: 6 to 17 s per grade (one timed out at 15 s and fell back). With `chat_template_kwargs.enable_thinking: false`: 1.8 to 4 s and about 40 micro-USD.
+- Forced failure (bad model, HTTP 404) fell back to `gemini-3.5-flash-lite` in 4.4 s with the `fallback` badge.

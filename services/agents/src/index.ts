@@ -6,6 +6,7 @@ import { english, generateMnemonic } from "viem/accounts"
 import { createAdapters, FAKE_BLOCK_MS } from "./adapters"
 import { parseAiConfig } from "./ai/config"
 import { createGateway } from "./ai/gateway"
+import { verificationOf } from "./ai/verification"
 import { LedgerWriter } from "./arkiv/ledgerWriter"
 import { parseConfig, pickupWindowFor, protocolParams } from "./config"
 import { PERSONAS } from "./fixtures/personas"
@@ -68,7 +69,20 @@ const ledger = new LedgerWriter({
   writer,
   detailsFor: (uri) => {
     const d = drafts.get(uri.split("/").pop() ?? "")
-    return d && { grade: d.grade.grade, gradeReport: d.grade, photos: d.photos.map((p) => p.hash), requestId: d.trace?.requestId, teeVerified: d.trace?.teeVerified }
+    if (!d) return undefined
+    // 0G trace on the public record: which model graded the lot, the Router's request id and provider, and the badge state.
+    const v = verificationOf(d.trace)
+    return {
+      grade: d.grade.grade,
+      gradeReport: d.grade,
+      photos: d.photos.map((p) => p.hash),
+      requestId: d.trace?.requestId,
+      provider: d.trace?.provider,
+      teeVerified: d.trace?.teeVerified,
+      model: d.trace?.model,
+      verification: v.state,
+      ...(d.trace?.fallback ? { fallback: d.trace.fallback.reason } : {}),
+    }
   },
   onError: (e, event) => log("arkiv write failed", { event, err: e instanceof Error ? e.message : String(e) }),
 })
@@ -165,7 +179,7 @@ const app = buildApp({
   handover: { chain, wallets, runtime, sellers, sessions, photos: listing.photos, drafts, config, ticketValidBlocks: fake ? 150n : 1500n },
   humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config },
   director,
-  health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI }),
+  health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI, ...(aiConfig.VISION_MODEL ? { visionModel: aiConfig.VISION_MODEL } : {}) }),
 })
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)
 await app.listen({ port: config.AGENTS_PORT, host: "0.0.0.0" })

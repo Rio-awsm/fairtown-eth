@@ -5,7 +5,7 @@ import type { AgentRuntime } from "./runtime/runtime"
 import type { SectorEngine } from "./sectors/engine"
 
 export type Dep = { ok: boolean; detail: string }
-export type HealthExtras = { relay: Dep; ledger: Dep; feed: Dep; runtime: Dep; llm: Dep }
+export type HealthExtras = { relay: Dep; ledger: Dep; feed: Dep; runtime: Dep; llm: Dep; vision: Dep }
 
 // Everything /api/health reports beyond contract 11's chain, arkiv and ai. Each part says how it degrades.
 export function healthExtras(d: {
@@ -14,7 +14,8 @@ export function healthExtras(d: {
   feed?: Pick<ChainFeed, "fromBlock" | "caughtUpTo" | "events">
   engine?: Pick<SectorEngine, "replaying">
   runtime?: Pick<AgentRuntime, "agents">
-  ai?: Pick<AiGateway, "stats">
+  ai?: Pick<AiGateway, "stats" | "visionStatus">
+  visionModel?: string
   llmOn: boolean
   fetch?: typeof fetch
 }): () => Promise<HealthExtras> {
@@ -47,6 +48,13 @@ export function healthExtras(d: {
     const llm: Dep = !d.llmOn
       ? { ok: true, detail: "MOCK_AI=1: rule strategy" }
       : { ok: !b || b.calls === 0 || b.failures + b.timeouts < b.calls / 2, detail: b ? `${b.calls} bidder calls, ${b.ok} ok, ${b.timeouts} timeouts, ${b.failures} failures: rules decide on any failure` : "no calls yet" }
-    return { relay, ledger, feed, runtime, llm }
+    const vs = d.ai?.visionStatus()
+    const vc = d.ai?.stats().vision
+    const vision: Dep = !d.llmOn
+      ? { ok: true, detail: "MOCK_AI=1" }
+      : vs?.pausedUntil
+        ? { ok: false, detail: `${d.visionModel ?? "primary"} paused until ${vs.pausedUntil} (${vs.pauseReason}); grading on fallback ${vs.fallback}` }
+        : { ok: true, detail: `${d.visionModel ?? "primary"}${vs?.fallback ? `, fallback ${vs.fallback}` : ", no fallback"}; ${vc?.calls ?? 0} grades, ${vc?.switched ?? 0} on fallback` }
+    return { relay, ledger, feed, runtime, llm, vision }
   }
 }

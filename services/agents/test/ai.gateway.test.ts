@@ -5,16 +5,19 @@ import { z } from "zod"
 import { AiConfigError, parseAiConfig, targetFor, withV1 } from "../src/ai/config"
 import { FakeAi } from "../src/ai/fake"
 import { AiError, createGateway, extractJson } from "../src/ai/gateway"
+import { verificationOf } from "../src/ai/verification"
+import { gradeLot } from "../src/listing/grade"
 
 const Lot = z.object({ commodity: z.string(), qty: z.number(), place: z.string() })
 const GOOD = '{"commodity":"cod","qty":600,"place":"bergen"}'
 
-type Seen = { path: string; body: Record<string, unknown>; auth?: string }
+type Seen = { path: string; body: Record<string, unknown>; auth?: string; trust?: string }
 let server: Server
 let base = ""
 let seen: Seen[] = []
 let replies: Array<string | { delayMs: number; content: string } | { status: number }> = []
 let extra: { trace?: unknown; resKey?: string } = {}
+let primaryStatus: number[] = [] // statuses the primary vision model ("vis-m") returns, one per request
 let inFlight = 0
 let maxInFlight = 0
 
@@ -45,7 +48,14 @@ async function handler(req: IncomingMessage, res: ServerResponse) {
     res.end(JSON.stringify({ text: "600 kilos of cod" }))
     return
   }
-  seen.push({ path, body: JSON.parse(raw), auth: req.headers.authorization })
+  const parsedBody = JSON.parse(raw)
+  seen.push({ path, body: parsedBody, auth: req.headers.authorization, trust: req.headers["x-0g-provider-trust-mode"] as string | undefined })
+  if (parsedBody.model === "vis-m" && primaryStatus.length) {
+    const status = primaryStatus.shift()!
+    res.writeHead(status, { "content-type": "application/json" })
+    res.end(JSON.stringify({ error: { type: "payment_error", code: "insufficient_balance", message: "deposit more" } }))
+    return
+  }
   const next = replies.shift() ?? GOOD
   if (typeof next === "object" && "status" in next) {
     res.writeHead(next.status, { "content-type": "application/json" })
@@ -73,6 +83,7 @@ beforeEach(() => {
   seen = []
   replies = []
   extra = {}
+  primaryStatus = []
   inFlight = 0
   maxInFlight = 0
 })
@@ -246,5 +257,74 @@ describe("AI gateway: provider errors and the shared RPM budget", () => {
     t += 60_001
     await waiting
     expect(seen).toHaveLength(6)
+  })
+})
+
+describe("vision on 0G: verification states and fallback (S2 8.1)", () => {
+  // Primary vision = 0G-style target ("vis-m" with its own base URL); fallback = LLM_BASE_URL with LISTING_MODEL ("list-m").
+  const zg = (over: Record<string, string> = {}) => live({ VISION_BASE_URL: `${base}/zg`, VISION_EXTRA_BODY: '{"verify_tee":true}', VISION_TRUST_MODE: "private", ...over })
+  const models = () => seen.filter((x) => x.path.endsWith("/chat/completions")).map((x) => x.body.model)
+
+  it("reads tee_verified true, false and absent into honest badge states", async () => {
+    for (const [tee, state, trusted] of [[true, "verified", true], [false, "failed", false], [undefined, "logged", true]] as const) {
+      extra = { trace: { request_id: "r-1", provider: "0xprov", ...(tee === undefined ? {} : { tee_verified: tee }) } }
+      const r = await createGateway({ config: zg() }).decide("vision", ask)
+      expect(r.trace).toMatchObject({ requestId: "r-1", provider: "0xprov", model: "vis-m", trustMode: "private" })
+      expect(verificationOf(r.trace)).toMatchObject({ state, trusted })
+    }
+    expect(verificationOf(undefined).state).toBe("none")
+    expect(seen.every((x) => !x.path.endsWith("/chat/completions") || (x.body.verify_tee === true && x.trust === "private"))).toBe(true)
+  })
+
+  it("a failed TEE check flags the grade as untrusted", async () => {
+    extra = { trace: { request_id: "r-2", provider: "0xprov", tee_verified: false } }
+    replies = ['{"grade":"fresh_e","defects":[],"confidence":0.9,"lotCodeVisible":true}']
+    const photo = { hash: "0x01" as const, file: "", mediaType: "image/png", lotCode: "1234", capturedAt: "2026-11-06T00:00:00Z", dataUrl: "data:image/png;base64,AAAA" }
+    const g = await gradeLot("fish", "cod", [photo], createGateway({ config: zg() }))
+    expect(g.report).toMatchObject({ grade: "fresh_e", untrusted: true })
+    expect(g.report.defects).toContain("Grade not attested: TEE check failed")
+  })
+
+  it("falls back to the LLM key on 402, pauses 0G for 10 minutes, then tries it again", async () => {
+    let t = 1_000_000
+    const gw = createGateway({ config: zg(), now: () => t })
+    primaryStatus = [402]
+    const r = await gw.decide("vision", ask)
+    expect(r.value).toEqual({ commodity: "cod", qty: 600, place: "bergen" })
+    expect(r.trace).toMatchObject({ provider: "fallback", model: "list-m", fallback: { from: "vis-m", reason: "primary HTTP 402" } })
+    expect(verificationOf(r.trace).state).toBe("fallback")
+    expect(models()).toEqual(["vis-m", "list-m"])
+    const again = await gw.decide("vision", ask)
+    expect(again.trace?.fallback?.reason).toBe("primary paused: insufficient balance (HTTP 402)")
+    expect(models()).toEqual(["vis-m", "list-m", "list-m"])
+    expect(gw.visionStatus()).toMatchObject({ fallback: "list-m", pauseReason: "insufficient balance (HTTP 402)" })
+    t += 10 * 60_000 + 1
+    await gw.decide("vision", ask)
+    expect(models().at(-1)).toBe("vis-m")
+    expect(gw.stats().vision).toMatchObject({ calls: 3, ok: 3, switched: 2 })
+  })
+
+  it("pauses 0G for a minute after three failures in a row", async () => {
+    let t = 5_000_000
+    const gw = createGateway({ config: zg(), now: () => t })
+    primaryStatus = [503, 503, 503]
+    for (let i = 0; i < 3; i++) expect((await gw.decide("vision", ask)).trace?.fallback?.reason).toBe("primary HTTP 503")
+    await gw.decide("vision", ask)
+    expect(models().filter((m) => m === "vis-m")).toHaveLength(3)
+    t += 60_001
+    await gw.decide("vision", ask)
+    expect(models().at(-1)).toBe("vis-m")
+  })
+
+  it("reports the primary's error when the fallback fails too, and never falls back when switched off", async () => {
+    primaryStatus = [402]
+    replies = ["not json", "not json", "not json"]
+    const e = await createGateway({ config: zg() }).decide("vision", ask).catch((x) => x)
+    expect(e).toMatchObject({ code: "provider_error", status: 402 })
+    seen = []
+    primaryStatus = [402]
+    const off = await createGateway({ config: zg({ VISION_FALLBACK: "0" }) }).decide("vision", ask).catch((x) => x)
+    expect(off.status).toBe(402)
+    expect(models()).toEqual(["vis-m"])
   })
 })

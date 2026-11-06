@@ -4,6 +4,7 @@ import type { FastifyInstance } from "fastify"
 import { createReadStream, existsSync } from "node:fs"
 import type { z } from "zod"
 import type { AiGateway } from "../ai/gateway"
+import { verificationOf } from "../ai/verification"
 import type { ChainAdapter, LotState } from "../chain/types"
 import { pickupWindowFor, type AgentsConfig } from "../config"
 import type { SellerDirectory } from "../sellers"
@@ -101,7 +102,18 @@ export function lotMetadata(d: Draft, base: string) {
       capturedAt: p.capturedAt,
       ...(p.gps ? { gps: p.gps } : {}),
     })),
-    ...(d.trace ? { trace: { requestId: d.trace.requestId, provider: d.trace.provider, teeVerified: d.trace.teeVerified } } : {}),
+    ...(d.trace
+      ? {
+          trace: {
+            requestId: d.trace.requestId,
+            provider: d.trace.provider,
+            teeVerified: d.trace.teeVerified,
+            model: d.trace.model,
+            ...(d.trace.fallback ? { fallback: d.trace.fallback } : {}),
+            verification: (({ state, label }) => ({ state, label }))(verificationOf(d.trace)),
+          },
+        }
+      : {}),
     createdAt: d.createdAt,
   }
 }
@@ -163,7 +175,8 @@ export function registerListingRoutes(app: FastifyInstance, deps: ListingDeps) {
     const graded = await gradeLot(parsed.sector, parsed.commodity, photos.photos, deps.ai)
     const reference = findReference(deps.references, parsed.commodity, parsed.place)
     const recent = (await deps.recentPrices?.(parsed.commodity, parsed.place)) ?? []
-    const floor = suggestFloor({ reference: reference ? BigInt(reference.perUnit) : undefined, recent, grade: graded.report.grade })
+    // An untrusted grade (TEE check failed) can't lift or cut the floor: price it as ungraded.
+    const floor = suggestFloor({ reference: reference ? BigInt(reference.perUnit) : undefined, recent, grade: graded.report.untrusted ? "na" : graded.report.grade })
     const advanceBps = await deps.chain.advanceBpsFor(seller.address, parsed.sector)
     const tier = parsed.sector === "truck" ? "truck" : advanceBps >= deps.config.ADVANCE_PROVEN_BPS ? "proven" : "new"
     const draft = deps.drafts.create({

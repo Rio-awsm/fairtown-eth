@@ -2,10 +2,11 @@ import type { Grade, Sector } from "@fairtown/shared"
 import { z } from "zod"
 import type { AiGateway } from "../ai/gateway"
 import type { AiTrace } from "../ai/providers"
+import { verificationOf } from "../ai/verification"
 import { GRADES_FOR, RUBRIC } from "./catalog"
 import type { StoredPhoto } from "./photos"
 
-export type GradeReport = { grade: Grade; defects: string[]; confidence: number; lotCodeVisible?: boolean }
+export type GradeReport = { grade: Grade; defects: string[]; confidence: number; lotCodeVisible?: boolean; untrusted?: boolean }
 export type GradeResult = { report: GradeReport; trace?: AiTrace; source: "vision" | "fixed" | "unavailable" }
 
 const schemaFor = (sector: Sector) =>
@@ -36,6 +37,11 @@ export async function gradeLot(
     })
     const report: GradeReport = { ...r.value }
     if (!r.value.lotCodeVisible) report.defects = [...report.defects, "Lot code not visible"]
+    // tee_verified false: the provider's TEE signature did not check out, so the grade is flagged and can't lift the floor.
+    if (!verificationOf(r.trace).trusted) {
+      report.untrusted = true
+      report.defects = [...report.defects, "Grade not attested: TEE check failed"]
+    }
     return { report, ...(r.trace ? { trace: r.trace } : {}), source: "vision" }
   } catch {
     return { report: { grade: "na", defects: ["Grading unavailable"], confidence: 0 }, source: "unavailable" }

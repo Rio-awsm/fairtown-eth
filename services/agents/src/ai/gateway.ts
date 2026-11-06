@@ -1,7 +1,7 @@
 import { APICallError, generateText, Output, type ModelMessage } from "ai"
 import pLimit from "p-limit"
 import { z } from "zod"
-import { AI_ROLES, targetFor, type AiConfig, type AiRole } from "./config"
+import { AI_ROLES, targetFor, visionFallbackFor, type AiConfig, type AiRole, type RoleTarget } from "./config"
 import { FakeAi } from "./fake"
 import { modelFor, type AiTrace, type FetchLike } from "./providers"
 import { transcribe as sttTranscribe, type SttResult } from "./stt"
@@ -21,14 +21,16 @@ export class AiError extends Error {
   constructor(
     readonly code: AiErrorCode,
     message: string,
+    readonly status?: number,
   ) {
     super(message)
     this.name = "AiError"
   }
 }
 
-type Counters = { calls: number; ok: number; fallbacks: number; failures: number; timeouts: number }
-const emptyCounters = (): Counters => ({ calls: 0, ok: 0, fallbacks: 0, failures: 0, timeouts: 0 })
+// fallbacks: answered on a JSON retry (attempt 2 or 3). switched: answered by the fallback provider (vision, D-79).
+type Counters = { calls: number; ok: number; fallbacks: number; failures: number; timeouts: number; switched: number }
+const emptyCounters = (): Counters => ({ calls: 0, ok: 0, fallbacks: 0, failures: 0, timeouts: 0, switched: 0 })
 
 export type GatewayOptions = {
   config: AiConfig
@@ -42,7 +44,13 @@ export type GatewayOptions = {
 
 // Provider errors are not "bad JSON": never retry them as such. Status only, because messages can carry URLs or key ids.
 const apiError = (role: AiRole, e: unknown) =>
-  APICallError.isInstance(e) ? new AiError(e.statusCode === 429 ? "rate_limited" : "provider_error", `${role}: provider HTTP ${e.statusCode ?? "error"}`) : undefined
+  APICallError.isInstance(e) ? new AiError(e.statusCode === 429 ? "rate_limited" : "provider_error", `${role}: provider HTTP ${e.statusCode ?? "error"}`, e.statusCode) : undefined
+
+// D-79: after a 402 (credits gone) the primary vision provider is skipped for 10 minutes; after 3 failures in a row, 1 minute.
+const PAUSE_PAYMENT_MS = 10 * 60_000
+const PAUSE_FAILURES_MS = 60_000
+const FAILURES_TO_PAUSE = 3
+const PRIMARY_MAX_MS = 10_000
 
 const BIDDER_RPM_SHARE = 0.8 // the seller flow (listing, vision) always keeps headroom
 
@@ -78,7 +86,7 @@ export function createGateway(opts: GatewayOptions) {
 
   const counters = Object.fromEntries(AI_ROLES.map((r) => [r, emptyCounters()])) as Record<AiRole, Counters>
 
-  async function run<T>(role: AiRole, input: DecideInput<T>, signal: AbortSignal): Promise<Omit<DecideResult<T>, "ms">> {
+  async function run<T>(role: AiRole, input: DecideInput<T>, signal: AbortSignal, target?: RoleTarget): Promise<Omit<DecideResult<T>, "ms">> {
     if (config.MOCK_AI) {
       let raw: unknown
       try {
@@ -92,7 +100,7 @@ export function createGateway(opts: GatewayOptions) {
     }
 
     let trace: AiTrace | undefined
-    const model = modelFor(targetFor(config, role), (t) => (trace = t), baseFetch)
+    const model = modelFor(target ?? targetFor(config, role), (t) => (trace = t), baseFetch)
     const messages = (prompt: string): ModelMessage[] => [
       { role: "user", content: [{ type: "text", text: prompt }, ...(input.images ?? []).map(toFilePart)] },
     ]
@@ -138,27 +146,63 @@ export function createGateway(opts: GatewayOptions) {
     throw new AiError("invalid_output", `${role}: no valid output after 3 attempts (${lastError})`)
   }
 
+  const visionFallback = config.MOCK_AI ? undefined : visionFallbackFor(config)
+  const pause = { until: 0, reason: "", failures: 0 }
+
   async function decide<T>(role: AiRole, input: DecideInput<T>): Promise<DecideResult<T>> {
     const c = counters[role]
     c.calls++
     return limit(async () => {
       const started = Date.now()
       const ms = input.timeoutMs ?? defaultTimeoutMs
-      const signal = AbortSignal.timeout(ms)
+      const fb = role === "vision" ? visionFallback : undefined
+      // With a fallback, the primary gets at most 10 s so a slow 0G answer still leaves the fallback time (D-79).
+      const attempt = async (target?: RoleTarget) => {
+        const budget = fb && !target ? Math.min(ms, PRIMARY_MAX_MS) : ms
+        const signal = AbortSignal.timeout(budget)
+        try {
+          return await run(role, input, signal, target)
+        } catch (e) {
+          if (signal.aborted) throw new AiError("timeout", `${role}: timed out after ${budget}ms`)
+          throw e instanceof AiError ? e : new AiError("provider_error", `${role}: ${(e as Error).message}`)
+        }
+      }
+      const primary = config.MOCK_AI ? undefined : targetFor(config, role)
+      const tag = (t: AiTrace | undefined, target: RoleTarget, extra: Partial<AiTrace> = {}): AiTrace => ({ ...(t ?? {}), model: target.model, ...extra })
+      const switchTo = async (reason: string) => {
+        const r = await attempt(fb)
+        c.ok++
+        c.switched++
+        return { ...r, trace: tag(r.trace, fb!, { provider: "fallback", fallback: { from: primary!.model, reason } }), ms: Date.now() - started }
+      }
       try {
-        const r = await run(role, input, signal)
+        if (fb && pause.until > now()) return await switchTo(`primary paused: ${pause.reason}`)
+        const r = await attempt()
+        pause.failures = 0
         c.ok++
         if (r.attempt > 1) c.fallbacks++
-        return { ...r, ms: Date.now() - started }
+        // Vision always says which model graded (the badge needs it); other roles keep the provider's trace as is.
+        return { ...r, ...(primary && role === "vision" ? { trace: tag(r.trace, primary) } : {}), ms: Date.now() - started }
       } catch (e) {
-        if (signal.aborted) {
-          c.timeouts++
-          throw new AiError("timeout", `${role}: timed out after ${ms}ms`)
+        const err = e as AiError
+        if (fb && err instanceof AiError && err.code !== "mock_error") {
+          if (err.status === 402) Object.assign(pause, { until: now() + PAUSE_PAYMENT_MS, reason: "insufficient balance (HTTP 402)", failures: 0 })
+          else if (++pause.failures >= FAILURES_TO_PAUSE) Object.assign(pause, { until: now() + PAUSE_FAILURES_MS, reason: `${pause.failures} failures in a row`, failures: 0 })
+          try {
+            return await switchTo(err.status ? `primary HTTP ${err.status}` : `primary ${err.code}`)
+          } catch {
+            // fall through: report the primary's error
+          }
         }
-        c.failures++
-        throw e instanceof AiError ? e : new AiError("provider_error", `${role}: ${(e as Error).message}`)
+        if (err instanceof AiError && err.code === "timeout") c.timeouts++
+        else c.failures++
+        throw err instanceof AiError ? err : new AiError("provider_error", `${role}: ${(e as Error).message}`)
       }
     })
+  }
+
+  function visionStatus() {
+    return { fallback: visionFallback ? `${visionFallback.model}` : null, pausedUntil: pause.until > now() ? new Date(pause.until).toISOString() : null, pauseReason: pause.until > now() ? pause.reason : null }
   }
 
   async function health(): Promise<{ ok: boolean; detail: string }> {
@@ -189,7 +233,7 @@ export function createGateway(opts: GatewayOptions) {
     return sttTranscribe(config, audioBase64, language, baseFetch)
   }
 
-  return { decide, health, transcribe, stats: () => structuredClone(counters), fake }
+  return { decide, health, transcribe, stats: () => structuredClone(counters), visionStatus, fake }
 }
 
 function toFilePart(img: AiImage) {

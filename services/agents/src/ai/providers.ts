@@ -7,6 +7,10 @@ export type AiTrace = {
   requestId?: string
   provider?: string
   teeVerified?: boolean
+  model?: string
+  cost?: { amount: string; currency: string } // 0G billing.total_cost (the Router reports "usd", micro-USD, on mainnet)
+  trustMode?: string // X-0G-Provider-Trust-Mode we sent
+  fallback?: { from: string; reason: string } // answered by the fallback provider, not the primary (D-79)
   raw?: unknown
 }
 
@@ -21,6 +25,8 @@ function readTrace(raw: unknown, resKey: string | null): AiTrace | undefined {
     if (typeof r.request_id === "string") t.requestId = r.request_id
     if (typeof r.provider === "string") t.provider = r.provider
     if (typeof r.tee_verified === "boolean") t.teeVerified = r.tee_verified
+    const bill = r.billing as { total_cost?: unknown; currency?: unknown } | undefined
+    if (bill && typeof bill.total_cost === "string") t.cost = { amount: bill.total_cost, currency: typeof bill.currency === "string" ? `${bill.currency} micro` : "neuron" }
     t.raw = raw
   }
   return t
@@ -35,7 +41,7 @@ export function modelFor(target: RoleTarget, onTrace: (t: AiTrace) => void, base
       try {
         const body = (await res.clone().json()) as { x_0g_trace?: unknown }
         const trace = readTrace(body.x_0g_trace, resKey)
-        if (trace) onTrace(trace)
+        if (trace) onTrace(target.headers?.["X-0G-Provider-Trust-Mode"] ? { ...trace, trustMode: target.headers["X-0G-Provider-Trust-Mode"] } : trace)
       } catch {
         // non-JSON body: nothing to capture
       }
@@ -51,6 +57,7 @@ export function modelFor(target: RoleTarget, onTrace: (t: AiTrace) => void, base
     supportsStructuredOutputs: true,
     fetch: tracingFetch,
     transformRequestBody: (body) => ({ ...body, ...target.extraBody }),
+    ...(target.headers ? { headers: target.headers } : {}),
   })
   return provider.chatModel(target.model)
 }
