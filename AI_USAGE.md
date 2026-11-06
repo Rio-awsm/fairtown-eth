@@ -20,6 +20,8 @@ Fairtown is built with Claude Code. Each row says what AI produced and what peop
 | --- | --- | --- | --- |
 | `contracts/` (foundry.toml, remappings, Smoke and ForkSmoke tests, CcaArtifacts, NOTES, README, CLAUDE.md), CCA v2.1.0 submodule | Written by Claude; CCA config and pins read from the v2.1.0 source; found the SSH submodule URL, the forge rollback and the factory's 362 B size margin | Installed Foundry, Bun and pnpm; filled and funded `.env`; chose D-02, D-04, D-36, D-37 | [S1 0.1](prompts/stream-1/S1-0.1.md) |
 | `scripts/doctor/checks/s1.ts`, `scripts/chain-fork.ts` and tests, `scripts/doctor.ts`, `package.json` scripts | Written by Claude, with failure-path and no-secret-leak tests | Chose the doctor rows for 0.1; waived the line-by-line key review | [S1 0.1](prompts/stream-1/S1-0.1.md) |
+| `contracts/src/` (LotFactory roles and parents, MarketSettlement relists and carriers, Keys), `contracts/test/integration/MarketExtensions.t.sol`, `services/keeper/src/deadlines.ts` | Written by Claude; found the tick-rounding relist loss (D-63) and closed the 2.1 contract gaps | Chose the minimum relist floor (D-60); approved the plan | [S1 3.1](prompts/stream-1/S1-3.1.md) |
+| `contracts/src/oracles/` (ReceiverBase, SignalOracle, DisputeResolver), `resolveRuling`, Deploy v2, `Rulings.t.sol`, `SignalOracle.t.sol`, keeper dispute expiry, ICR-005 | Written by Claude from the CRE consumer-contract docs (Context7); deployed v2 to anvil and Base Sepolia after approval | Chose the stale guard, ruling timeout, no-show rule and deploy order (D-64 to D-66); committed and approved the Base Sepolia deploy; posted "S1 v2 deployed" | [S1 4.1](prompts/stream-1/S1-4.1.md) |
 
 ## Stream 2 (Brains)
 
