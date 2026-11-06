@@ -217,6 +217,18 @@ The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depe
 
 **Reference data is illustrative.** `/api/reference` (stream-2-brain `services/agents`, run from a detached worktree with no `.env`, so fake chain, in-memory Arkiv and mock AI) dates every price 2026-11-05 with source "illustrative"; cod says "replace with the Rafisklaget minimum price before the demo". W1 publishes what the service says and logs that source; S2 owns replacing the data.
 
+## 2026-11-06, S1 4.3
+
+**Open-Meteo.** One `/v1/forecast` request with comma-separated coordinates returns a list in request order (Context7 and live check). On 2026-11-06 all five places were calm (gusts 15 to 40 km/h, rain 0 to 8.5 mm), so the real-world levels (D-13) produced no weather signal; the demo storm has to be forced and labelled (SoT scene 1). Weather numbers are not money; plain JS numbers.
+
+**Calendar.** Diwali (Lakshmi Puja) on Sun 8 Nov 2026 is real and two days away: W2 wrote "Diwali in 2 days" for Mumbai and Pune (severity 4), expiring at the end of 8 Nov UTC (block 56,302,656 from head 55,155,xxx at 5 blocks/s). The forced "Valentine's cargo cutoff (forced)" for Nairobi expires 6 h after the run.
+
+**Block rate confirmed.** Base Sepolia: 500,000 blocks in exactly 100,000 s (5.0 blocks/s), head time equal to wall-clock time. D-50 holds.
+
+**Broadcast.** 3 of 3 `DemandSignal`s landed and matched field by field (`cre/logs/w2-signals-verify-onchain-2026-11-06.log`); `SignalOracle.signalCount` = 3. The weather broadcast sent nothing (calm). The CRE `headerByNumber(LATEST_BLOCK_NUMBER)` reply gives `blockNumber` as a proto BigInt (`protoBigIntToBigint`) and `timestamp` in seconds.
+
+**S2 alignment.** Labels follow the agents director (`calendarLabel`, `forced()`), and the director already posts `{ workflow: "w2-signals", forceSignals: [...] }` to the CRE bridge: S1 4.5 must accept that shape and route it to this workflow's forced path.
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.

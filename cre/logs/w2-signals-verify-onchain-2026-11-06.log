@@ -1,0 +1,6 @@
+ok   festival mumbai sev 4              "Diwali in 2 days" 0x776bdb660f6e6984f48c44843609fda919a89067e303809898359137e6bf6b04 block 55155850
+ok   festival pune sev 4                "Diwali in 2 days" 0xe4da91fb089cb23e728ec7759c7b53e17b6bba4097263e244fb5011ee45356b4 block 55155863
+ok   festival nairobi sev 4 FORCED      "Valentine's cargo cutoff (forced)" 0xc891f5eb9a9ba9ad3ef1f4fa8666a8a3e15efc872fefb093ef162b380d4cf5af block 55155878
+
+SignalOracle.signalCount = 3
+3 of 3 broadcast signals landed
