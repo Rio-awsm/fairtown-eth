@@ -1,0 +1,40 @@
+# Web app credits
+
+## Code
+
+| What                                                                                                                                         | Source                                                                                      | Licence | Used for                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------- | --------------------------------- |
+| three.js 0.181 and its addons (GLTFLoader, HDRLoader, SkeletonUtils, EffectComposer, UnrealBloomPass, ShaderPass, OutputPass, CSS2DRenderer) | [mrdoob/three.js](https://github.com/mrdoob/three.js), Copyright 2010-2025 three.js authors | MIT     | The 3D town (`src/town3d/`, D-113) |
+
+The Phaser React template (MIT) shaped the old `src/game/PhaserGame.tsx` and `src/game/main.ts`; both went with Phaser in D-113.
+
+## Art and sound
+
+| File                                                                                                                                             | Source                                                                                                                                                                                               | Licence | Used for                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
+| Coin, gavel, rain and bell sounds                                                                                                                | Synthesised in the browser with Web Audio by `src/sound/sfx.ts`, own work; no sound files                                                                                                            | CC0     | Town sound (S3 5.1)                                                                                     |
+| `public/assets/tiles/fairtown-town.png`                                                                                                          | Painted by `src/game/art/tiles.ts`, written by `scripts/make-stub-map.ts`; own work                                                                                                                  | CC0     | Ground, water, shore, road and plank tiles of the generated `town.tmj`                                  |
+| Buildings, people, trees, lamps, boat, gate, stalls, goods icons, truck, coins, clouds, glows                                                    | Painted in code by `src/game/art/` (`buildings.ts`, `people.ts`, `props.ts`); own work, original designs, no external art                                                                            | CC0     | Every sprite in the town and the character cards on /sell, /buy, /walkin                                |
+| Grass page background and the Fairtown house mark                                                                                                | Hand-written SVG in `src/index.css` and `src/hud/TownMark.tsx`; own work                                                                                                                             | CC0     | Page chrome                                                                                             |
+| 3D models: City Kit (Commercial, Industrial, Suburban), Car Kit, Mini Characters, Nature Kit, Watercraft Pack, in `public/assets/models/kenney/` | [Kenney](https://kenney.nl), copied unchanged from the CC0 mirror [shorepine/kenney](https://github.com/shorepine/kenney) at `3694c68` (kenney.nl blocks scripted downloads); see `LICENSE.md` there | CC0 1.0 | Buildings, homes, trees, cars, trucks, boats, containers, market parasols and the people of the 3D town |
+| `public/assets/env/moonless_golf_1k.hdr`                                                                                                         | [Moonless Golf](https://polyhaven.com/a/moonless_golf) by Greg Zaal, Poly Haven                                                                                                                      | CC0 1.0 | Night sky light and reflections in the 3D town                                                          |
+
+Packs for a hand-built map (D-23: Kenney Tiny Town, Ninja Adventure) get one row each if added.
+
+## Fonts
+
+| Font                  | Source                                                                                                                               | Licence                   | Used for                                                  |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- | --------------------------------------------------------- |
+| Jersey 10             | [@fontsource/jersey-10](https://fontsource.org/fonts/jersey-10), Copyright 2023 The Soft Type Project Authors                        | SIL Open Font License 1.1 | Display: headings, buttons, badges, town signs and labels |
+| Atkinson Hyperlegible | [@fontsource/atkinson-hyperlegible](https://fontsource.org/fonts/atkinson-hyperlegible), Copyright 2020 Braille Institute of America | SIL Open Font License 1.1 | Body and form text                                        |
+| Inter Tight           | [@fontsource-variable/inter-tight](https://fontsource.org/fonts/inter-tight), Copyright 2020 The Inter Project Authors               | SIL Open Font License 1.1 | The landing hero at `/`                                   |
+
+All are self-hosted from npm; nothing is fetched from a font CDN.
+
+## Hotlinked media (not in the repo)
+
+| What                                                      | Source                                                                                                       | Licence                                                                          | Used for                                 |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | ---------------------------------------- |
+| NORVA glide clips (1920 × 1080 and 1280 × 720) and poster | `d2ol7oe51mr4n9.cloudfront.net`, supplied with the "NORVA night-city staffing hero" prompt on motionsites.ai | **Not confirmed.** The prompt hands them out to build with; no licence is stated | The scene behind the landing hero at `/` |
+
+The clip shows a fictional staffing city (crews, turbines, cooling towers), not a market town. Confirm the media licence, or swap in our own clip, before the demo is public.

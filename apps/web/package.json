@@ -1,0 +1,63 @@
+{
+  "name": "@fairtown/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 8080 --host",
+    "build": "tsc -p . && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "typecheck": "tsc -p .",
+    "fixtures:day": "tsx scripts/write-day.ts",
+    "map:stub": "tsx scripts/make-stub-map.ts"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  },
+  "dependencies": {
+    "@arkiv-network/sdk": "1.0.1",
+    "@fairtown/shared": "workspace:*",
+    "@fontsource-variable/inter-tight": "^5",
+    "@fontsource/atkinson-hyperlegible": "^5",
+    "@fontsource/jersey-10": "^5",
+    "@tanstack/react-query": "^5.106.1",
+    "@yudiel/react-qr-scanner": "2.6.0",
+    "easystarjs": "0.4.4",
+    "qrcode": "1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^7.18.5",
+    "three": "~0.181.2",
+    "uplot": "^1.6.32",
+    "viem": "catalog:",
+    "zod": "catalog:",
+    "zustand": "^5.0.16",
+    "zxing-wasm": "3.1.6"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "~1.64.1",
+    "@tailwindcss/vite": "^4.3.4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/node": "catalog:",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "~0.181.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "jsdom": "^26.1.0",
+    "msw": "^2.15.0",
+    "tailwindcss": "^4.3.4",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vite": "^6.4.5",
+    "vitest": "catalog:"
+  }
+}
