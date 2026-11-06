@@ -9,7 +9,9 @@
     "with-env": "tsx with-env.ts",
     "test": "vitest run",
     "typecheck": "tsc -p .",
-    "e2e:lot": "tsx e2e/lot.ts"
+    "e2e:lot": "tsx e2e/lot.ts",
+    "e2e:town-live": "tsx e2e/town-live.ts",
+    "dev:all": "tsx dev-all.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "1.0.1",

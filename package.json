@@ -23,9 +23,10 @@
     "verify:base-sepolia": "DEPLOY_NETWORK=base-sepolia DEPLOY_COMMIT=$(git rev-parse HEAD) pnpm -s -F scripts run with-env --cwd contracts -- forge script script/Deploy.s.sol:Deploy --rpc-url base_sepolia --broadcast --resume --verify",
     "smoke:anvil": "pnpm -F keeper smoke anvil",
     "smoke:base-sepolia": "pnpm -F keeper smoke base-sepolia",
-    "dev:all": "node scripts/pending.mjs dev:all \"C 1.2\"",
+    "dev:all": "pnpm -s -F scripts run dev:all",
     "e2e:day": "node scripts/pending.mjs e2e:day \"C 2.3\"",
-    "e2e:lot": "pnpm -s -F scripts run e2e:lot"
+    "e2e:lot": "pnpm -s -F scripts run e2e:lot",
+    "e2e:town-live": "pnpm -s -F scripts run e2e:town-live"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

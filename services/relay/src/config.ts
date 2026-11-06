@@ -9,6 +9,9 @@ export const RelayConfig = z.object({
   RPC_URL: z.string().url().optional(),
   RPC_WS_URL: z.string().optional(),
   LOGS_RPC_URL: z.string().url().optional(),
+  // Restart lookback in blocks, as in the agents service (default 20,000 in the watcher). Anvil runs use 1: a fork
+  // forwards pre-fork getLogs to its upstream RPC, which rejects wide ranges (C 1.2).
+  CHAIN_BACKFILL_BLOCKS: z.coerce.bigint().positive().optional(),
 })
 export type RelayConfig = z.infer<typeof RelayConfig>
 

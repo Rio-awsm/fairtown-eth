@@ -35,6 +35,10 @@ describe("readEnv", () => {
     expect(readEnv({}).explorerUrl).toBe("https://sepolia.basescan.org")
   })
 
+  it("has no explorer on a local anvil fork (VITE_EXPLORER_URL=local)", () => {
+    expect(readEnv({ VITE_EXPLORER_URL: "local" }).explorerUrl).toBeUndefined()
+  })
+
   it("drops a trailing slash from the explorer URL", () => {
     expect(readEnv({ VITE_EXPLORER_URL: "https://example.org/" }).explorerUrl).toBe("https://example.org")
   })

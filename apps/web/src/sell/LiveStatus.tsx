@@ -1,5 +1,5 @@
 import { TestMoneyBadge } from "../hud/ModeBadge"
-import { explorerTx } from "../hud/links"
+import { explorerTx, LOCAL_FORK_TITLE } from "../hud/links"
 import { lotMoney, lotPerUnit, STATUS_WORDS } from "../hud/model"
 import { countdown } from "../game/market/slots"
 import type { LotState } from "../game/reducer"
@@ -15,9 +15,13 @@ function PayoutCard({ lot, sellerId }: { lot: LotState; sellerId: string }) {
         {lot.handoverTx ? `${lotMoney(lot, s.held)} received at handover` : `${lotMoney(lot, s.held)} more at handover`}{" "}
         · Fee {lotMoney(lot, s.fee)}
       </p>
-      <a className="text-harbour underline" href={explorerTx(s.tx)} target="_blank" rel="noreferrer">
-        Receipt
-      </a>
+      {explorerTx(s.tx) ? (
+        <a className="text-harbour underline" href={explorerTx(s.tx)} target="_blank" rel="noreferrer">
+          Receipt
+        </a>
+      ) : (
+        <span title={LOCAL_FORK_TITLE}>Receipt (local fork)</span>
+      )}
       {!lot.handoverTx && <SoldLot lot={lot} sellerId={sellerId} />}
       <TestMoneyBadge />
     </section>

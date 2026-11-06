@@ -43,6 +43,7 @@ if (!fake) {
     rpcUrl: config.RPC_URL,
     ...(config.RPC_WS_URL ? { wsUrl: config.RPC_WS_URL } : {}),
     ...(config.LOGS_RPC_URL ? { logsRpcUrl: config.LOGS_RPC_URL } : {}),
+    ...(config.CHAIN_BACKFILL_BLOCKS ? { backfillBlocks: config.CHAIN_BACKFILL_BLOCKS } : {}),
     publish: (envs) => relay.publish(envs),
     nameOf: (a) => state.nameOf(a),
     onError: (where, e) => relay.app.log.warn({ where, err: e instanceof Error ? e.message.replace(/https?:\/\/\S+|wss?:\/\/\S+/g, "<rpc>").slice(0, 200) : String(e) }, "chain watcher"),
