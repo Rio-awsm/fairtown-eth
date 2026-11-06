@@ -4,6 +4,7 @@ import type { ProtocolParams } from "./chain/types"
 
 const port = z.coerce.number().int().min(1).max(65535)
 const bps = z.coerce.number().int().min(0).max(10000)
+// ICR-003 / D-50: Base Sepolia runs ~5 blocks/s, so block windows are x10 the SoT 14 values.
 const blocks = z.coerce.bigint().positive()
 
 export const AgentsConfig = z.object({
@@ -20,16 +21,19 @@ export const AgentsConfig = z.object({
   ADVANCE_PROVEN_BPS: bps.default(9000),
   ADVANCE_TRUCK_BPS: bps.default(1000),
   PROVEN_AFTER_CLEAN_LOTS: z.coerce.number().int().positive().default(3),
-  CONTEST_WINDOW_BLOCKS: blocks.default(60n),
-  REPORT_WINDOW_BLOCKS: blocks.default(300n),
-  PICKUP_WINDOW_FISH: blocks.default(300n),
-  PICKUP_WINDOW_FLOWERS: blocks.default(300n),
-  PICKUP_WINDOW_PRODUCE: blocks.default(450n),
-  PICKUP_WINDOW_TRUCK: blocks.default(300n),
-  PICKUP_WINDOW_STORAGE: blocks.default(150n),
-  PICKUP_WINDOW_COMPUTE: blocks.default(60n),
+  CONTEST_WINDOW_BLOCKS: blocks.default(600n),
+  REPORT_WINDOW_BLOCKS: blocks.default(3000n),
+  PICKUP_WINDOW_FISH: blocks.default(3000n),
+  PICKUP_WINDOW_FLOWERS: blocks.default(3000n),
+  PICKUP_WINDOW_PRODUCE: blocks.default(4500n),
+  PICKUP_WINDOW_TRUCK: blocks.default(3000n),
+  PICKUP_WINDOW_STORAGE: blocks.default(1500n),
+  PICKUP_WINDOW_COMPUTE: blocks.default(600n),
   RELIST_STEP_BPS: bps.default(1500),
   AGENT_MNEMONIC: z.string().optional(),
+  RPC_URL: z.string().url().optional(),
+  RPC_WS_URL: z.string().optional(),
+  OPERATOR_PRIVATE_KEY: z.string().optional(),
   RELAY_PORT: port.default(8788),
   RELAY_INTERNAL_TOKEN: z.string().default("change-me"),
   ARKIV_ACCESS_KEY: z.string().optional(),

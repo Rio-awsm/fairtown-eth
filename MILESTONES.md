@@ -14,11 +14,11 @@ One row per step. Status: todo, in progress, green, cut. Updated through MILESTO
 | C 3.1 | Demo hardening, fallbacks, rehearsals |  | todo |  |  |  |  |
 | C 3.2 | Sponsor deliverables and docs |  | todo |  |  |  |  |
 | C 3.3 | Video, submission, finalist prep |  | todo |  |  |  |  |
-| S1 0.1 | Toolchain and dependencies |  | todo |  |  |  |  |
-| S1 1.1 | Base contracts |  | todo |  |  |  |  |
-| S1 1.2 | LotFactory on CCA |  | todo |  |  |  |  |
-| S1 1.3 | MarketSettlement and ChainTrigger |  | todo |  |  |  |  |
-| S1 1.4 | Deploy v1 and publish |  | todo |  |  |  |  |
+| S1 0.1 | Toolchain and dependencies | maxspxtr | green | 2026-11-06 | 2026-11-06 | uncommitted | forge 10/10 (incl. 4 Base Sepolia fork); TS 115 pass; doctor exit 0; CCA v2.1.0. Full second review and line-by-line key review waived by maxspxtr; quick checks by Claude instead (prompt log). Stream cmd: `cre/` and keeper parts arrive in 4.2 and 2.1 |
+| S1 1.1 | Base contracts | maxspxtr | tests green, open | 2026-11-06 |  | uncommitted | forge 64/64 (incl. hook on real CCA v2.1.0, schedule sweeps 2..500 x 0..9000); shared 101/101 incl. 20 price vectors (ICR-001). Open: read hook against CCA interface (manual), D-38/D-39 review |
+| S1 1.2 | LotFactory on CCA | maxspxtr | tests green, open | 2026-11-06 |  | uncommitted | forge 85/85 incl. Base Sepolia fork lot through real Permit2; spread 4.5% at share 7500 (10.7% at 5000, D-40); LotFactory 12,572 B; events checked. Open: read one -vvvv trace (manual), mentor on sniping |
+| S1 1.3 | MarketSettlement and ChainTrigger | maxspxtr | tests green, open | 2026-11-06 |  | uncommitted | forge 116/116 (settlement 31 incl. fuzzed payout invariant and no-stuck-currency, 256 runs each); exact guide balances; MarketSettlement 17,510 B. Open: human line-by-line read of settlement, mentor review booked, D-44/D-46/D-47 review, hand-recompute one settlement from a trace |
+| S1 1.4 | Deploy v1 and publish | maxspxtr | tests green, open | 2026-11-06 |  | uncommitted | Base Sepolia v1 deployed and all 10 verified (settlement 0x657C61e2a48769C9bf39Fa0A6E73985e0d1ec3ea); smoke passed on anvil and Base Sepolia (lot to paid_in_full); ABIs generated; forge 117, TS 157. Found ~200 ms blocks: windows x10 (D-50, ICR-003). Open: post 'S1 v1 deployed', S2 to scale auction durations |
 | S1 2.1 | Keeper service |  | todo |  |  |  |  |
 | S1 3.1 | Relists, capacity and compute lots |  | todo |  |  |  |  |
 | S1 4.1 | Receivers, rulings, deploy v2 |  | todo |  |  |  |  |
@@ -27,7 +27,7 @@ One row per step. Status: todo, in progress, green, cut. Updated through MILESTO
 | S1 4.4 | W3, rulings |  | todo |  |  |  |  |
 | S1 4.5 | CRE bridge |  | todo |  |  |  |  |
 | S1 5.1 | Hardening and sponsor deliverables |  | todo |  |  |  |  |
-| S2 0.1 | Service skeletons, adapters, fixtures and doctor | Rio-awsm | green | 2026-11-06 | 2026-11-06 | uncommitted | agents 36, relay 10 tests pass. ICR-001 awaits S3 ack. Human read of FakeChain.ts and clearing.ts: NEEDS HUMAN INPUT |
+| S2 0.1 | Service skeletons, adapters, fixtures and doctor | Rio-awsm | green | 2026-11-06 | 2026-11-06 | uncommitted | agents 36, relay 10 tests pass. ICR-004 awaits S3 ack. Human read of FakeChain.ts and clearing.ts: NEEDS HUMAN INPUT |
 | S2 1.1 | AI gateway |  | todo |  |  |  |  |
 | S2 1.2 | Listing, grading, metadata, evidence |  | todo |  |  |  |  |
 | S2 2.1 | Arkiv data layer and ledger writer |  | todo |  |  |  |  |

@@ -12,9 +12,9 @@ describe("config", () => {
   it("defaults to mock modes and contract values", () => {
     const c = parseConfig({})
     expect(c).toMatchObject({ AGENTS_PORT: 8787, CHAIN_MODE: "fake", ARKIV_MODE: "memory", MOCK_AI: true, FEE_BPS: 100 })
-    expect(protocolParams(c)).toEqual(params)
-    expect(pickupWindowFor(c, "produce")).toBe(450n)
-    expect(pickupWindowFor(c, "compute")).toBe(60n)
+    expect(protocolParams(c)).toEqual({ ...params, contestWindowBlocks: 600n, reportWindowBlocks: 3000n })
+    expect(pickupWindowFor(c, "produce")).toBe(4500n)
+    expect(pickupWindowFor(c, "compute")).toBe(600n)
   })
   it("parses .env.example style values and ignores empty ones", () => {
     const c = parseConfig({ CHAIN_MODE: "base-sepolia", MOCK_AI: "0", CONTEST_WINDOW_BLOCKS: "90", TREASURY_ADDRESS: "" })
@@ -79,14 +79,14 @@ describe("agents server", () => {
 })
 
 describe("createAdapters", () => {
-  it("builds fake chain and memory store", () => {
-    const a = createAdapters(parseConfig({}))
+  it("builds fake chain and memory store", async () => {
+    const a = await createAdapters(parseConfig({}))
     a.stop()
     expect(a.chain.mode).toBe("fake")
     expect(a.arkiv.mode).toBe("memory")
   })
-  it("refuses modes that are not built yet", () => {
-    expect(() => createAdapters(parseConfig({ CHAIN_MODE: "anvil" }))).toThrow(/S2 3.1/)
-    expect(() => createAdapters(parseConfig({ ARKIV_MODE: "live" }))).toThrow(/ARKIV_ACCESS_KEY/)
+  it("refuses live modes without their keys", async () => {
+    await expect(createAdapters(parseConfig({ CHAIN_MODE: "base-sepolia" }))).rejects.toThrow(/OPERATOR_PRIVATE_KEY/)
+    await expect(createAdapters(parseConfig({ ARKIV_MODE: "live" }))).rejects.toThrow(/ARKIV_ACCESS_KEY/)
   })
 })

@@ -3,7 +3,9 @@ import type { Address, Hex, LocalAccount } from "viem"
 import type { ArkivStore } from "./arkiv/ArkivStore"
 import { LiveArkivStore } from "./arkiv/LiveArkivStore"
 import { MemoryArkivStore } from "./arkiv/MemoryArkivStore"
+import { loadDeployment } from "@fairtown/shared/addresses"
 import { FakeChain } from "./chain/fake/FakeChain"
+import { ViemChain } from "./chain/viem/ViemChain"
 import type { ChainAdapter } from "./chain/types"
 import { protocolParams, type AgentsConfig } from "./config"
 
@@ -19,10 +21,17 @@ export function createArkiv(config: AgentsConfig, onFriction?: (n: string) => vo
   return { arkiv: new LiveArkivStore({ accessKey: config.ARKIV_ACCESS_KEY, writer, onFriction }), writer: writer.address }
 }
 
-export function createAdapters(config: AgentsConfig, accountFor?: (a: Address) => LocalAccount | undefined): { chain: ChainAdapter; arkiv: ArkivStore; writer: Address; stop: () => void; fake?: FakeChain } {
-  if (config.CHAIN_MODE !== "fake")
-    throw new Error(`CHAIN_MODE=${config.CHAIN_MODE} needs ViemChain, which lands in S2 3.1. Use CHAIN_MODE=fake for now.`)
+export type Adapters = { chain: ChainAdapter; arkiv: ArkivStore; writer: Address; stop: () => void; fake?: FakeChain; viem?: ViemChain }
+
+export async function createAdapters(config: AgentsConfig, accountFor?: (a: Address) => LocalAccount | undefined): Promise<Adapters> {
   const { arkiv, writer } = createArkiv(config)
+  if (config.CHAIN_MODE !== "fake") {
+    if (!config.OPERATOR_PRIVATE_KEY || !config.RPC_URL || !accountFor)
+      throw new Error(`CHAIN_MODE=${config.CHAIN_MODE} needs OPERATOR_PRIVATE_KEY, RPC_URL and AGENT_MNEMONIC`)
+    const deployment = await loadDeployment(config.CHAIN_MODE)
+    const viem = new ViemChain({ deployment, rpcUrl: config.RPC_URL, operator: writerAccount(config.OPERATOR_PRIVATE_KEY), accountFor })
+    return { chain: viem, arkiv, writer, stop: () => {}, viem }
+  }
   const chain = new FakeChain({
     params: protocolParams(config),
     chainId: config.CHAIN_ID,

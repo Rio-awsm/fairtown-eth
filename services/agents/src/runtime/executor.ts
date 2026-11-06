@@ -1,4 +1,5 @@
 import type { Address } from "viem"
+import { ChainError } from "../chain/errors"
 import type { ChainAdapter } from "../chain/types"
 import { checkBid, DEFAULT_GUARDRAILS, type GuardrailConfig } from "./guardrails"
 import type { Publisher } from "./publisher"
@@ -30,6 +31,9 @@ export class Executor {
       await this.publisher.publish([{ type: "agent.intent", agentId: agent.agentId, action: "pass", lotId: lot.lotId.toString(), reason: d.reason }], block)
       return { status: "pass", reason: d.reason }
     }
+    // Re-read clearing just before sending: on a real chain it can move between observation and bid.
+    const fresh = await this.chain.clearingPerUnit(lot.lotId)
+    if (fresh > lot.clearingPerUnit) o = { ...o, lot: { ...lot, clearingPerUnit: fresh } }
     const g = checkBid(d, o, ex.bidTimes, this.now(), this.cfg)
     if (!g.ok) return { status: "rejected", reason: g.reason }
 
@@ -49,6 +53,8 @@ export class Executor {
       if (g.maxPerUnit > (ex.best.get(key) ?? 0n)) ex.best.set(key, g.maxPerUnit)
       return { status: "bid", bidId: r.bidId, maxPerUnit: g.maxPerUnit, amount: g.amount, clamped: g.clamped }
     } catch (e) {
+      // On a real CCA the clearing price rises block by block; a simulated revert costs nothing and just means "outbid".
+      if (e instanceof ChainError && e.code === "BelowClearing") return { status: "rejected", reason: "clearing moved past my price" }
       return { status: "failed", reason: e instanceof Error ? e.message : String(e) }
     }
   }

@@ -26,7 +26,7 @@ const ai = createGateway({ config: parseAiConfig(env) })
 
 if (!config.AGENT_MNEMONIC && config.CHAIN_MODE !== "fake") throw new Error("AGENT_MNEMONIC is required outside CHAIN_MODE=fake")
 const wallets = new Wallets(config.AGENT_MNEMONIC ?? generateMnemonic(english))
-const { chain, arkiv, writer, fake } = createAdapters(config, wallets.accountFor)
+const { chain, arkiv, writer, fake, viem } = await createAdapters(config, wallets.accountFor)
 const sellers = new SellerDirectory(PERSONAS, (p) => wallets.address(PERSONAS.indexOf(p)))
 
 const drafts = new DraftStore()
@@ -53,6 +53,7 @@ const runtime = new AgentRuntime({
   gradeFor: (_id, uri) => drafts.get(uri.split("/").pop() ?? "")?.grade.grade,
   nameOf: (a: Address) => sellers.byAddr(a)?.name,
   ...(fake ? { markProven: (a: Address) => fake.markProven(a, true) } : {}),
+  ...(viem ? { markProven: (a: Address) => viem.markProven(a, true), gasTopUpWei: 5n * 10n ** 14n } : {}),
 })
 runtime.addPersonas(PERSONAS)
 

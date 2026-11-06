@@ -9,7 +9,7 @@ import type { LotObservation, MandateT, RuntimeAgent, Strategy } from "./types"
 import type { Wallets } from "./wallets"
 
 const BIDDERS = new Set(["BUYER", "SOCIETY", "HUMAN"])
-const GAS_WEI = 10n ** 16n // 0.01 ETH for gas on testnets
+const GAS_WEI = 10n ** 16n // fake chain default
 const lc = (a: string) => a.toLowerCase() as Address
 
 type TrackedLot = { lotId: bigint; seller: Address; currency: string; grade: Grade; place: Place; sector: Sector; building: Building; ended: boolean }
@@ -23,9 +23,10 @@ export type RuntimeOptions = {
   ledger?: Pick<LedgerWriter, "writeAgent">
   gradeFor?: (lotId: bigint, metadataURI: string) => Grade | undefined
   nameOf?: (address: Address) => string | undefined
-  markProven?: (address: Address) => void // fake mode stand-in for the operator; seeded sellers are disclosed
+  markProven?: (address: Address) => unknown // operator marks seeded sellers proven (disclosed); awaited so operator nonces stay in order
   guardrails?: GuardrailConfig
   now?: () => number
+  gasTopUpWei?: bigint // Base Sepolia gas is cheap; keep top-ups small so the operator wallet lasts
 }
 
 export class AgentRuntime {
@@ -89,8 +90,10 @@ export class AgentRuntime {
       await chain.register(a.agentId, a.role, a.name)
       const have = await chain.balanceOf(a.currency, a.agentId)
       if (a.budget > have) await chain.mint(a.currency, a.agentId, a.budget - have)
-      if ((await chain.balanceOf("ETH", a.agentId)) < GAS_WEI) await chain.sendEth(a.agentId, GAS_WEI)
-      if (a.personaId && seededProven.includes(a.personaId)) this.o.markProven?.(a.agentId)
+      const gas = this.o.gasTopUpWei ?? GAS_WEI
+      const eth = await chain.balanceOf("ETH", a.agentId)
+      if (eth < gas / 2n) await chain.sendEth(a.agentId, gas - eth)
+      if (a.personaId && seededProven.includes(a.personaId) && !(await chain.sellerRecord(a.agentId)).proven) await this.o.markProven?.(a.agentId)
       await this.o.ledger?.writeAgent(
         { id: a.personaId ?? a.agentId, name: a.name, role: a.role, building: a.building, ...(a.mandate ? { mandate: a.mandate } : {}) } as Persona,
         a.agentId,
