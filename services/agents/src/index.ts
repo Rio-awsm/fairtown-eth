@@ -20,6 +20,7 @@ import { buildApp } from "./server"
 import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
 import { SectorEngine } from "./sectors/engine"
 import { MarketState, moveOnSignal } from "./market/state"
+import { SessionStore } from "./handover/sessions"
 import { findReference } from "./listing/references"
 import { AUCTION_BLOCKS, AUCTION_BLOCKS_FAKE } from "./sectors/rules"
 import { SECTORS } from "@fairtown/shared"
@@ -119,7 +120,20 @@ const sectors = new SectorEngine({
 const stopSectors = sectors.start()
 const stopMining = fake ? fake.autoMine(FAKE_BLOCK_MS) : () => {}
 
-const app = buildApp({ config, chain, arkiv, ai, listing, runtime, disputes, market: { market, arkiv, chain, references: listing.references, sellers, params: protocolParams(config) } })
+// Handover codes live about 5 minutes: 1500 blocks at 200 ms, 150 in fake mode (2 s blocks).
+const sessions = new SessionStore()
+const app = buildApp({
+  config,
+  chain,
+  arkiv,
+  ai,
+  listing,
+  runtime,
+  disputes,
+  market: { market, arkiv, chain, references: listing.references, sellers, params: protocolParams(config) },
+  handover: { chain, wallets, runtime, sellers, sessions, photos: listing.photos, drafts, config, ticketValidBlocks: fake ? 150n : 1500n },
+  humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config },
+})
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)
 await app.listen({ port: config.AGENTS_PORT, host: "0.0.0.0" })
 

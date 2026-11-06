@@ -41,6 +41,11 @@ export const AgentsConfig = z.object({
   ARKIV_PRIVATE_KEY: z.string().optional(),
   STORAGE_DIR: z.string().default("./.data"),
   PUBLIC_BASE_URL: z.string().url().default("http://localhost:8787"),
+  PUBLIC_WEB_URL: z.string().url().default("http://localhost:8080"),
+  SELLER_PIN: z.string().min(4).optional(), // one disclosed demo PIN; unset disables seller sessions
+  TRUST_PROXY: z.string().optional(), // IP/CIDR of the tunnel (e.g. 127.0.0.1), never "true"
+  WALKIN_BUDGET: z.string().regex(/^\d+(\.\d{1,6})?$/).default("500"),
+  WALKIN_CAP: z.coerce.number().int().positive().default(50),
   TREASURY_ADDRESS: z
     .string()
     .regex(/^0x[0-9a-fA-F]{40}$/)

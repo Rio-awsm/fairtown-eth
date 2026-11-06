@@ -5,7 +5,7 @@ import type { LedgerWriter } from "../arkiv/ledgerWriter"
 import { Executor, type ExecResult, type Exposure } from "./executor"
 import { DEFAULT_GUARDRAILS, type GuardrailConfig } from "./guardrails"
 import type { Publisher } from "./publisher"
-import type { LotObservation, MandateT, MarketView, RuntimeAgent, Strategy } from "./types"
+import type { Decision, LotObservation, MandateT, MarketView, Observation, RuntimeAgent, Strategy } from "./types"
 import type { Wallets } from "./wallets"
 
 const BIDDERS = new Set(["BUYER", "SOCIETY", "HUMAN"])
@@ -204,70 +204,99 @@ export class AgentRuntime {
       const { chain } = this.o
       const block = await chain.blockNumber()
       for (const t of this.lots.values()) {
-        if (t.ended) continue
-        const lot = await chain.getLot(t.lotId)
-        if (lot.status !== "open" || block >= lot.endBlock) continue
-        const record = await chain.sellerRecord(t.seller)
-        const obsLot: LotObservation = {
-          lotId: lot.lotId,
-          auction: lot.auction,
-          sector: lot.spec.sector,
-          commodity: lot.spec.commodity,
-          grade: t.grade !== "na" ? t.grade : lot.spec.grade,
-          building: t.building,
-          place: lot.spec.place,
-          seller: t.seller,
-          ...(this.o.nameOf?.(t.seller) ? { sellerName: this.o.nameOf(t.seller)! } : {}),
-          sellerRecord: record,
-          currency: lot.spec.currency,
-          qty: lot.spec.qty,
-          floorPerUnit: lot.spec.floorPerUnit,
-          clearingPerUnit: lot.clearingPerUnit,
-          tickPerUnit: fromQ96(lot.tickQ96) + 1n,
-          endBlock: lot.endBlock,
-          blocksLeft: lot.endBlock - block,
-        }
-        const mv = this.o.marketFor?.(obsLot, block)
-        if (mv?.reference !== undefined) obsLot.reference = mv.reference
-        const market = mv && { signals: mv.signals, urgencyBps: mv.urgencyBps }
-        const key = t.lotId.toString()
-        const duty = this.duties.get(key)
-        const observe = (base: RuntimeAgent) => {
-          const m = duty?.get(base.agentId)
-          const a = m ? { ...base, mandate: m } : base
-          const ex = this.ex(a.agentId)
-          return { ex, o: { agent: a, budgetLeft: this.budgetLeft(a), exposureOnLot: ex.onLot.get(key) ?? 0n, myBestOnLot: ex.best.get(key) ?? 0n, lot: { ...obsLot }, ...(market ? { market } : {}) } }
-        }
+        const view = await this.observeLot(t, block)
+        if (!view) continue
+        const { obsLot } = view
+        const duty = this.duties.get(t.lotId.toString())
         const eligible = [...this.agents.values()].filter((a) => {
           const m = duty?.get(a.agentId) ?? a.mandate
-          return BIDDERS.has(a.role) && !a.paused && m && a.currency === obsLot.currency && m.commodities.includes(obsLot.commodity as (typeof m.commodities)[number])
+          return BIDDERS.has(a.role) && !a.paused && !a.manual && m && a.currency === obsLot.currency && m.commodities.includes(obsLot.commodity as (typeof m.commodities)[number])
         })
         const { strategy } = this.o
         const pre = strategy.parallel
           ? await Promise.all(
               eligible.map(async (a) => {
-                const x = observe(a)
+                const x = this.observeAgent(a, view)
                 return { ...x, d: await strategy.decide(x.o) }
               }),
             )
           : []
         for (const [i, a] of eligible.entries()) {
           const p = pre[i]
-          const { ex, o } = p ?? observe(a)
+          const { ex, o } = p ?? this.observeAgent(a, view)
           const d = p ? p.d : await strategy.decide(o)
           if (d.action === "pass" && o.myBestOnLot > obsLot.clearingPerUnit) continue // quietly still winning
-          const result = await this.executor.execute(d, o, ex)
-          if (result.status === "bid") this.bids.set(result.bidId.toString(), { agent: a.agentId, amount: result.amount, lotId: t.lotId })
-          const entry = { agentId: a.agentId, lotId: t.lotId, result }
+          const entry = await this.run(a, t.lotId, d, o, ex)
           out.push(entry)
-          this.log.push(entry)
-          if (result.status === "bid") obsLot.clearingPerUnit = await chain.clearingPerUnit(t.lotId)
+          if (entry.result.status === "bid") obsLot.clearingPerUnit = await chain.clearingPerUnit(t.lotId)
         }
       }
     } finally {
       this.stepping = false
     }
     return out
+  }
+
+  // A human's bid (walk-in): same observation, executor and guardrails as an agent's.
+  async manualBid(agentId: Address, lotId: bigint, maxPerUnit: bigint, amount: bigint, reason: string): Promise<Decided> {
+    const a = this.agents.get(lc(agentId))
+    const t = this.lots.get(lotId.toString())
+    const fail = (why: string): Decided => ({ agentId: lc(agentId), lotId, result: { status: "rejected", reason: why } })
+    if (!a) return fail("unknown agent")
+    if (!t) return fail("unknown lot")
+    const view = await this.observeLot(t, await this.o.chain.blockNumber())
+    if (!view) return fail("auction is not open")
+    const { ex, o } = this.observeAgent(a, view)
+    return this.run(a, lotId, { action: "bid", maxPerUnit: maxPerUnit.toString(), amount: amount.toString(), moveTo: t.building, reason: reason.slice(0, 80) }, o, ex)
+  }
+
+  private async run(a: RuntimeAgent, lotId: bigint, d: Decision, o: Observation, ex: Exposure): Promise<Decided> {
+    const result = await this.executor.execute(d, o, ex)
+    if (result.status === "bid") this.bids.set(result.bidId.toString(), { agent: a.agentId, amount: result.amount, lotId })
+    const entry = { agentId: a.agentId, lotId, result }
+    this.log.push(entry)
+    return entry
+  }
+
+  private async observeLot(t: TrackedLot, block: bigint) {
+    if (t.ended) return undefined
+    const { chain } = this.o
+    const lot = await chain.getLot(t.lotId)
+    if (lot.status !== "open" || block >= lot.endBlock) return undefined
+    const record = await chain.sellerRecord(t.seller)
+    const obsLot: LotObservation = {
+      lotId: lot.lotId,
+      auction: lot.auction,
+      sector: lot.spec.sector,
+      commodity: lot.spec.commodity,
+      grade: t.grade !== "na" ? t.grade : lot.spec.grade,
+      building: t.building,
+      place: lot.spec.place,
+      seller: t.seller,
+      ...(this.o.nameOf?.(t.seller) ? { sellerName: this.o.nameOf(t.seller)! } : {}),
+      sellerRecord: record,
+      currency: lot.spec.currency,
+      qty: lot.spec.qty,
+      floorPerUnit: lot.spec.floorPerUnit,
+      clearingPerUnit: lot.clearingPerUnit,
+      tickPerUnit: fromQ96(lot.tickQ96) + 1n,
+      endBlock: lot.endBlock,
+      blocksLeft: lot.endBlock - block,
+    }
+    const mv = this.o.marketFor?.(obsLot, block)
+    if (mv?.reference !== undefined) obsLot.reference = mv.reference
+    const market: MarketView | undefined = mv && { signals: mv.signals, urgencyBps: mv.urgencyBps }
+    return { obsLot, market, key: t.lotId.toString() }
+  }
+
+  private observeAgent(base: RuntimeAgent, view: { obsLot: LotObservation; market?: MarketView; key: string }): { ex: Exposure; o: Observation } {
+    const m = this.duties.get(view.key)?.get(base.agentId)
+    const a = m ? { ...base, mandate: m } : base
+    const ex = this.ex(a.agentId)
+    return {
+      ex,
+      o: { agent: a, budgetLeft: this.budgetLeft(a), exposureOnLot: ex.onLot.get(view.key) ?? 0n, myBestOnLot: ex.best.get(view.key) ?? 0n, lot: { ...view.obsLot }, ...(view.market ? { market: view.market } : {}) },
+    }
   }
 
   budgetLeft(a: RuntimeAgent) {

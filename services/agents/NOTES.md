@@ -58,3 +58,12 @@
 - S1 4.2 and 4.3 are not deployed. Tests drive FakeChain's `pushSignal`, `pushReference`, `pushFx` stand-ins; the ABI on Base Sepolia v1 has no `DemandSignal` or `ReferencePriceUpdated`, so on the live chain the town runs on the snapshot until S1 v2.
 - `ReferencePriceUpdated` round-trips: CRE W1 reads `/api/reference`, posts it, and the event upserts the same row. Idempotent, but the `source` becomes "CRE W1: <tag>".
 - Severity scale is assumed 1 to 5; values above 5 are clamped. Confirm with S1 4.3.
+
+## 2026-11-06, S2 6.1 handover, no-show, walk-in, STT, calendar
+
+**Built:** `src/handover/routes.ts` (seller PIN sessions, ticket, confirm, no-show report and contest), `src/handover/sessions.ts` (bearer sessions, sliding rate limiter), `src/humans/routes.ts` (walk-in join and bid, STT, calendar), `src/data/festivals.json`. Runtime: `manual` agents and `manualBid` share the step's observation, executor and guardrails. Body limit 12 MiB (phone photos and voice notes); optional `TRUST_PROXY`.
+
+**Notes:**
+- Walk-in Permit2 approval happens on the first bid (inside `ensurePermit2`), not at join, so the first bid on Base Sepolia takes two extra transactions (about 1 s).
+- The ticket QR fallback URL puts the code in the fragment (`#t=`), so it never reaches a server or tunnel log.
+- Add to `.env`: `SELLER_PIN` (4+ chars), and `TRUST_PROXY=127.0.0.1` when cloudflared runs on this machine. Without `TRUST_PROXY` every phone behind the tunnel shares one IP and the walk-in limit (3 per 10 min) applies to all of them.

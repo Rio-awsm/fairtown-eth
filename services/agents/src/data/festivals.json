@@ -1,0 +1,15 @@
+{
+  "events": [
+    { "name": "Diwali (Lakshmi Puja)", "date": "2026-11-08", "market": "mumbai", "sectorsAffected": ["flowers", "produce"], "demandMultiplier": 1.8, "source": "https://www.timeanddate.com/holidays/india/diwali" },
+    { "name": "Diwali (Lakshmi Puja)", "date": "2026-11-08", "market": "pune", "sectorsAffected": ["flowers", "produce"], "demandMultiplier": 1.6, "source": "https://www.timeanddate.com/holidays/india/diwali" },
+    { "name": "Thanksgiving", "date": "2026-11-26", "market": "dallas", "sectorsAffected": ["produce", "truck"], "demandMultiplier": 1.4, "source": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/" },
+    { "name": "Thanksgiving", "date": "2026-11-26", "market": "houston", "sectorsAffected": ["produce", "truck"], "demandMultiplier": 1.4, "source": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/" },
+    { "name": "Christmas", "date": "2026-12-25", "market": "bergen", "sectorsAffected": ["fish"], "demandMultiplier": 1.5, "source": "https://www.timeanddate.com/holidays/norway/christmas-day" },
+    { "name": "Christmas", "date": "2026-12-25", "market": "oslo", "sectorsAffected": ["fish", "flowers"], "demandMultiplier": 1.4, "source": "https://www.timeanddate.com/holidays/norway/christmas-day" },
+    { "name": "Christmas", "date": "2026-12-25", "market": "hamburg", "sectorsAffected": ["fish", "flowers"], "demandMultiplier": 1.3, "source": "https://www.timeanddate.com/holidays/germany/christmas-day" },
+    { "name": "Lunar New Year", "date": "2027-02-06", "market": "houston", "sectorsAffected": ["produce"], "demandMultiplier": 1.2, "source": "https://www.timeanddate.com/holidays/china/spring-festival" },
+    { "name": "Ramadan begins (estimated, moon sighting)", "date": "2027-02-08", "market": "lagos", "sectorsAffected": ["produce"], "demandMultiplier": 1.3, "source": "https://www.timeanddate.com/holidays/nigeria/ramadan-begins" },
+    { "name": "Valentine's Day", "date": "2027-02-14", "market": "amsterdam", "sectorsAffected": ["flowers"], "demandMultiplier": 2.0, "source": "https://www.timeanddate.com/holidays/netherlands/valentine-day" },
+    { "name": "Valentine's Day", "date": "2027-02-14", "market": "nairobi", "sectorsAffected": ["flowers", "truck"], "demandMultiplier": 1.8, "source": "https://www.timeanddate.com/holidays/kenya/valentine-day" }
+  ]
+}

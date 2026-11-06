@@ -1,4 +1,4 @@
-import type { Address } from "viem"
+import type { Address, Hex } from "viem"
 import { ChainError } from "../chain/errors"
 import type { ChainAdapter } from "../chain/types"
 import { checkBid, DEFAULT_GUARDRAILS, type GuardrailConfig } from "./guardrails"
@@ -7,7 +7,7 @@ import type { Decision, Observation } from "./types"
 import type { Wallets } from "./wallets"
 
 export type ExecResult =
-  | { status: "bid"; bidId: bigint; maxPerUnit: bigint; amount: bigint; clamped: string[] }
+  | { status: "bid"; bidId: bigint; maxPerUnit: bigint; amount: bigint; clamped: string[]; tx: Hex }
   | { status: "pass"; reason: string }
   | { status: "rejected"; reason: string }
   | { status: "failed"; reason: string }
@@ -51,7 +51,7 @@ export class Executor {
       ex.onLot.set(key, (ex.onLot.get(key) ?? 0n) + g.amount)
       ex.total += g.amount
       if (g.maxPerUnit > (ex.best.get(key) ?? 0n)) ex.best.set(key, g.maxPerUnit)
-      return { status: "bid", bidId: r.bidId, maxPerUnit: g.maxPerUnit, amount: g.amount, clamped: g.clamped }
+      return { status: "bid", bidId: r.bidId, maxPerUnit: g.maxPerUnit, amount: g.amount, clamped: g.clamped, tx: r.tx }
     } catch (e) {
       // On a real CCA the clearing price rises block by block; a simulated revert costs nothing and just means "outbid".
       if (e instanceof ChainError && e.code === "BelowClearing") return { status: "rejected", reason: "clearing moved past my price" }

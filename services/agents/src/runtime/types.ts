@@ -28,6 +28,7 @@ export type RuntimeAgent = {
   paused: boolean
   walletIndex: number
   personaId?: string
+  manual?: boolean // walk-in humans: never auto-bid, only through manualBid
 }
 
 export type LotObservation = {

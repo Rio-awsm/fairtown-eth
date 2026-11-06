@@ -6,16 +6,20 @@ import type { ChainAdapter } from "./chain/types"
 import type { AgentsConfig } from "./config"
 import { registerDisputeRoutes, type DisputeDeps } from "./handover/disputes"
 import { registerMarketRoutes, type MarketDeps } from "./market/routes"
+import { registerHandoverRoutes, type HandoverDeps } from "./handover/routes"
+import { registerHumanRoutes, type HumanDeps } from "./humans/routes"
 import { registerListingRoutes, type ListingDeps } from "./listing/routes"
 import { registerAgentRoutes } from "./runtime/routes"
 import type { AgentRuntime } from "./runtime/runtime"
 
-export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; market?: MarketDeps; logger?: boolean }
+export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; market?: MarketDeps; handover?: HandoverDeps; humans?: HumanDeps; logger?: boolean }
 
 export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
 
 export function buildApp(deps: AppDeps): FastifyInstance {
   const app = Fastify({
+    bodyLimit: 12 * 1024 * 1024, // up to 3 phone photos or a voice note as base64
+    ...(deps.config.TRUST_PROXY ? { trustProxy: deps.config.TRUST_PROXY } : {}),
     logger: deps.logger === false ? false : { level: "info", redact: { paths: REDACT, censor: "[redacted]" } },
   })
 
@@ -52,6 +56,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   if (deps.runtime) registerAgentRoutes(app, deps.runtime)
   if (deps.runtime && deps.disputes) registerDisputeRoutes(app, { ...deps.disputes, runtime: deps.runtime })
   if (deps.market) registerMarketRoutes(app, deps.market)
+  if (deps.handover) registerHandoverRoutes(app, deps.handover)
+  if (deps.humans) registerHumanRoutes(app, deps.humans)
   if (deps.listing) registerListingRoutes(app, { ...deps.listing, config: deps.config, chain: deps.chain })
 
   return app
