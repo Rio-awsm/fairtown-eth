@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { planCheckpoints } from "../src/checkpointer"
-import { goodsParentOf, planCarriers, planNoShows, planReleases } from "../src/deadlines"
+import { goodsParentOf, planCarriers, planDisputeExpiries, planNoShows, planReleases } from "../src/deadlines"
 import { planSettles } from "../src/settler"
 import { reportKey } from "../src/state"
 import { FakeReads, KeeperState, addr, ctx, lot, sale } from "./fakes"
@@ -206,5 +206,39 @@ describe("planReleases", () => {
     expect(at(550n + 600n + 3_000n)).toEqual([])
     expect(at(550n + 600n + 3_001n)).toEqual(["release:2"])
     expect(at(550n + 3_000n + 3_001n)).toEqual(["release:1", "release:2"])
+  })
+})
+
+describe("planDisputeExpiries (D-65)", () => {
+  const RESOLVER = addr(0xd15)
+  function open() {
+    const state = new KeeperState()
+    const r = new FakeReads()
+    state.disputes.set(7n, { disputeId: 7n, lotId: 3n, openedBlock: 1_000n })
+    r.disputes.set(7n, { open: true, lotId: 3n, openedBlock: 1_000n })
+    return { state, r }
+  }
+  const withTimeout = { resolver: RESOLVER, rulingTimeoutBlocks: 3_000n }
+
+  it("expires only after openedBlock + timeout (contract: block > deadline), once", async () => {
+    const { state, r } = open()
+    expect(planDisputeExpiries(state, ctx(r, 4_000n, withTimeout))).toHaveLength(0)
+    const [a] = planDisputeExpiries(state, ctx(r, 4_001n, withTimeout))
+    expect(a!.key).toBe("expire:7")
+    expect(a!.once).toBe(true)
+    expect(a!.call.address).toBe(RESOLVER)
+    expect(a!.call.functionName).toBe("expireDispute")
+    expect(a!.call.args).toEqual([7n])
+    expect(await a!.stillNeeded()).toBe(true)
+  })
+  it("stillNeeded is false once a ruling or someone else closed it", async () => {
+    const { state, r } = open()
+    const [a] = planDisputeExpiries(state, ctx(r, 4_001n, withTimeout))
+    r.disputes.set(7n, { open: false, lotId: 3n, openedBlock: 1_000n })
+    expect(await a!.stillNeeded()).toBe(false)
+  })
+  it("plans nothing on a v1 deployment (no resolver, no timeout)", () => {
+    const { state, r } = open()
+    expect(planDisputeExpiries(state, ctx(r, 10_000n))).toHaveLength(0)
   })
 })

@@ -1485,6 +1485,516 @@ export const continuousClearingAuctionFactoryAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// DisputeResolver
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const disputeResolverAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'admin', internalType: 'address', type: 'address' },
+      { name: 'forwarder_', internalType: 'address', type: 'address' },
+      {
+        name: 'settlement_',
+        internalType: 'contract ISettlementRulings',
+        type: 'address',
+      },
+      {
+        name: 'factory_',
+        internalType: 'contract LotFactory',
+        type: 'address',
+      },
+      { name: 'rulingTimeoutBlocks_', internalType: 'uint64', type: 'uint64' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'DEFAULT_ADMIN_ROLE',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'KIND_NO_SHOW',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'KIND_QUALITY',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MAX_CLOCK_SKEW',
+    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'STALE_AFTER',
+    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'disputeCount',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'disputeId', internalType: 'uint256', type: 'uint256' }],
+    name: 'disputeOf',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct DisputeResolver.Dispute',
+        type: 'tuple',
+        components: [
+          { name: 'lotId', internalType: 'uint256', type: 'uint256' },
+          { name: 'buyer', internalType: 'address', type: 'address' },
+          { name: 'kind', internalType: 'uint8', type: 'uint8' },
+          { name: 'open', internalType: 'bool', type: 'bool' },
+          { name: 'openedBlock', internalType: 'uint64', type: 'uint64' },
+          { name: 'tokenAmount', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'expectedWorkflowOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'disputeId', internalType: 'uint256', type: 'uint256' }],
+    name: 'expireDispute',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'factory',
+    outputs: [
+      { name: '', internalType: 'contract LotFactory', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'forwarder',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'role', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'getRoleAdmin',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'account', internalType: 'address', type: 'address' },
+    ],
+    name: 'grantRole',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'account', internalType: 'address', type: 'address' },
+    ],
+    name: 'hasRole',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'metadata', internalType: 'bytes', type: 'bytes' },
+      { name: 'report', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'onReport',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'lotId', internalType: 'uint256', type: 'uint256' },
+      { name: 'tokenAmount', internalType: 'uint256', type: 'uint256' },
+      { name: 'evidenceHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'evidenceURI', internalType: 'string', type: 'string' },
+    ],
+    name: 'openDispute',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'lotId', internalType: 'uint256', type: 'uint256' },
+      { name: 'buyer', internalType: 'address', type: 'address' },
+      { name: 'tokenAmount', internalType: 'uint256', type: 'uint256' },
+      { name: 'evidenceHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'evidenceURI', internalType: 'string', type: 'string' },
+    ],
+    name: 'openNoShowRuling',
+    outputs: [{ name: 'disputeId', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'callerConfirmation', internalType: 'address', type: 'address' },
+    ],
+    name: 'renounceRole',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'account', internalType: 'address', type: 'address' },
+    ],
+    name: 'revokeRole',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'rulingTimeoutBlocks',
+    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'setExpectedWorkflowOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'forwarder_', internalType: 'address', type: 'address' }],
+    name: 'setForwarder',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'settlement',
+    outputs: [
+      {
+        name: '',
+        internalType: 'contract ISettlementRulings',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'interfaceId', internalType: 'bytes4', type: 'bytes4' }],
+    name: 'supportsInterface',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'disputeId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'lotId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'DisputeExpired',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'disputeId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'lotId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'buyer',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'kind', internalType: 'uint8', type: 'uint8', indexed: false },
+      {
+        name: 'tokenAmount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'evidenceHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: false,
+      },
+      {
+        name: 'evidenceURI',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'DisputeOpened',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'disputeId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'lotId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'refundBps',
+        internalType: 'uint16',
+        type: 'uint16',
+        indexed: false,
+      },
+      {
+        name: 'reasonHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: false,
+      },
+    ],
+    name: 'DisputeResolved',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previous',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'current',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'ExpectedWorkflowOwnerUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previous',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'current',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'ForwarderUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32', indexed: true },
+      {
+        name: 'previousAdminRole',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'newAdminRole',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+    ],
+    name: 'RoleAdminChanged',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32', indexed: true },
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'sender',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'RoleGranted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32', indexed: true },
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'sender',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'RoleRevoked',
+  },
+  { type: 'error', inputs: [], name: 'AccessControlBadConfirmation' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'account', internalType: 'address', type: 'address' },
+      { name: 'neededRole', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'AccessControlUnauthorizedAccount',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'length', internalType: 'uint256', type: 'uint256' }],
+    name: 'BadMetadata',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'refundBps', internalType: 'uint16', type: 'uint16' }],
+    name: 'BadRefundBps',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'disputeId', internalType: 'uint256', type: 'uint256' }],
+    name: 'DisputeNotOpen',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'NotForwarder',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'NotSettlement',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'asOf', internalType: 'uint64', type: 'uint64' },
+      { name: 'blockTime', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'ReportFromFuture',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'asOf', internalType: 'uint64', type: 'uint64' },
+      { name: 'blockTime', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'ReportTooOld',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'asOf', internalType: 'uint64', type: 'uint64' },
+      { name: 'latest', internalType: 'uint64', type: 'uint64' },
+    ],
+    name: 'StaleReport',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'expiresAfterBlock', internalType: 'uint64', type: 'uint64' },
+    ],
+    name: 'TooEarly',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'owner', internalType: 'address', type: 'address' },
+      { name: 'expected', internalType: 'address', type: 'address' },
+    ],
+    name: 'WrongWorkflowOwner',
+  },
+  { type: 'error', inputs: [], name: 'ZeroAddress' },
+  { type: 'error', inputs: [], name: 'ZeroTimeout' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // IAllowanceTransfer
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2270,6 +2780,14 @@ export const lotFactoryAbi = [
   },
   {
     type: 'error',
+    inputs: [
+      { name: 'parentLotId', internalType: 'uint256', type: 'uint256' },
+      { name: 'parentSector', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'BadParent',
+  },
+  {
+    type: 'error',
     inputs: [{ name: 'currency', internalType: 'address', type: 'address' }],
     name: 'CurrencyNotAllowed',
   },
@@ -2309,6 +2827,11 @@ export const lotFactoryAbi = [
   },
   {
     type: 'error',
+    inputs: [{ name: 'sector', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'ParentNotAllowed',
+  },
+  {
+    type: 'error',
     inputs: [{ name: 'qty', internalType: 'uint256', type: 'uint256' }],
     name: 'QtyTooLarge',
   },
@@ -2341,6 +2864,15 @@ export const lotFactoryAbi = [
     type: 'error',
     inputs: [{ name: 'sector', internalType: 'bytes32', type: 'bytes32' }],
     name: 'UnknownSector',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'seller', internalType: 'address', type: 'address' },
+      { name: 'sector', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'role', internalType: 'uint8', type: 'uint8' },
+    ],
+    name: 'WrongRole',
   },
   { type: 'error', inputs: [], name: 'ZeroAddress' },
   { type: 'error', inputs: [], name: 'ZeroPickupWindow' },
@@ -2629,6 +3161,13 @@ export const marketSettlementAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'MIN_RELIST_FLOOR_BPS',
+    outputs: [{ name: '', internalType: 'uint16', type: 'uint16' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'OPERATOR_ROLE',
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
@@ -2711,6 +3250,16 @@ export const marketSettlementAbi = [
     inputs: [],
     name: 'contestWindowBlocks',
     outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'lotId', internalType: 'uint256', type: 'uint256' },
+      { name: 'buyer', internalType: 'address', type: 'address' },
+    ],
+    name: 'disputedTokensOf',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -2817,6 +3366,24 @@ export const marketSettlementAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: 'lotId', internalType: 'uint256', type: 'uint256' }],
+    name: 'minRelistFloorOf',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'lotId', internalType: 'uint256', type: 'uint256' },
+      { name: 'buyer', internalType: 'address', type: 'address' },
+      { name: 'tokenAmount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'onDisputeOpened',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'provenAfter',
     outputs: [{ name: '', internalType: 'uint32', type: 'uint32' }],
@@ -2893,14 +3460,14 @@ export const marketSettlementAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'address', type: 'address' },
-      { name: '', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'uint16', type: 'uint16' },
+      { name: 'lotId', internalType: 'uint256', type: 'uint256' },
+      { name: 'buyer', internalType: 'address', type: 'address' },
+      { name: 'tokenAmount', internalType: 'uint256', type: 'uint256' },
+      { name: 'refundBps', internalType: 'uint16', type: 'uint16' },
     ],
     name: 'resolveRuling',
     outputs: [],
-    stateMutability: 'view',
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -3448,6 +4015,14 @@ export const marketSettlementAbi = [
   {
     type: 'error',
     inputs: [
+      { name: 'given', internalType: 'uint256', type: 'uint256' },
+      { name: 'expected', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'AmountMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
       { name: 'amount', internalType: 'uint256', type: 'uint256' },
       { name: 'available', internalType: 'uint256', type: 'uint256' },
     ],
@@ -3462,6 +4037,11 @@ export const marketSettlementAbi = [
     name: 'AuctionNotOver',
   },
   { type: 'error', inputs: [], name: 'BadParams' },
+  {
+    type: 'error',
+    inputs: [{ name: 'refundBps', internalType: 'uint16', type: 'uint16' }],
+    name: 'BadRefundBps',
+  },
   { type: 'error', inputs: [], name: 'BadSignature' },
   {
     type: 'error',
@@ -3480,6 +4060,22 @@ export const marketSettlementAbi = [
       { name: 'buyer', internalType: 'address', type: 'address' },
     ],
     name: 'Contested',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'lotId', internalType: 'uint256', type: 'uint256' },
+      { name: 'buyer', internalType: 'address', type: 'address' },
+    ],
+    name: 'DisputeOpen',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'newFloor', internalType: 'uint256', type: 'uint256' },
+      { name: 'minFloor', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'FloorBelowMinimum',
   },
   {
     type: 'error',
@@ -3506,6 +4102,14 @@ export const marketSettlementAbi = [
       { name: 'lotId', internalType: 'uint256', type: 'uint256' },
       { name: 'buyer', internalType: 'address', type: 'address' },
     ],
+    name: 'NoOpenDispute',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'lotId', internalType: 'uint256', type: 'uint256' },
+      { name: 'buyer', internalType: 'address', type: 'address' },
+    ],
     name: 'NoOpenReport',
   },
   { type: 'error', inputs: [], name: 'NoResolver' },
@@ -3519,6 +4123,11 @@ export const marketSettlementAbi = [
   },
   {
     type: 'error',
+    inputs: [{ name: 'lotId', internalType: 'uint256', type: 'uint256' }],
+    name: 'NoTransport',
+  },
+  {
+    type: 'error',
     inputs: [{ name: 'truckLotId', internalType: 'uint256', type: 'uint256' }],
     name: 'NotATruckLot',
   },
@@ -3527,7 +4136,6 @@ export const marketSettlementAbi = [
     inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
     name: 'NotBuyerOrCarrier',
   },
-  { type: 'error', inputs: [], name: 'NotImplemented' },
   {
     type: 'error',
     inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
@@ -3960,19 +4568,450 @@ export const mockStableAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// StubDisputeResolver
+// SignalOracle
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export const stubDisputeResolverAbi = [
-  { type: 'fallback', stateMutability: 'payable' },
-  { type: 'error', inputs: [], name: 'NotImplemented' },
-] as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// StubSignalOracle
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const stubSignalOracleAbi = [
-  { type: 'fallback', stateMutability: 'payable' },
-  { type: 'error', inputs: [], name: 'NotImplemented' },
+export const signalOracleAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'admin', internalType: 'address', type: 'address' },
+      { name: 'forwarder_', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'DEFAULT_ADMIN_ROLE',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'KIND_FX',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'KIND_REFERENCE',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'KIND_SIGNAL',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MAX_CLOCK_SKEW',
+    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'STALE_AFTER',
+    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'expectedWorkflowOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'forwarder',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'currencyCode', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'fxRate',
+    outputs: [
+      { name: 'perUsdE8', internalType: 'uint256', type: 'uint256' },
+      { name: 'updatedAt', internalType: 'uint64', type: 'uint64' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'role', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'getRoleAdmin',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'account', internalType: 'address', type: 'address' },
+    ],
+    name: 'grantRole',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'account', internalType: 'address', type: 'address' },
+    ],
+    name: 'hasRole',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'metadata', internalType: 'bytes', type: 'bytes' },
+      { name: 'report', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'onReport',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'commodity', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'market', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'referencePrice',
+    outputs: [
+      { name: 'perUnit', internalType: 'uint256', type: 'uint256' },
+      { name: 'currencyCode', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'sourceTag', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'updatedAt', internalType: 'uint64', type: 'uint64' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'callerConfirmation', internalType: 'address', type: 'address' },
+    ],
+    name: 'renounceRole',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'account', internalType: 'address', type: 'address' },
+    ],
+    name: 'revokeRole',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'setExpectedWorkflowOwner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'forwarder_', internalType: 'address', type: 'address' }],
+    name: 'setForwarder',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'signalCount',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'interfaceId', internalType: 'bytes4', type: 'bytes4' }],
+    name: 'supportsInterface',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'id', internalType: 'uint256', type: 'uint256', indexed: true },
+      {
+        name: 'signalKind',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'place',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'severity',
+        internalType: 'uint8',
+        type: 'uint8',
+        indexed: false,
+      },
+      {
+        name: 'expiresAtBlock',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+      { name: 'label', internalType: 'string', type: 'string', indexed: false },
+    ],
+    name: 'DemandSignal',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previous',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'current',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'ExpectedWorkflowOwnerUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previous',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'current',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'ForwarderUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'currencyCode',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'perUsdE8',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'updatedAt',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'FxUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'commodity',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'market',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'perUnit',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'currencyCode',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: false,
+      },
+      {
+        name: 'sourceTag',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: false,
+      },
+      {
+        name: 'updatedAt',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'ReferencePriceUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32', indexed: true },
+      {
+        name: 'previousAdminRole',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'newAdminRole',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+    ],
+    name: 'RoleAdminChanged',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32', indexed: true },
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'sender',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'RoleGranted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'role', internalType: 'bytes32', type: 'bytes32', indexed: true },
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'sender',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'RoleRevoked',
+  },
+  { type: 'error', inputs: [], name: 'AccessControlBadConfirmation' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'account', internalType: 'address', type: 'address' },
+      { name: 'neededRole', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'AccessControlUnauthorizedAccount',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'length', internalType: 'uint256', type: 'uint256' }],
+    name: 'BadMetadata',
+  },
+  { type: 'error', inputs: [], name: 'EmptyKey' },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'NotForwarder',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'asOf', internalType: 'uint64', type: 'uint64' },
+      { name: 'blockTime', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'ReportFromFuture',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'asOf', internalType: 'uint64', type: 'uint64' },
+      { name: 'blockTime', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'ReportTooOld',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'expiresAtBlock', internalType: 'uint64', type: 'uint64' },
+      { name: 'blockNumber', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'SignalExpired',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'asOf', internalType: 'uint64', type: 'uint64' },
+      { name: 'latest', internalType: 'uint64', type: 'uint64' },
+    ],
+    name: 'StaleReport',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'kind', internalType: 'uint8', type: 'uint8' }],
+    name: 'UnknownKind',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'owner', internalType: 'address', type: 'address' },
+      { name: 'expected', internalType: 'address', type: 'address' },
+    ],
+    name: 'WrongWorkflowOwner',
+  },
+  { type: 'error', inputs: [], name: 'ZeroAddress' },
+  { type: 'error', inputs: [], name: 'ZeroValue' },
 ] as const

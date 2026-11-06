@@ -178,6 +178,26 @@ The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depe
 
 **Sizes.** MarketSettlement 18,151 B (was 17,510), LotFactory 13,146 B (was 12,572).
 
+## 2026-11-06, S1 4.1
+
+**CRE consumer pattern (Context7, CRE docs "Building consumer contracts").** `IReceiver.onReport(bytes metadata, bytes report)` with ERC-165 (`interfaceId` = `onReport` selector `0x805f2132`); metadata is `abi.encodePacked(workflowId, workflowName bytes10, workflowOwner)`, and the production forwarder appends a 2-byte report id, so the owner is read from bytes 42 to 62. The docs say simulation and production forwarders differ, hence `setForwarder` (D-67). **Doc mismatch:** Context7's forwarder-directory table shows placeholder-looking addresses (e.g. Base Sepolia simulation `0x8c7B4F1A…`) that don't match the guide's `0x82300bd7…`; the latter has 9 KB of code on Base Sepolia and was used. Confirm with `cre workflow supported-chains` once the CLI is installed.
+
+**Stale guard (D-64, ICR-005).** Kinds 1 and 3 now end with `uint64 asOf`. The production KeystoneForwarder already refuses to deliver a transmission twice, but the simulation mock forwarder doesn't, so without `asOf` an old FX report could be replayed. Checked on the anvil fork: the mock forwarder (impersonated with `cast`) delivered EUR 0.92/USD, and the same report a second time reverted `StaleReport` (`0x4287e77f`).
+
+**Rulings.** Quality disputes escrow the buyer's tokens in the resolver; no-show tokens stay in settlement's escrow. `resolveRuling` tells them apart by the contested no-show report, burns from the right holder, and works after `releaseExpired` because disputed tokens stay in `reportedTokens`. A buyer can't have a no-show report and a quality dispute open on the same lot. Disputes end by ruling or by `expireDispute` after `RULING_TIMEOUT_BLOCKS` (D-65), which the keeper now sends. Exact numbers: EUR 1,000 raised, new seller, held 495; a 40% ruling pays the buyer 198.000000 and the seller 297.000000; a proven seller's upheld no-show refunds all 99.000000.
+
+**Wiring (D-41 extended).** The deploy script predicts MarketSettlement at nonce +2 and DisputeResolver at +3, so LotFactory (LotToken escrow rights), settlement and the resolver hold each other immutably. Fixtures do the same.
+
+**`gen:abi` and stale artifacts.** wagmi failed with `Contract name "DisputeResolver" must be unique`, then the same for `MarketSettlement`: building once from `contracts/` and once with `--root contracts` from the repo root left two artifact trees (`out/X.sol/` and `out/src/X.sol/`, `out/oracles/X.sol/`). Deleting the stale trees fixed it. Prefer running forge from `contracts/`; if `gen:abi` reports a duplicate name, look for nested `out/src` or `out/oracles` folders.
+
+**Lints.** Same scoped `reentrancy-no-eth`/`reentrancy-events` disable as MarketSettlement for DisputeResolver (OZ guard false positive); `openDispute` reordered so the record and event come before the settlement call and the escrow. `block-timestamp` is disabled on the two freshness comparisons (wall-clock report times, one-hour window).
+
+**Sizes.** MarketSettlement 20,249 B (was 18,151; 4.3 KB headroom), DisputeResolver 5,519 B, SignalOracle 4,268 B, LotFactory 13,146 B.
+
+**`pnpm deploy:anvil` overwrites the Base Sepolia broadcast record.** The fork has chain id 84532, so forge writes `contracts/broadcast/Deploy.s.sol/84532/run-latest.json` (committed, Base Sepolia v1) plus a new `run-<ts>.json`. After the 4.1 anvil deploy both were reverted by hand. The Base Sepolia v2 deploy will write the real record. **Open:** point the anvil deploy at its own broadcast folder (`FOUNDRY_BROADCAST`, as the keeper test does).
+
+**v1 archived** at `deployments/archive/base-sepolia-v1.json`. The keeper still runs against v1: reading `rulingTimeoutBlocks` from the stub reverts, so dispute handling switches off with one warning (a network error is still thrown).
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.

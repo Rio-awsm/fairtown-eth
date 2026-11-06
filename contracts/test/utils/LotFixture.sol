@@ -28,6 +28,7 @@ abstract contract LotFixture is Test {
 
     address internal op = makeAddr("operator");
     address internal settlement = makeAddr("settlement");
+    address internal predictedResolver; // set in _deploy, at the same nonce as the settlement prediction
     address internal ingrid = makeAddr("ingrid.seller");
     address internal buyerA = makeAddr("buyerA");
     address internal buyerB = makeAddr("buyerB");
@@ -53,6 +54,11 @@ abstract contract LotFixture is Test {
         return settlement;
     }
 
+    /// DisputeResolver as seen by LotFactory (LotToken escrow rights). Zero here; SettlementFixture predicts it.
+    function _resolverAddress() internal view virtual returns (address) {
+        return address(0);
+    }
+
     function _deploy(uint256 shareBps) internal virtual {
         ccaFactory = IDistributorFactory(
             vm.deployCode(
@@ -64,8 +70,9 @@ abstract contract LotFixture is Test {
         teur = new MockStable("Test EUR", "tEUR", op);
         tusd = new MockStable("Test USD", "tUSD", op);
         settlement = _settlementAddress();
+        predictedResolver = _resolverAddress();
         factory = new LotFactory(
-            op, ccaFactory, IAgentRegistry(address(reg)), address(hook), settlement, address(0), shareBps
+            op, ccaFactory, IAgentRegistry(address(reg)), address(hook), settlement, predictedResolver, shareBps
         );
         vm.startPrank(op);
         factory.setCurrency(address(teur), true);

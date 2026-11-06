@@ -1,4 +1,4 @@
-import { RpcRequestError, type PublicClient } from "viem"
+import { BaseError, RpcRequestError, type PublicClient } from "viem"
 import { describe, expect, it } from "vitest"
 import type { Deployment } from "@fairtown/shared/addresses"
 import { MIN_LOG_CHUNK } from "../src/config"
@@ -18,7 +18,7 @@ const limitError = () =>
 
 const dep = {
   deployedAtBlock: 1_000,
-  contracts: { LotFactory: addr(1), MarketSettlement: addr(2) },
+  contracts: { LotFactory: addr(1), MarketSettlement: addr(2), DisputeResolver: addr(3) },
 } as unknown as Deployment
 
 describe("shrinkLogChunk", () => {
@@ -40,25 +40,30 @@ describe("shrinkLogChunk", () => {
 describe("Keeper.sync against an RPC that caps getLogs at 200 blocks", () => {
   function fakePub(head: bigint) {
     const ranges: [bigint, bigint][] = []
+    const addresses: string[][] = []
     let rejected = 0
     const pub = {
-      async getLogs({ fromBlock, toBlock }: { fromBlock: bigint; toBlock: bigint }) {
+      async getLogs({ fromBlock, toBlock, address }: { fromBlock: bigint; toBlock: bigint; address: string[] }) {
         if (toBlock - fromBlock + 1n > 200n) {
           rejected++
           throw limitError()
         }
         ranges.push([fromBlock, toBlock])
+        addresses.push(address)
         return []
+      },
+      async readContract() {
+        return 3_000n // DisputeResolver.rulingTimeoutBlocks (v2)
       },
       async getBlockNumber() {
         return head
       },
     }
-    return { pub: pub as unknown as PublicClient, ranges, rejected: () => rejected }
+    return { pub: pub as unknown as PublicClient, ranges, addresses, rejected: () => rejected }
   }
 
   it("drops to the stated limit after one rejection and covers every block exactly once", async () => {
-    const { pub, ranges, rejected } = fakePub(5_000n)
+    const { pub, ranges, addresses, rejected } = fakePub(5_000n)
     const cap = captureLogger([SECRET_URL])
     const k = new Keeper({ pub, queue: {} as TxQueue, dep, log: cap.log, checkpointEvery: 25n, secrets: [SECRET_URL] })
     await k.sync(5_000n)
@@ -68,6 +73,8 @@ describe("Keeper.sync against an RPC that caps getLogs at 200 blocks", () => {
     for (let i = 1; i < ranges.length; i++) expect(ranges[i]![0]).toBe(ranges[i - 1]![1] + 1n)
     expect(ranges.every(([f, t]) => t - f + 1n <= 200n)).toBe(true)
     expect(cap.text()).not.toContain("SECRET_RPC_KEY_789")
+    // v2: the DisputeResolver's logs come in the same call (S1 4.1).
+    expect(addresses[0]).toContain(dep.contracts.DisputeResolver)
     // Later syncs keep the smaller chunk: no more rejections.
     await k.sync(5_600n)
     expect(rejected()).toBe(1)
@@ -77,6 +84,9 @@ describe("Keeper.sync against an RPC that caps getLogs at 200 blocks", () => {
     const pub = {
       async getLogs() {
         throw new Error("fetch failed")
+      },
+      async readContract() {
+        return 3_000n
       },
     } as unknown as PublicClient
     const k = new Keeper({
@@ -89,6 +99,48 @@ describe("Keeper.sync against an RPC that caps getLogs at 200 blocks", () => {
     })
     await expect(k.sync(1_100n)).rejects.toThrow(/fetch failed/)
     expect(MIN_LOG_CHUNK).toBeGreaterThan(0n)
+  })
+})
+
+describe("Keeper on a v1 deployment (stub DisputeResolver)", () => {
+  function pub(readError: Error) {
+    const addresses: string[][] = []
+    let reads = 0
+    const p = {
+      async getLogs({ address }: { address: string[] }) {
+        addresses.push(address)
+        return []
+      },
+      async readContract() {
+        reads++
+        throw readError
+      },
+    } as unknown as PublicClient
+    return { p, addresses, reads: () => reads }
+  }
+
+  it("turns dispute handling off once, says so, and leaves the resolver out of log reads", async () => {
+    const { p, addresses, reads } = pub(new BaseError("Execution reverted for an unknown reason."))
+    const cap = captureLogger()
+    const k = new Keeper({ pub: p, queue: {} as TxQueue, dep, log: cap.log, checkpointEvery: 25n, secrets: [] })
+    await k.sync(1_100n)
+    await k.sync(1_200n)
+    expect(reads()).toBe(1)
+    expect(addresses.every((a) => !a.includes(dep.contracts.DisputeResolver))).toBe(true)
+    expect(cap.text().match(/dispute expiry off/g)).toHaveLength(1)
+  })
+
+  it("a network error reading the resolver is thrown, not mistaken for v1", async () => {
+    const { p } = pub(new Error("fetch failed"))
+    const k = new Keeper({
+      pub: p,
+      queue: {} as TxQueue,
+      dep,
+      log: captureLogger().log,
+      checkpointEvery: 25n,
+      secrets: [],
+    })
+    await expect(k.sync(1_100n)).rejects.toThrow(/fetch failed/)
   })
 })
 

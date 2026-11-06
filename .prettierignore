@@ -9,5 +9,7 @@ packages/shared/fixtures/price-vectors.json
 packages/shared/src/abi/generated.ts
 # Written by contracts/script/Deploy.s.sol
 deployments/*.json
+# Byte-identical copies of earlier deployments (S1 4.1 archived v1)
+deployments/archive/
 # Written by forge test (contracts/test/integration/ExitHintFixtures.t.sol)
 services/keeper/test/fixtures/exit-hints.json

@@ -8,10 +8,16 @@ import {AgentRegistry} from "../../src/registry/AgentRegistry.sol";
 import {LotFactory} from "../../src/LotFactory.sol";
 import {ChainTrigger} from "../../src/ChainTrigger.sol";
 import {MarketSettlement} from "../../src/MarketSettlement.sol";
+import {SignalOracle} from "../../src/oracles/SignalOracle.sol";
+import {DisputeResolver} from "../../src/oracles/DisputeResolver.sol";
+import {IReceiver, ReceiverBase} from "../../src/oracles/ReceiverBase.sol";
 
 /// Runs script/Deploy.s.sol on a Base Sepolia fork with throwaway keys (generated per run, never stored) and
-/// checks wiring, roles, currencies and the deployments JSON (contract section 8).
+/// checks wiring, roles, currencies and the deployments JSON (contract section 8). v2 (S1 4.1): real CRE receivers,
+/// and the guide's manual check automated: impersonate the Base Sepolia mock forwarder and deliver a signal.
 contract DeployForkTest is Test {
+    address internal constant MOCK_FORWARDER = 0x82300bd7c3958625581cc2F77bC6464dcEcDF3e5;
+
     string internal out;
     address internal deployer;
     address internal operator;
@@ -41,6 +47,8 @@ contract DeployForkTest is Test {
         vm.setEnv("REPORT_WINDOW_BLOCKS", "3000");
         vm.setEnv("FEE_BPS", "100");
         vm.setEnv("ADVANCE_PROVEN_BPS", "9000");
+        vm.setEnv("CRE_FORWARDER_BASE_SEPOLIA", vm.toString(MOCK_FORWARDER));
+        vm.setEnv("RULING_TIMEOUT_BLOCKS", "3000");
     }
 
     /// One test on purpose: vm.setEnv is process-wide and forge runs tests in parallel.
@@ -61,8 +69,15 @@ contract DeployForkTest is Test {
         assertEq(ChainTrigger(o.trigger).settlement(), o.settlement, "trigger -> settlement");
         assertEq(address(ms.factory()), o.factory);
         assertEq(address(ms.trigger()), o.trigger);
-        assertEq(ms.resolver(), address(0), "no resolver in v1 (D-48)");
-        assertEq(f.resolver(), address(0));
+        assertEq(ms.resolver(), o.disputeResolver, "settlement -> resolver (v2)");
+        assertEq(f.resolver(), o.disputeResolver, "factory -> resolver (LotToken escrow)");
+        DisputeResolver dr = DisputeResolver(o.disputeResolver);
+        assertEq(address(dr.settlement()), o.settlement);
+        assertEq(address(dr.factory()), o.factory);
+        assertEq(dr.rulingTimeoutBlocks(), 3000);
+        assertEq(dr.forwarder(), MOCK_FORWARDER);
+        assertEq(SignalOracle(o.signalOracle).forwarder(), MOCK_FORWARDER);
+        assertTrue(dr.hasRole(dr.DEFAULT_ADMIN_ROLE(), deployer), "deployer can change the forwarder");
         assertEq(ms.treasury(), treasury);
         assertEq(f.lastBlockShareBps(), 7500);
         assertEq(ms.feeBps(), 100);
@@ -79,15 +94,28 @@ contract DeployForkTest is Test {
         assertTrue(MockStable(o.teur).hasRole(role, operator));
         assertTrue(f.hasRole(f.DEFAULT_ADMIN_ROLE(), deployer), "deployer keeps admin");
 
-        // Stubs revert on any call.
-        (bool okCall,) = o.disputeResolver.call(abi.encodeWithSignature("openDispute(uint256)", 1));
-        assertFalse(okCall);
+        // Receivers answer ERC-165 for IReceiver, and the real mock forwarder (code on Base Sepolia) can deliver.
+        assertTrue(SignalOracle(o.signalOracle).supportsInterface(type(IReceiver).interfaceId));
+        assertTrue(dr.supportsInterface(type(IReceiver).interfaceId));
+        assertGt(MOCK_FORWARDER.code.length, 0, "mock forwarder deployed on Base Sepolia");
+        uint64 asOf = uint64(block.timestamp);
+        bytes memory fx = abi.encode(uint8(3), abi.encode(bytes32("EUR"), uint256(92_000_000), asOf));
+        vm.expectRevert(abi.encodeWithSelector(ReceiverBase.NotForwarder.selector, address(this)));
+        SignalOracle(o.signalOracle).onReport("", fx);
+        vm.prank(MOCK_FORWARDER);
+        SignalOracle(o.signalOracle).onReport("", fx);
+        (uint256 rate, uint64 updatedAt) = SignalOracle(o.signalOracle).fxRate("EUR");
+        assertEq(rate, 92_000_000);
+        assertEq(updatedAt, asOf);
 
         string memory json = vm.readFile(out);
         assertEq(vm.parseJsonString(json, ".network"), "base-sepolia");
         assertEq(vm.parseJsonUint(json, ".chainId"), 84_532);
         assertEq(vm.parseJsonAddress(json, ".contracts.MarketSettlement"), o.settlement);
         assertEq(vm.parseJsonAddress(json, ".contracts.CCAFactory"), o.ccaFactory);
+        assertEq(vm.parseJsonAddress(json, ".contracts.DisputeResolver"), o.disputeResolver);
+        assertEq(vm.parseJsonAddress(json, ".contracts.SignalOracle"), o.signalOracle);
+        assertEq(vm.parseJsonAddress(json, ".external.CreForwarder"), MOCK_FORWARDER);
         assertEq(vm.parseJsonAddress(json, ".external.Permit2"), 0x000000000022D473030F116dDEE9F6B43aC78BA3);
         assertEq(vm.parseJsonUint(json, ".params.advanceProvenBps"), 9000);
         vm.removeFile(out);

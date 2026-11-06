@@ -492,7 +492,7 @@ contract MarketSettlementTest is SettlementFixture {
         ms.contestNoShow(lotId, buyerA, keccak256("handover photo"), "ipfs://evidence");
         vm.prank(ingrid);
         ms.contestNoShow(lotId, buyerA, keccak256("handover photo"), "ipfs://evidence");
-        assertEq(resolver.opened(), 1);
+        assertEq(resolver.disputeCount(), 1);
         assertEq(ms.statusOf(lotId), DISPUTED);
         (,,,, uint256 disputeId) = ms.reportOf(lotId, buyerA);
         assertEq(disputeId, 1);
@@ -605,11 +605,14 @@ contract MarketSettlementTest is SettlementFixture {
         assertTrue(proven);
     }
 
-    function test_resolveRulingStubbed() public {
+    function test_RevertWhen_rulingNotFromResolverOrNothingOpen() public {
         vm.expectRevert(abi.encodeWithSelector(MarketSettlement.NotResolver.selector, stranger));
         vm.prank(stranger);
         ms.resolveRuling(1, buyerA, 1, 100);
-        vm.expectRevert(MarketSettlement.NotImplemented.selector);
+        vm.expectRevert(abi.encodeWithSelector(MarketSettlement.NotResolver.selector, stranger));
+        vm.prank(stranger);
+        ms.onDisputeOpened(1, buyerA, 1);
+        vm.expectRevert(abi.encodeWithSelector(MarketSettlement.NoOpenDispute.selector, 1, buyerA));
         vm.prank(address(resolver));
         ms.resolveRuling(1, buyerA, 1, 100);
     }

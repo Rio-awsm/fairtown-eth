@@ -122,6 +122,7 @@ ADVANCE_TRUCK_BPS=1000
 PROVEN_AFTER_CLEAN_LOTS=3
 CONTEST_WINDOW_BLOCKS=600
 REPORT_WINDOW_BLOCKS=3000
+RULING_TIMEOUT_BLOCKS=3000           # no CRE ruling after this many blocks: anyone may expire the dispute, seller paid, no refund (D-65)
 PICKUP_WINDOW_FISH=3000
 PICKUP_WINDOW_FLOWERS=3000
 PICKUP_WINDOW_PRODUCE=4500
@@ -333,6 +334,7 @@ function releaseExpired(uint256 lotId) external;                     // anyone, 
 
 // --- rulings ---
 function resolveRuling(uint256 lotId, address buyer, uint256 tokenAmount, uint16 refundBps) external; // only DisputeResolver
+function onDisputeOpened(uint256 lotId, address buyer, uint256 tokenAmount) external; // only DisputeResolver; holds the disputed share back (ICR-005)
 
 // --- seller record ---
 function markProven(address seller, bool proven) external;           // onlyOperator; seeded demo sellers, disclosed
@@ -342,6 +344,8 @@ function sellerRecord(address seller) external view returns (uint32 cleanLots, u
 // --- views ---
 function heldOf(uint256 lotId) external view returns (uint256 held, uint256 soldTokens, uint64 pickupDeadline, address carrier);
 function statusOf(uint256 lotId) external view returns (uint8); // index into LOT_STATUS
+function minRelistFloorOf(uint256 lotId) external view returns (uint256); // D-60 (ICR-005)
+function disputedTokensOf(uint256 lotId, address buyer) external view returns (uint256); // open quality dispute (ICR-005)
 
 event LotSettled(uint256 indexed lotId, uint256 finalClearingPerUnit, uint256 avgPerUnit, uint256 soldUnits, uint256 raised, uint256 sellerPaid, uint256 held, uint256 fee, uint16 advanceBps, uint64 pickupDeadline);
 event LotRelisted(uint256 indexed lotId, uint256 indexed newLotId, uint256 newFloorPerUnit);
@@ -379,9 +383,11 @@ event StorageNeeded(uint256 indexed lotId, address indexed requester, uint256 qt
 ```solidity
 function onReport(bytes calldata metadata, bytes calldata report) external; // only forwarder
 // report = abi.encode(uint8 kind, bytes body)
-// kind 1 reference: abi.encode(bytes32 commodity, bytes32 market, uint256 perUnit, bytes32 currencyCode, bytes32 sourceTag)
+// kind 1 reference: abi.encode(bytes32 commodity, bytes32 market, uint256 perUnit, bytes32 currencyCode, bytes32 sourceTag, uint64 asOf)
 // kind 2 signal:    abi.encode(bytes32 signalKind, bytes32 place, uint8 severity, uint64 expiresAtBlock, string label)
-// kind 3 fx:        abi.encode(bytes32 currencyCode, uint256 perUsdE8)
+// kind 3 fx:        abi.encode(bytes32 currencyCode, uint256 perUsdE8, uint64 asOf)
+// asOf (ICR-005, D-64): the workflow's trigger time in unix seconds, stored as updatedAt. Stale reports revert: asOf not
+// newer than the stored one, more than 1 hour old, or more than 60 s ahead of the block. Kind 2 reverts once expired.
 function referencePrice(bytes32 commodity, bytes32 market) external view returns (uint256 perUnit, bytes32 currencyCode, bytes32 sourceTag, uint64 updatedAt);
 function fxRate(bytes32 currencyCode) external view returns (uint256 perUsdE8, uint64 updatedAt);
 event ReferencePriceUpdated(bytes32 indexed commodity, bytes32 indexed market, uint256 perUnit, bytes32 currencyCode, bytes32 sourceTag, uint64 updatedAt);
@@ -397,6 +403,14 @@ function onReport(bytes calldata metadata, bytes calldata report) external; // o
 // report = abi.encode(uint256 disputeId, uint16 refundBps, bytes32 reasonHash)
 event DisputeOpened(uint256 indexed disputeId, uint256 indexed lotId, address indexed buyer, uint8 kind, uint256 tokenAmount, bytes32 evidenceHash, string evidenceURI); // kind 0 quality, 1 no_show
 event DisputeResolved(uint256 indexed disputeId, uint256 indexed lotId, uint16 refundBps, bytes32 reasonHash);
+// ICR-005: every dispute ends. After rulingTimeoutBlocks with no ruling anyone may expire it: no refund, seller paid (D-65).
+function expireDispute(uint256 disputeId) external;
+function disputeOf(uint256 disputeId) external view returns (Dispute memory); // lotId, buyer, kind, open, openedBlock, tokenAmount
+function disputeCount() external view returns (uint256);
+function rulingTimeoutBlocks() external view returns (uint64);
+event DisputeExpired(uint256 indexed disputeId, uint256 indexed lotId);
+// Receivers: forwarder() settable by the admin (simulation MockKeystoneForwarder -> production KeystoneForwarder);
+// optional expectedWorkflowOwner checked against the forwarder metadata.
 ```
 
 ### 7.9 CCA events consumed (from v2.1.0 source, checked)
@@ -634,3 +648,4 @@ The agents service publishes `agent.*`, `human.joined` and `clock` phase events 
 | ICR-002 | S1 (maxspxtr) | Minor: `LAST_BLOCK_SHARE_BPS` default 5000 -> 7500 in section 4 and `.env.example`. Value only, no interface change | S1 1.2 spread test: early vs late bidder at the same max were 10.7% apart at 5000, 4.5% at 7500 (target 5%) | S1, S2 (agents reading the schedule) | maxspxtr (S1) | Approved 2026-11-06 |
 | ICR-003 | S1 (maxspxtr) | Minor: block windows x10 in section 4 and `.env.example` (contest 600, report 3000, pickup fish 3000, flowers 3000, produce 4500, truck 3000, storage 1500, compute 600). Auction durations x10 too (D-50): fish 450, flowers 600, produce 900, truck/storage/compute 300. Values only | Base Sepolia and Base mainnet measured at ~5 blocks/s (200 ms), not ~2 s; the old values ran 10x faster than SoT 14 intends (contest 12 s, pickup 60 s) | S1, S2 (agents, director timers), S3 (countdowns) | maxspxtr (S1) | Approved 2026-11-06 |
 | ICR-004 | S1 (maxspxtr) | Minor: add `KEEPER_CHECKPOINT_BLOCKS=25` to section 4 and `.env.example` (keeper only, optional, default 25). No interface change | D-15 "every 2 blocks" is 0.4 s at Base's ~200 ms blocks (D-50), faster than one broadcast round trip; 25 blocks is ~5 s (D-54) | S1 | maxspxtr (S1) | Approved 2026-11-06 |
+| ICR-005 | S1 (maxspxtr) | Minor, v2 (S1 4.1): `uint64 asOf` appended to SignalOracle kind 1 and 3 bodies (stale guard, D-64); `RULING_TIMEOUT_BLOCKS=3000` in section 4 and `.env.example`, `DisputeResolver.expireDispute`, `DisputeExpired`, `disputeOf`, `disputeCount`, `rulingTimeoutBlocks` (D-65); `MarketSettlement.onDisputeOpened`, `disputedTokensOf`, `minRelistFloorOf` (3.1); receiver admin `setForwarder`, `setExpectedWorkflowOwner`; new errors from 3.1 and 4.1; regenerated `abi/generated.ts` (`signalOracleAbi`, `disputeResolverAbi` replace the stub ABIs). No section 7 event or existing signature changed | SoT 10: receivers drop stale reports, but kinds 1 and 3 had no time field; every lot state needs a timeout, and a ruling that never arrives would hold money forever | S1 (W1 encodes asOf), S2 (decodes new errors, may call `openDispute`/read `disputeOf`), S3 (dispute status) | maxspxtr (S1) | Approved 2026-11-06 |

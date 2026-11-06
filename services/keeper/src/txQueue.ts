@@ -37,9 +37,17 @@ export const DONE_ERRORS = new Set([
   "HeldAlreadyReleased",
   "NoOpenReport",
   "LotClosed",
+  "DisputeNotOpen",
 ])
 /** Reverts that can never succeed for this action: stop trying. */
-export const NEVER_ERRORS = new Set(["ParentMismatch", "NotATruckLot", "NotSold", "TruckNotSold", "Contested"])
+export const NEVER_ERRORS = new Set([
+  "ParentMismatch",
+  "NotATruckLot",
+  "NotSold",
+  "TruckNotSold",
+  "Contested",
+  "NoTransport",
+])
 
 export function revertName(e: unknown): string | undefined {
   if (!(e instanceof BaseError)) return undefined

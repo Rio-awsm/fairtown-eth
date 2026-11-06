@@ -1,5 +1,10 @@
 import { BaseError, getAbiItem, type Address, type Log, type PublicClient } from "viem"
-import { continuousClearingAuctionAbi, lotFactoryAbi, marketSettlementAbi } from "@fairtown/shared/abi"
+import {
+  continuousClearingAuctionAbi,
+  disputeResolverAbi,
+  lotFactoryAbi,
+  marketSettlementAbi,
+} from "@fairtown/shared/abi"
 import { fromKey } from "@fairtown/shared/keys"
 import type { Deployment } from "@fairtown/shared/addresses"
 import { ZERO } from "./chain"
@@ -116,4 +121,24 @@ async function scanReports(
     }
   }
   return chunk
+}
+
+/**
+ * Open disputes from DisputeResolver views (S1 4.1): `disputeCount`, then `disputeOf(id)` for each. Cost per dispute,
+ * not per block. Resolved and expired disputes are skipped.
+ */
+export async function bootstrapDisputes(
+  state: KeeperState,
+  pub: PublicClient,
+  resolver: Address,
+  log: Logger,
+): Promise<number> {
+  const dr = { address: resolver, abi: disputeResolverAbi } as const
+  const count = await pub.readContract({ ...dr, functionName: "disputeCount" })
+  for (let id = 1n; id <= count; id++) {
+    const d = await pub.readContract({ ...dr, functionName: "disputeOf", args: [id] })
+    if (d.open) state.disputes.set(id, { disputeId: id, lotId: d.lotId, openedBlock: BigInt(d.openedBlock) })
+  }
+  log.info({ disputes: Number(count), open: state.disputes.size }, "disputes rebuilt from resolver views")
+  return state.disputes.size
 }

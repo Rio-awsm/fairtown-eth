@@ -8,7 +8,7 @@ Makes sure auctions and deadlines never wait on a person. It holds only `KEEPER_
 | `src/checkpointer.ts` | `checkpoint()` on a live auction with bids after `KEEPER_CHECKPOINT_BLOCKS` (default 25) quiet blocks (D-54) |
 | `src/settler.ts` | `settle` from `endBlock`, including zero-bid lots |
 | `src/exits.ts` | After settle: `exitBid` or `exitPartiallyFilledBid` with checkpoint hints, then `claimTokensBatch` per owner |
-| `src/deadlines.ts` | `assignCarrier` for chained truck lots (a relisted truck lot serves its chain's goods lot, D-61; never storage or compute lots), `finalizeNoShow` after the contest window, `releaseExpired` after the report window (each lot's own pickup window, so GPU lots release first) |
+| `src/deadlines.ts` | `assignCarrier` for chained truck lots (a relisted truck lot serves its chain's goods lot, D-61; never storage or compute lots), `finalizeNoShow` after the contest window, `releaseExpired` after the report window (each lot's own pickup window, so GPU lots release first); `expireDispute` after the ruling timeout (S1 4.1, D-65; off on a v1 deployment) |
 | `src/txQueue.ts` | Re-checks each action before sending, classifies reverts (D-58), uses consecutive nonces, bumps fees on stuck txs, resyncs the nonce |
 
 ```sh

@@ -1,5 +1,10 @@
 import { parseEventLogs, type Address, type Hex, type Log } from "viem"
-import { continuousClearingAuctionAbi, lotFactoryAbi, marketSettlementAbi } from "@fairtown/shared/abi"
+import {
+  continuousClearingAuctionAbi,
+  disputeResolverAbi,
+  lotFactoryAbi,
+  marketSettlementAbi,
+} from "@fairtown/shared/abi"
 import { fromKey } from "@fairtown/shared/keys"
 
 export type LotInfo = {
@@ -14,6 +19,7 @@ export type LotInfo = {
 }
 export type SettledInfo = { soldUnits: bigint; held: bigint; pickupDeadline: bigint }
 export type ReportInfo = { lotId: bigint; buyer: Address; contestEnds: bigint; contested: boolean }
+export type DisputeInfo = { disputeId: bigint; lotId: bigint; openedBlock: bigint }
 
 const lower = (a: string) => a.toLowerCase() as Address
 export const reportKey = (lotId: bigint, buyer: Address) => `${lotId}:${lower(buyer)}`
@@ -43,6 +49,8 @@ export class KeeperState {
   readonly carriers = new Set<bigint>()
   /** Open no-show reports, keyed by reportKey. */
   readonly reports = new Map<string, ReportInfo>()
+  /** Open DisputeResolver disputes (quality and contested no-shows), keyed by dispute id (S1 4.1). */
+  readonly disputes = new Map<bigint, DisputeInfo>()
   /** Lots whose bids are all exited and claimed, verified onchain. Other one-shot work is tracked by the queue. */
   readonly exitsDone = new Set<bigint>()
   /** Last block whose logs are ingested. */
@@ -101,6 +109,23 @@ export class KeeperState {
         case "NoShowRefunded":
           this.reports.delete(reportKey(ev.args.lotId, ev.args.buyer))
           break
+      }
+    }
+  }
+
+  /** DisputeResolver logs: opened disputes are tracked until resolved or expired. */
+  ingestDisputes(logs: Log[]) {
+    const events = ["DisputeOpened", "DisputeResolved", "DisputeExpired"] as const
+    for (const ev of parseEventLogs({ abi: disputeResolverAbi, logs, eventName: [...events] })) {
+      if (ev.eventName === "DisputeOpened") {
+        if (ev.blockNumber === null) continue // pending logs are never requested
+        this.disputes.set(ev.args.disputeId, {
+          disputeId: ev.args.disputeId,
+          lotId: ev.args.lotId,
+          openedBlock: ev.blockNumber,
+        })
+      } else {
+        this.disputes.delete(ev.args.disputeId)
       }
     }
   }
