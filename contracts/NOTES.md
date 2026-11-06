@@ -243,6 +243,14 @@ The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depe
 
 **Real runs (Base Sepolia, final bridge build).** Timers at start: W1 FX 5 written, W1 reference 0 written 5 skipped (service off), W2 weather 0 (calm), W2 calendar 3; then the director's body by `POST /run`: "Storm forecast, Bergen (forced)" written with its exact `expiresAtBlock`. All five strictly one after another. Verified on chain from the bridge logs: FX 5 of 5, signals 4 of 4 (`signalCount` 13). Wrong token: 401. Bridge stopped afterwards so its timers don't keep spending test ETH.
 
+## 2026-11-06, S1 5.1
+
+**Invariants on real CCA lots** (`test/invariant/Settlement.invariant.t.sol`): a handler takes random handovers, no-show reports, contests, finalizes, quality disputes, rulings, expiries, releases and time steps across three sold lots (48 runs x 40 calls, about 1,900 calls). After every call: the settlement's currency balance equals the sum of `heldRemaining`; each lot token's supply equals what buyers, settlement, resolver and the auction hold; `reportedTokens <= outstanding`; complete lots hold nothing. After each run (`afterInvariant`): roll past every window and timeout, expire, finalize and release, then the settlement holds 0 and seller + buyers + treasury (+ auction dust) == the starting total. A fixed path (`test_handlerReachesRealStates`) proves every action really changes state, so the random campaign isn't vacuous. All green, first try.
+
+**Gas** (`gas-report.txt`, `.gas-snapshot`, without fork and invariant suites): `createLot` ~4.9M, `settle` ~645k, `confirmHandover` ~127k, `reportNoShow` ~154k, `openDispute` ~269k, `DisputeResolver.onReport` ~135k, `SignalOracle.onReport` 31k to 121k.
+
+**Slither** not installed; optional, skipped.
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.

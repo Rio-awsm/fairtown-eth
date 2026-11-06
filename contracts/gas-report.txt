@@ -1,0 +1,632 @@
+Compiling 15 files with Solc 0.8.26
+Solc 0.8.26 finished in 6.61s
+Compiler run successful!
+
+Ran 5 tests for test/unit/Keys.t.sol:KeysTest
+[PASS] test_encodingMatchesSharedToKey() (gas: 6062)
+[PASS] test_isChained() (gas: 5468)
+[PASS] test_isTruckAndIsSector() (gas: 5539)
+[PASS] test_listerRoleMatchesRegistry() (gas: 890185)
+[PASS] test_needsTransport() (gas: 6948)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 16.78ms (4.96ms CPU time)
+
+Ran 7 tests for test/unit/AgentRegistryHook.t.sol:AgentRegistryHookTest
+[PASS] testFuzz_onlyOwnerAsSender(address,uint256,uint128) (runs: 256, μ: 12407, ~: 12407)
+[PASS] test_RevertWhen_bidderRevoked() (gas: 59184)
+[PASS] test_RevertWhen_ownerCannotBid() (gas: 33515)
+[PASS] test_RevertWhen_senderIsNotOwner() (gas: 13075)
+[PASS] test_RevertWhen_zeroRegistry() (gas: 104094)
+[PASS] test_acceptsRegisteredBidderAsOwnSender() (gas: 13801)
+[PASS] test_erc165() (gas: 28420)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 32.31ms (15.89ms CPU time)
+
+Ran 9 tests for test/unit/LotToken.t.sol:LotTokenTest
+[PASS] testFuzz_onlySettlementBurns(address,uint256) (runs: 256, μ: 41947, ~: 41653)
+Logs:
+  Bound result 4102309907
+
+[PASS] test_RevertWhen_escrowMoreThanBalance() (gas: 37409)
+[PASS] test_RevertWhen_resolverOrStrangerBurns() (gas: 59351)
+[PASS] test_RevertWhen_strangerEscrows() (gas: 35340)
+[PASS] test_RevertWhen_zeroSettlementOrMintTo() (gas: 196599)
+[PASS] test_metadataAndSupply() (gas: 64120)
+[PASS] test_settlementAndResolverEscrow() (gas: 150096)
+[PASS] test_settlementBurnsWithoutApproval() (gas: 63273)
+[PASS] test_zeroResolverGrantsNothing() (gas: 717576)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 42.29ms (25.85ms CPU time)
+
+Ran 7 tests for test/unit/AgentRegistry.t.sol:AgentRegistryTest
+[PASS] testFuzz_roleMatrix(uint8) (runs: 256, μ: 109039, ~: 109223)
+Logs:
+  Bound result 6
+
+[PASS] test_RevertWhen_badRoleOrAddress() (gas: 252042)
+[PASS] test_RevertWhen_nonOperator() (gas: 69702)
+[PASS] test_registerEmitsAndStores() (gas: 108731)
+[PASS] test_rolesMatchSharedKeys() (gas: 58393)
+[PASS] test_setRoleChangesAndRevokes() (gas: 190312)
+[PASS] test_unregisteredCanDoNothing() (gas: 38515)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 52.31ms (39.23ms CPU time)
+
+Ran 22 tests for test/integration/LotFactory.t.sol:LotFactoryTest
+[PASS] test_RevertWhen_adminCallsByStranger() (gas: 93829)
+[PASS] test_RevertWhen_badParent() (gas: 20840166)
+[PASS] test_RevertWhen_badSpec() (gas: 292487)
+[PASS] test_RevertWhen_bidAtClearing() (gas: 5278492)
+[PASS] test_RevertWhen_bidWithoutPermit2Allowance() (gas: 5157594)
+[PASS] test_RevertWhen_currencyNotAllowed() (gas: 972314)
+[PASS] test_RevertWhen_lateBid() (gas: 5110096)
+[PASS] test_RevertWhen_sellerCannotList() (gas: 86879)
+[PASS] test_RevertWhen_sellerRoleDoesNotMatchSector() (gas: 493182)
+[PASS] test_RevertWhen_unauthorizedLister() (gas: 156549)
+[PASS] test_RevertWhen_unregisteredBids() (gas: 5443441)
+[PASS] test_createLot_cod600kgEUR() (gas: 5251084)
+[PASS] test_eachSectorListsWithItsRole() (gas: 40449481)
+[PASS] test_fullAuction_threeBuyers() (gas: 15637226)
+Logs:
+  raised (base units) 5384143134
+  refunded 4615856865
+  claimed tokens 599999999999999999997 unsold 0
+  final clearing per kg 9074999
+
+[PASS] test_labelUnderscoreToSpace() (gas: 5194933)
+[PASS] test_operatorListsForSeller() (gas: 4943438)
+[PASS] test_relistOnlyBySettlementWithParent() (gas: 10131388)
+[PASS] test_sizeUnderEip170() (gas: 7858)
+[PASS] test_spreadTable() (gas: 106024650)
+Logs:
+  share 0
+    avg early, avg late 7925160 10050085
+    spread bps 2681
+  share 2500
+    avg early, avg late 8272250 10050000
+    spread bps 2149
+  share 5000
+    avg early, avg late 8602334 9524999
+    spread bps 1072
+  share 7500
+    avg early, avg late 8687327 9074999
+    spread bps 446
+  share 9000
+    avg early, avg late 8915853 9074999
+    spread bps 178
+
+[PASS] test_spreadWithin5PctAtDefaultShare() (gas: 21090818)
+Logs:
+  default share: avg early / late per kg (base units) 8687327 9074999
+  spread bps 446
+
+[PASS] test_tUsdLot() (gas: 5544258)
+[PASS] test_zeroBidsAuction() (gas: 5367309)
+Suite result: ok. 22 passed; 0 failed; 0 skipped; finished in 84.49ms (62.31ms CPU time)
+
+Ran 14 tests for test/unit/SignalOracle.t.sol:SignalOracleTest
+[PASS] testFuzz_freshnessIsMonotonicPerKey(uint64,uint64) (runs: 256, μ: 136684, ~: 128449)
+Logs:
+  Bound result 1799998463
+  Bound result 1799997685
+
+[PASS] testFuzz_onlyForwarderDelivers(address) (runs: 256, μ: 37700, ~: 37700)
+[PASS] test_RevertWhen_constructedWithZero() (gas: 168064)
+[PASS] test_RevertWhen_malformedOrEmpty() (gas: 224610)
+[PASS] test_RevertWhen_notForwarder() (gas: 66800)
+[PASS] test_RevertWhen_stale() (gas: 336666)
+[PASS] test_RevertWhen_wrongKind() (gas: 101603)
+[PASS] test_adminSwitchesForwarder_simulationToProduction() (gas: 214237)
+[PASS] test_erc165() (gas: 36995)
+[PASS] test_kind1_referencePrice() (gas: 166861)
+[PASS] test_kind2_signalIdsIncrement() (gas: 116915)
+[PASS] test_kind3_fx() (gas: 97155)
+[PASS] test_staleBoundariesAccepted() (gas: 232996)
+[PASS] test_workflowOwnerCheck() (gas: 292500)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 52.25ms (51.86ms CPU time)
+
+Ran 6 tests for test/Smoke.t.sol:SmokeTest
+[PASS] test_RevertWhen_createAmountAboveUint128() (gas: 5300345)
+[PASS] test_ccaFactoryDeploysWithZeroFeeController() (gas: 5281195)
+[PASS] test_ccaFactoryFitsEip170() (gas: 5277665)
+[PASS] test_compilerIsPinned() (gas: 3351)
+[PASS] test_permit2AndOzLink() (gas: 514459)
+[PASS] test_plainEvmHasNoPermit2() (gas: 5716)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 2.21ms (2.05ms CPU time)
+
+Ran 9 tests for test/unit/MockStable.t.sol:MockStableTest
+[PASS] testFuzz_dripCap(uint32[8]) (runs: 256, μ: 423717, ~: 428036)
+[PASS] test_RevertWhen_dripTwiceWithin24h() (gas: 126861)
+[PASS] test_RevertWhen_nonOperatorMints() (gas: 42987)
+[PASS] test_RevertWhen_zeroAdmin() (gas: 200904)
+[PASS] test_dripAgainAfter24h() (gas: 147269)
+[PASS] test_dripCapIsPerRecipient() (gas: 181678)
+[PASS] test_dripGives5000() (gas: 116723)
+[PASS] test_metadata() (gas: 48266)
+[PASS] test_operatorMints() (gas: 89236)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 69.78ms (69.88ms CPU time)
+
+Ran 5 tests for test/integration/HookOnCca.t.sol:HookOnCcaTest
+[PASS] testFuzz_ccaAcceptsEndWeighted(uint64,uint256) (runs: 256, μ: 4663417, ~: 4663735)
+Logs:
+  Bound result 184
+  Bound result 2152
+
+[PASS] test_RevertWhen_routerBidsForBuyer() (gas: 5002854)
+[PASS] test_RevertWhen_sellerOrUnregisteredBids() (gas: 5027500)
+[PASS] test_ccaAcceptsEndWeightedSchedules() (gas: 111540236)
+[PASS] test_registeredBuyerBidsDirectly() (gas: 5032828)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 170.50ms (149.27ms CPU time)
+
+Ran 14 tests for test/integration/MarketExtensions.t.sol:MarketExtensionsTest
+[PASS] testFuzz_relistFloorRule(uint256,uint256) (runs: 256, μ: 7938545, ~: 5708759)
+Logs:
+  Bound result 705558656808
+  Bound result 464555835544
+
+[PASS] test_dallasStandaloneTruckLot() (gas: 6675183)
+[PASS] test_dallasTruckRelistStaysStandalone() (gas: 12195130)
+[PASS] test_gpuLot_providerSellsAndBuyerAgentConfirmsAccess() (gas: 6778833)
+[PASS] test_gpuNoShowAfterShortWindow() (gas: 6719345)
+[PASS] test_releaseAfterRefundKeepsRefundedStatus() (gas: 7226961)
+[PASS] test_releaseWithoutRefundStillPaidInFull() (gas: 6504107)
+[PASS] test_relistFloor_neverBelowHalfOfFirstFloor() (gas: 17281412)
+[PASS] test_relistFloor_roundsUpAndNeverBelowProductMinimum() (gas: 16299406)
+[PASS] test_relist_cod600At9Sells30Pct_relistAt765SellsRest() (gas: 13415068)
+[PASS] test_relistedTruckLotCarriesTheGoodsLot() (gas: 19728243)
+[PASS] test_storage_requestForHoldersOnly_andSlotLotChainedToGoods() (gas: 13374997)
+[PASS] test_truckChained_tenPctAdvance_dropOffDeliversParentAndPaysInFull() (gas: 13305032)
+[PASS] test_truckRelistChainResolvesThroughTwoHops() (gas: 24203728)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 446.90ms (303.59ms CPU time)
+
+Ran 13 tests for test/integration/Rulings.t.sol:RulingsTest
+[PASS] testFuzz_rulingsKeepMoneyWhole(uint96,uint96,uint16,uint16,uint8,bool) (runs: 256, μ: 7718565, ~: 7666471)
+Logs:
+  Bound result 1001254898
+  Bound result 1827924896
+  Bound result 5527
+  Bound result 0
+  Bound result 0
+
+[PASS] test_RevertWhen_disputeAfterHandover() (gas: 6716654)
+[PASS] test_RevertWhen_doubleOrBadResolution() (gas: 6930872)
+[PASS] test_RevertWhen_qualityDisputeRules() (gas: 25932231)
+[PASS] test_RevertWhen_resolverEntryPointsMisused() (gas: 318973)
+[PASS] test_noShow_partialRefundStillMarksSeller() (gas: 6909469)
+[PASS] test_noShow_rejected_paysSeller() (gas: 6940332)
+[PASS] test_noShow_upheld100_recordReset() (gas: 7111622)
+[PASS] test_quality_40pctRefundExact() (gas: 7010963)
+[PASS] test_quality_heldBackFromRelease_rulingAfterWindowHonoured() (gas: 7656153)
+[PASS] test_rejectedNoShow_withEarlierRefund_staysRefunded() (gas: 7653273)
+[PASS] test_timeout_contestedNoShowExpires_recordKept() (gas: 6932692)
+[PASS] test_timeout_qualityExpires_sellerPaidNoRefund() (gas: 6934864)
+Suite result: ok. 13 passed; 0 failed; 0 skipped; finished in 494.35ms (513.60ms CPU time)
+
+Ran 31 tests for test/integration/MarketSettlement.t.sol:MarketSettlementTest
+[PASS] testFuzz_noCurrencyStuckAfterAllWindows(uint8,uint8,uint8,uint96,uint96,uint96) (runs: 256, μ: 8015398, ~: 8002755)
+Logs:
+  Bound result 2990000278
+  Bound result 169954306
+  Bound result 48613542
+
+[PASS] testFuzz_payoutInvariant(uint256,uint256,uint256,uint256,uint8) (runs: 256, μ: 6964662, ~: 6946854)
+Logs:
+  Bound result 1020906522
+  Bound result 5253614964
+  Bound result 12402038
+  Bound result 18471815
+  Bound result 1
+
+[PASS] test_RevertWhen_badConstructorParams() (gas: 468698)
+[PASS] test_RevertWhen_badTickets() (gas: 6646709)
+[PASS] test_RevertWhen_carrierMismatch() (gas: 24785741)
+[PASS] test_RevertWhen_contestWithoutResolver() (gas: 24573044)
+[PASS] test_RevertWhen_handoverMoreThanOwnedOrUnsold() (gas: 12043847)
+[PASS] test_RevertWhen_noShowWindowsAndRules() (gas: 13102745)
+[PASS] test_RevertWhen_rulingNotFromResolverOrNothingOpen() (gas: 106270)
+[PASS] test_RevertWhen_settleEarlyOrTwice() (gas: 5699991)
+[PASS] test_RevertWhen_ticketReplayed() (gas: 6574574)
+[PASS] test_buyerSilent_releaseToSellerAfterWindow() (gas: 6685254)
+[PASS] test_carrierFlow_orderAndPaidInFull() (gas: 13550654)
+[PASS] test_cleanLotsReachProvenAt3() (gas: 19488060)
+[PASS] test_directHandover_paysHeldAndPaidInFull() (gas: 6659923)
+[PASS] test_handoverDigestMatchesSharedTypedData() (gas: 12206)
+[PASS] test_markProvenOperatorOnly() (gas: 104005)
+[PASS] test_noShow_contestBlocksFinalize() (gas: 6957280)
+[PASS] test_noShow_earlyReportReverts_uncontestedRefundExact_recordReset() (gas: 26380028)
+[PASS] test_partialHandoversThenDust() (gas: 6853864)
+[PASS] test_relistBurnsUnsoldAndUsesNewToken() (gas: 10979164)
+[PASS] test_settle_emitsLotSettled() (gas: 6303021)
+[PASS] test_settle_newTierExactBalances() (gas: 6444078)
+[PASS] test_settle_provenTier() (gas: 6500951)
+[PASS] test_settle_truckTierAlways10Pct() (gas: 12843780)
+[PASS] test_sizesUnderEip170() (gas: 13037)
+[PASS] test_transportNeededOnlyForGoodsThatMove() (gas: 38283171)
+[PASS] test_transportQtyIsWholeUnitsRoundedUp() (gas: 6317538)
+[PASS] test_triggerAndStorageAuth() (gas: 6590067)
+[PASS] test_twoBuyersShareSumsToHeld() (gas: 7129810)
+[PASS] test_zeroBids_noPayoutNoTransportReclaimBurns() (gas: 5830137)
+Suite result: ok. 31 passed; 0 failed; 0 skipped; finished in 417.98ms (707.16ms CPU time)
+
+Ran 9 tests for test/unit/PriceMath.t.sol:PriceMathTest
+[PASS] testFuzz_q96RoundTripNeverOverstates(uint256) (runs: 256, μ: 7965, ~: 7676)
+Logs:
+  Bound result 12579
+
+[PASS] testFuzz_splitPayoutInvariant(uint256,uint256,uint256) (runs: 256, μ: 16127, ~: 16246)
+Logs:
+  Bound result 340282366920938463463374607431768211452
+  Bound result 603
+  Bound result 5094
+
+[PASS] testFuzz_ticks(uint256,uint256) (runs: 256, μ: 17608, ~: 17750)
+Logs:
+  Bound result 20600637664357382808
+  Bound result 745211199683122053411656067212
+
+[PASS] test_RevertWhen_zeroTickOrBpsTooHigh() (gas: 37427)
+[PASS] test_constants() (gas: 3557)
+[PASS] test_exportPriceVectors() (gas: 875497)
+[PASS] test_minimumFloorNote() (gas: 4154)
+[PASS] test_splitPayoutGuideExample() (gas: 4841)
+[PASS] test_tickNeverBelow2() (gas: 4454)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 995.84ms (999.55ms CPU time)
+
+Ran 1 test for test/integration/ExitHintFixtures.t.sol:ExitHintFixturesTest
+[PASS] test_writeExitHintFixtures() (gas: 9138871)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 1.05s (1.03s CPU time)
+
+Ran 5 tests for test/unit/Schedules.t.sol:SchedulesTest
+[PASS] testFuzz_sumsExactly(uint256,uint256) (runs: 256, μ: 20590, ~: 20908)
+Logs:
+  Bound result 10749
+  Bound result 2152
+
+[PASS] test_RevertWhen_badInputs() (gas: 43944)
+[PASS] test_example45BlocksHalfOnLast() (gas: 10365)
+[PASS] test_sumsExactlyForAllDurations() (gas: 1068806425)
+[PASS] test_sumsExactlyForAllShares() (gas: 768482941)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 1.19s (2.15s CPU time)
+
+╭--------------------------------------------+-----------------+-------+--------+-------+---------╮
+| src/ChainTrigger.sol:ChainTrigger Contract |                 |       |        |       |         |
++=================================================================================================+
+| Deployment Cost                            | Deployment Size |       |        |       |         |
+|--------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                     555803 |            2641 |       |        |       |         |
+|--------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                            |                 |       |        |       |         |
+|--------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                              | Min             | Avg   | Median | Max   | # Calls |
+|--------------------------------------------+-----------------+-------+--------+-------+---------|
+| onSettled                                  |           21544 | 21544 |  21544 | 21544 |       1 |
+|--------------------------------------------+-----------------+-------+--------+-------+---------|
+| requestStorage                             |           21914 | 68618 |  75774 | 77660 |       7 |
+╰--------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭----------------------------------------+-----------------+---------+---------+---------+---------╮
+| src/LotFactory.sol:LotFactory Contract |                 |         |         |         |         |
++==================================================================================================+
+| Deployment Cost                        | Deployment Size |         |         |         |         |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+|                                2958658 |           14536 |         |         |         |         |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+|                                        |                 |         |         |         |         |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+| Function Name                          | Min             | Avg     | Median  | Max     | # Calls |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+| MIN_FLOOR_PER_UNIT                     |             239 |     239 |     239 |     239 |       1 |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+| OPERATOR_ROLE                          |             326 |     326 |     326 |     326 |       1 |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+| createLot                              |           27257 | 4760016 | 4893939 | 4904708 |    1163 |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+| createRelistedLot                      |           24726 | 1646314 |   24773 | 4889443 |       3 |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+| getLot                                 |             886 |   33190 |   43166 |   43166 |    4225 |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+| lotCount                               |            2317 |    2317 |    2317 |    2317 |       1 |
+|----------------------------------------+-----------------+---------+---------+---------+---------|
+| setCurrency                            |           24193 |   47703 |   48064 |   48064 |     179 |
+╰----------------------------------------+-----------------+---------+---------+---------+---------╯
+
+╭----------------------------------------------------+-----------------+---------+--------+---------+---------╮
+| src/MarketSettlement.sol:MarketSettlement Contract |                 |         |        |         |         |
++=============================================================================================================+
+| Deployment Cost                                    | Deployment Size |         |        |         |         |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+|                                            4526861 |           22796 |         |        |         |         |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+|                                                    |                 |         |        |         |         |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| Function Name                                      | Min             | Avg     | Median | Max     | # Calls |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| OPERATOR_ROLE                                      |             348 |     348 |    348 |     348 |       1 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| TOKEN_DUST                                         |             327 |     327 |    327 |     327 |       4 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| advanceBpsFor                                      |            2829 |    2979 |   2987 |    3099 |       6 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| assignCarrier                                      |           33328 |   57970 |  42194 |   93814 |      11 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| confirmHandover                                    |           33514 |  126612 | 126845 |  171031 |     529 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| contestNoShow                                      |           30691 |  143578 | 148194 |  165294 |      57 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| disputedTokensOf                                   |            2682 |    2682 |   2682 |    2682 |       2 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| finalizeNoShow                                     |           29512 |  106285 | 105408 |  119016 |     185 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| handoverDigest                                     |            1185 |    1185 |   1185 |    1185 |     526 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| heldOf                                             |            3088 |    4340 |   3088 |    9088 |    1303 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| markProven                                         |           24502 |   48711 |  48984 |   48984 |      90 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| minRelistFloorOf                                   |            2863 |    4064 |   2863 |   51314 |     121 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| onDisputeOpened                                    |           27308 |   27308 |  27308 |   27308 |       1 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| reclaimUnsold                                      |           28806 |   42183 |  42760 |   54407 |       4 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| releaseExpired                                     |           31099 |   89977 | 101860 |  101860 |     285 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| relist                                             |           31655 | 2354601 | 105962 | 5002280 |     274 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| reportNoShow                                       |           31751 |  143605 | 154317 |  171429 |     244 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| reportOf                                           |            7212 |    7212 |   7212 |    7212 |     829 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| resolveRuling                                      |           27544 |   29931 |  29931 |   32318 |       2 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| saleOf                                             |           29898 |   29898 |  29898 |   29898 |    1636 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| sellerRecord                                       |            3001 |    3167 |   3149 |    3271 |      12 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| settle                                             |           28843 |  607401 | 645063 |  661097 |    1109 |
+|----------------------------------------------------+-----------------+---------+--------+---------+---------|
+| statusOf                                           |            2600 |    2600 |   2600 |    2600 |      35 |
+╰----------------------------------------------------+-----------------+---------+--------+---------+---------╯
+
+╭----------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/oracles/DisputeResolver.sol:DisputeResolver Contract |                 |        |        |        |         |
++=================================================================================================================+
+| Deployment Cost                                          | Deployment Size |        |        |        |         |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                  1327657 |            6415 |        |        |        |         |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                          |                 |        |        |        |         |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                            | Min             | Avg    | Median | Max    | # Calls |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disputeCount                                             |            2383 |   2383 |   2383 |   2383 |     264 |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disputeOf                                                |            7386 |   7386 |   7386 |   7386 |     123 |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| expireDispute                                            |           28798 | 128077 | 121617 | 150349 |     123 |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| onReport                                                 |           25335 | 134212 | 135120 | 156835 |     199 |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| openDispute                                              |          165117 | 266146 | 269056 | 269056 |     272 |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| openNoShowRuling                                         |           22978 |  22978 |  22978 |  22978 |       1 |
+|----------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| settlement                                               |             282 |    282 |    282 |    282 |       1 |
+╰----------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭----------------------------------------------------+-----------------+-------+--------+--------+---------╮
+| src/oracles/SignalOracle.sol:SignalOracle Contract |                 |       |        |        |         |
++==========================================================================================================+
+| Deployment Cost                                    | Deployment Size |       |        |        |         |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+|                                            1032616 |            4789 |       |        |        |         |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+|                                                    |                 |       |        |        |         |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| Function Name                                      | Min             | Avg   | Median | Max    | # Calls |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| DEFAULT_ADMIN_ROLE                                 |             282 |   282 |    282 |    282 |       2 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| MAX_CLOCK_SKEW                                     |             325 |   325 |    325 |    325 |       1 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| STALE_AFTER                                        |             261 |   261 |    261 |    261 |       1 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| fxRate                                             |            4730 |  4730 |   4730 |   4730 |     124 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| onReport                                           |           25478 | 45320 |  30978 | 121136 |     804 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| referencePrice                                     |            9036 |  9036 |   9036 |   9036 |       2 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| setExpectedWorkflowOwner                           |           24219 | 36088 |  36088 |  47957 |       2 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| setForwarder                                       |           23968 | 26359 |  24218 |  30891 |       3 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| signalCount                                        |            2405 |  2405 |   2405 |   2405 |       1 |
+|----------------------------------------------------+-----------------+-------+--------+--------+---------|
+| supportsInterface                                  |             409 |   503 |    526 |    551 |       4 |
+╰----------------------------------------------------+-----------------+-------+--------+--------+---------╯
+
+╭-------------------------------------------------------+-----------------+-------+--------+-------+---------╮
+| src/registry/AgentRegistry.sol:AgentRegistry Contract |                 |       |        |       |         |
++============================================================================================================+
+| Deployment Cost                                       | Deployment Size |       |        |       |         |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                                819754 |            3693 |       |        |       |         |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                                       |                 |       |        |       |         |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                         | Min             | Avg   | Median | Max   | # Calls |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| BUYER                                                 |             270 |   270 |    270 |   270 |     266 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| HUMAN                                                 |             225 |   225 |    225 |   225 |       1 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| NONE                                                  |             313 |   313 |    313 |   313 |       1 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| OPERATOR_ROLE                                         |             304 |   304 |    304 |   304 |       1 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| SELLER                                                |             292 |   292 |    292 |   292 |     155 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| SOCIETY                                               |             292 |   292 |    292 |   292 |       1 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| STORAGE                                               |             269 |   269 |    269 |   269 |      64 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| TRUCK                                                 |             226 |   226 |    226 |   226 |      65 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| canBid                                                |            2701 |  2704 |   2701 |  2734 |    2182 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| canList                                               |            2709 |  2713 |   2709 |  2743 |    1420 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| nameOf                                                |            3483 |  3483 |   3483 |  3483 |       1 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| register                                              |           24842 | 72534 |  72780 | 72936 |     888 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| roleOf                                                |             605 |   608 |    605 |  2605 |    1161 |
+|-------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| setRole                                               |           24482 | 30152 |  30522 | 34339 |       6 |
+╰-------------------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭---------------------------------------------------------------+-----------------+-----+--------+------+---------╮
+| src/registry/AgentRegistryHook.sol:AgentRegistryHook Contract |                 |     |        |      |         |
++=================================================================================================================+
+| Deployment Cost                                               | Deployment Size |     |        |      |         |
+|---------------------------------------------------------------+-----------------+-----+--------+------+---------|
+|                                                        230604 |            1012 |     |        |      |         |
+|---------------------------------------------------------------+-----------------+-----+--------+------+---------|
+|                                                               |                 |     |        |      |         |
+|---------------------------------------------------------------+-----------------+-----+--------+------+---------|
+| Function Name                                                 | Min             | Avg | Median | Max  | # Calls |
+|---------------------------------------------------------------+-----------------+-----+--------+------+---------|
+| supportsInterface                                             |             363 | 388 |    401 |  401 |       3 |
+|---------------------------------------------------------------+-----------------+-----+--------+------+---------|
+| validate                                                      |             814 | 899 |    814 | 6450 |     262 |
+╰---------------------------------------------------------------+-----------------+-----+--------+------+---------╯
+
+╭-------------------------------------------+-----------------+-------+--------+-------+---------╮
+| src/tokens/LotToken.sol:LotToken Contract |                 |       |        |       |         |
++================================================================================================+
+| Deployment Cost                           | Deployment Size |       |        |       |         |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                    652907 |            3857 |       |        |       |         |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                           |                 |       |        |       |         |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                             | Min             | Avg   | Median | Max   | # Calls |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| balanceOf                                 |             582 |  1979 |   2582 |  2582 |    7856 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| burnFrom                                  |           22059 | 22162 |  22131 | 34372 |     260 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| decimals                                  |             287 |   287 |    287 |   287 |       1 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| escrowFrom                                |           22142 | 34443 |  24610 | 51686 |       5 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| name                                      |            3108 |  3108 |   3108 |  3108 |       3 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| resolver                                  |             205 |   205 |    205 |   205 |       1 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| settlement                                |             227 |   227 |    227 |   227 |       2 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| symbol                                    |            3107 |  3107 |   3107 |  3107 |       1 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| totalSupply                               |            2347 |  2347 |   2347 |  2347 |       2 |
+|-------------------------------------------+-----------------+-------+--------+-------+---------|
+| transfer                                  |           51580 | 51603 |  51604 | 51604 |     293 |
+╰-------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭-----------------------------------------------+-----------------+-------+--------+-------+---------╮
+| src/tokens/MockStable.sol:MockStable Contract |                 |       |        |       |         |
++====================================================================================================+
+| Deployment Cost                               | Deployment Size |       |        |       |         |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                        819999 |            4224 |       |        |       |         |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                               |                 |       |        |       |         |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                 | Min             | Avg   | Median | Max   | # Calls |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| DRIP_AMOUNT                                   |             304 |   304 |    304 |   304 |     257 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| OPERATOR_ROLE                                 |             326 |   326 |    326 |   326 |       2 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| approve                                       |           26749 | 41666 |  46649 | 46649 |     707 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| balanceOf                                     |             582 |  2408 |   2582 |  2582 |   12786 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| decimals                                      |             243 |   243 |    243 |   243 |       1 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| drip                                          |           24068 | 35763 |  24068 | 90595 |    2063 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| hasRole                                       |            2740 |  2740 |   2740 |  2740 |       1 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| mint                                          |           24472 | 59421 |  53787 | 70887 |     532 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| name                                          |            3131 |  3131 |   3131 |  3131 |       1 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| nextDripAt                                    |            2583 |  2583 |   2583 |  2583 |    2057 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| symbol                                        |            3196 |  3196 |   3196 |  3196 |       1 |
+|-----------------------------------------------+-----------------+-------+--------+-------+---------|
+| totalSupply                                   |            2370 |  2370 |   2370 |  2370 |       1 |
+╰-----------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭--------------------------------------+-----------------+-----+--------+-----+---------╮
+| test/Smoke.t.sol:SmokeToken Contract |                 |     |        |     |         |
++=======================================================================================+
+| Deployment Cost                      | Deployment Size |     |        |     |         |
+|--------------------------------------+-----------------+-----+--------+-----+---------|
+|                               477757 |            2184 |     |        |     |         |
+|--------------------------------------+-----------------+-----+--------+-----+---------|
+|                                      |                 |     |        |     |         |
+|--------------------------------------+-----------------+-----+--------+-----+---------|
+| Function Name                        | Min             | Avg | Median | Max | # Calls |
+|--------------------------------------+-----------------+-----+--------+-----+---------|
+| decimals                             |             176 | 176 |    176 | 176 |       1 |
+╰--------------------------------------+-----------------+-----+--------+-----+---------╯
+
+╭-----------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| test/integration/HookOnCca.t.sol:BidRouter Contract |                 |        |        |        |         |
++============================================================================================================+
+| Deployment Cost                                     | Deployment Size |        |        |        |         |
+|-----------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                              125539 |             362 |        |        |        |         |
+|-----------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                     |                 |        |        |        |         |
+|-----------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                       | Min             | Avg    | Median | Max    | # Calls |
+|-----------------------------------------------------+-----------------+--------+--------+--------+---------|
+| bidFor                                              |          179063 | 179063 | 179063 | 179063 |       1 |
+╰-----------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-----------------------------------------------------+-----------------+-----+--------+-----+---------╮
+| test/unit/PriceMath.t.sol:PriceMathHarness Contract |                 |     |        |     |         |
++======================================================================================================+
+| Deployment Cost                                     | Deployment Size |     |        |     |         |
+|-----------------------------------------------------+-----------------+-----+--------+-----+---------|
+|                                              258400 |             977 |     |        |     |         |
+|-----------------------------------------------------+-----------------+-----+--------+-----+---------|
+|                                                     |                 |     |        |     |         |
+|-----------------------------------------------------+-----------------+-----+--------+-----+---------|
+| Function Name                                       | Min             | Avg | Median | Max | # Calls |
+|-----------------------------------------------------+-----------------+-----+--------+-----+---------|
+| ceilToTick                                          |             330 | 330 |    330 | 330 |       1 |
+|-----------------------------------------------------+-----------------+-----+--------+-----+---------|
+| floorToTick                                         |             308 | 308 |    308 | 308 |       1 |
+|-----------------------------------------------------+-----------------+-----+--------+-----+---------|
+| splitPayout                                         |             413 | 431 |    431 | 450 |       2 |
+╰-----------------------------------------------------+-----------------+-----+--------+-----+---------╯
+
+╭-----------------------------------------------------+-----------------+------+--------+------+---------╮
+| test/unit/Schedules.t.sol:SchedulesHarness Contract |                 |      |        |      |         |
++========================================================================================================+
+| Deployment Cost                                     | Deployment Size |      |        |      |         |
+|-----------------------------------------------------+-----------------+------+--------+------+---------|
+|                                              255244 |             962 |      |        |      |         |
+|-----------------------------------------------------+-----------------+------+--------+------+---------|
+|                                                     |                 |      |        |      |         |
+|-----------------------------------------------------+-----------------+------+--------+------+---------|
+| Function Name                                       | Min             | Avg  | Median | Max  | # Calls |
+|-----------------------------------------------------+-----------------+------+--------+------+---------|
+| endWeighted                                         |             369 |  606 |    395 | 1479 |       5 |
+|-----------------------------------------------------+-----------------+------+--------+------+---------|
+| summarize                                           |            2450 | 2457 |   2458 | 2458 |   81670 |
+╰-----------------------------------------------------+-----------------+------+--------+------+---------╯
+
+
+Ran 15 test suites in 1.31s (5.12s CPU time): 157 tests passed, 0 failed, 0 skipped (157 total tests)
