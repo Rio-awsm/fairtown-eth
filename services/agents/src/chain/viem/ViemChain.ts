@@ -324,7 +324,8 @@ export class ViemChain implements ChainAdapter {
 
   // ---------- events ----------
   // HTTP log polling over every contract we deployed plus each auction we have seen. Works without a WebSocket.
-  watch(handler: (e: ChainEvent) => void, fromBlock?: bigint) {
+  // onIdle(head): called each time the loop has processed every block up to head (backfill done, then every poll).
+  watch(handler: (e: ChainEvent) => void, fromBlock?: bigint, onIdle?: (head: bigint) => void) {
     let stopped = false
     let next: bigint | undefined = fromBlock
     const loop = async () => {
@@ -344,6 +345,7 @@ export class ViemChain implements ChainAdapter {
             from = to + 1n
           }
           next = from
+          if (!stopped) onIdle?.(head)
         } catch {
           // transient RPC failure: retry on the next poll
         }

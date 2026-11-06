@@ -9,6 +9,7 @@
     "timeout": 0,
     "invalid_output": 0,
     "provider_error": 0,
+    "rate_limited": 0,
     "mock_error": 0,
     "unusable": 0
   },

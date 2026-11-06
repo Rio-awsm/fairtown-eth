@@ -48,6 +48,7 @@ export const AgentsConfig = z.object({
   WALKIN_CAP: z.coerce.number().int().positive().default(50),
   CRE_BRIDGE_PORT: port.default(8789),
   CRE_BRIDGE_TOKEN: z.string().optional(),
+  CHAIN_BACKFILL_BLOCKS: blocks.default(9000n), // restart lookback: longest auction + pickup + report + contest windows
   TREASURY_ADDRESS: z
     .string()
     .regex(/^0x[0-9a-fA-F]{40}$/)

@@ -4,6 +4,7 @@ import { english, generateMnemonic } from "viem/accounts"
 import { ChainMapper } from "../../../relay/src/mapping"
 import type { ChainEvent, ProtocolParams } from "../chain/types"
 import { FakeChain } from "../chain/fake/FakeChain"
+import type { LedgerWriter } from "../arkiv/ledgerWriter"
 import { Director, fakeSignals } from "../director/director"
 import { PERSONAS } from "../fixtures/personas"
 import { loadCalendar } from "../humans/routes"
@@ -28,7 +29,7 @@ export type Recording = { envelopes: TownEnvelope[]; blocks: number; lots: Recor
 
 // Runs `full_day` on FakeChain as fast as it can mine and records what the town would see: agent events from the
 // publisher, chain events through the relay's own mapper, a clock every 25 blocks. Timestamps follow blocks.
-export async function recordDay(o: { maxBlocks?: number; speed?: number } = {}): Promise<Recording> {
+export async function recordDay(o: { maxBlocks?: number; speed?: number; ledger?: (chain: FakeChain) => LedgerWriter } = {}): Promise<Recording> {
   const maxBlocks = o.maxBlocks ?? 4000
   const wallets = new Wallets(generateMnemonic(english))
   const chain = new FakeChain({ params: PARAMS, accountFor: wallets.accountFor })
@@ -59,6 +60,9 @@ export async function recordDay(o: { maxBlocks?: number; speed?: number } = {}):
     },
   }
 
+  // Optional: mirror the simulated day into Arkiv (S2 7.1 seed) through the normal ledger writer.
+  const ledger = o.ledger?.(chain)
+  ledger?.start()
   const references = loadReferences()
   const market = new MarketState({ chain, references })
   market.start()
@@ -67,6 +71,7 @@ export async function recordDay(o: { maxBlocks?: number; speed?: number } = {}):
     wallets,
     publisher,
     strategy: ruleStrategy,
+    ...(ledger ? { ledger } : {}),
     now: () => tsAt(chain.currentBlock),
     markProven: (a) => chain.markProven(a, true),
     nameOf: (a) => names.get(lc(a)),

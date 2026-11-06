@@ -39,6 +39,10 @@ export type SectorEngineOptions = {
   references?: ReferenceRow[]
   fileDispute?: (buyer: Address, lotId: bigint, tokenAmount: bigint) => Promise<{ disputeId: bigint }>
   onError?: (what: string, err: unknown) => void
+  // Restart: events up to this block are history. State is rebuilt from them; one-time actions (list a truck or storage
+  // lot, request storage, relist) wait until the feed has caught up and run only if the chain shows they never happened.
+  replayUntil?: bigint
+  caughtUpTo?: () => bigint | undefined
 }
 
 type Task = { at: bigint; what: string; run: () => Promise<void> }
@@ -58,6 +62,9 @@ export class SectorEngine {
   private readonly disputeLots = new Set<string>()
   private readonly failingCompute = new Set<string>()
   private tasks: Task[] = []
+  private deferred: Task[] = []
+  private replayed = false
+  private readonly storageRequested = new Set<string>() // lotId:requester
   private q: Promise<void> = Promise.resolve()
   private unwatch?: () => void
   private timer?: ReturnType<typeof setInterval>
@@ -115,8 +122,31 @@ export class SectorEngine {
     return this.tasks.map((t) => ({ at: t.at, what: t.what }))
   }
 
+  private isHistory(block: bigint) {
+    return !this.replayed && this.o.replayUntil !== undefined && block <= this.o.replayUntil
+  }
+  private onceLive(block: bigint, what: string, run: () => Promise<void>) {
+    if (this.isHistory(block)) this.deferred.push({ at: block, what, run })
+    else return run()
+  }
+  replaying() {
+    return !this.replayed && this.o.replayUntil !== undefined
+  }
+
   async step() {
     await this.idle()
+    if (this.replaying() && (this.o.caughtUpTo?.() ?? -1n) >= this.o.replayUntil!) {
+      this.replayed = true
+      const todo = this.deferred
+      this.deferred = []
+      for (const t of todo) {
+        try {
+          await t.run()
+        } catch (err) {
+          this.fail(`deferred ${t.what}`, err)
+        }
+      }
+    }
     const block = await this.o.chain.blockNumber()
     const due = this.tasks.filter((t) => t.at <= block).sort((a, b) => (a.at < b.at ? -1 : 1))
     this.tasks = this.tasks.filter((t) => t.at > block)
@@ -167,7 +197,12 @@ export class SectorEngine {
       case "CarrierAssigned":
         return this.onCarrierAssigned(e.args, e.blockNumber)
       case "StorageNeeded":
-        return this.onStorageNeeded(e.args)
+        return this.onStorageNeeded(e.args, e.blockNumber)
+      case "LotDelivered": {
+        const truckLot = this.lots.get(e.args.truckLotId.toString())
+        if (e.args.truckLotId > 0n && truckLot) this.freeTruck(e.args.lotId, topHolder(truckLot))
+        return
+      }
       default:
         return
     }
@@ -196,6 +231,13 @@ export class SectorEngine {
     this.lots.set(a.lotId.toString(), lot)
     this.byAuction.set(lc(a.auction), a.lotId)
     if (!parent || relisted) return
+    if (sector === "truck") {
+      const t = this.trucks.find((x) => x.agentId === lot.seller)
+      if (t) {
+        t.busy = true
+        this.truckOf.set(parent.lotId.toString(), t)
+      }
+    }
     // A chained truck or storage lot: the parent's buyer gets a duty to bid on it, inside guardrails.
     const buyer = sector === "truck" ? topHolder(parent) : sector === "storage" ? this.storageFor.get(parent.lotId.toString()) : undefined
     if (!buyer) return
@@ -206,7 +248,7 @@ export class SectorEngine {
   private async onSettled(a: EventArgs<"LotSettled">, block: bigint) {
     const lot = this.lots.get(a.lotId.toString())
     if (!lot) return
-    if (a.soldUnits < lot.qty) await this.maybeRelist(lot, lot.qty - a.soldUnits)
+    if (a.soldUnits < lot.qty) await this.onceLive(block, `relist lot ${lot.lotId}`, () => this.maybeRelist(lot, lot.qty - a.soldUnits))
     if (a.soldUnits === 0n) {
       const parent = lot.sector === "truck" && lot.parentLotId > 0n ? this.lots.get(lot.parentLotId.toString()) : undefined
       if (parent) {
@@ -219,7 +261,9 @@ export class SectorEngine {
     this.at(a.pickupDeadline + 1n, `no-show check lot ${lot.lotId}`, () => this.reportNoShows(lot))
     const arrive = block + this.rules.arriveBlocks
     if (GOODS.includes(lot.sector)) {
-      for (const [h] of lot.holders) if (this.o.runtime.agents.get(h)?.mandate?.commodities.includes("storage_slot")) this.at(block + 1n, `storage request lot ${lot.lotId}`, () => this.requestStorage(lot, h))
+      for (const [h] of lot.holders)
+        if (this.o.runtime.agents.get(h)?.mandate?.commodities.includes("storage_slot"))
+          await this.onceLive(block, `storage request lot ${lot.lotId}`, async () => this.at(block + 1n, `storage request lot ${lot.lotId}`, () => this.requestStorage(lot, h)))
     } else if (lot.sector === "compute") this.at(arrive, `compute access lot ${lot.lotId}`, () => this.computeAccess(lot))
     else if (lot.sector === "truck" && lot.parentLotId === 0n) this.at(block + this.rules.travelBlocks, `drop-off lot ${lot.lotId}`, () => this.directHandover(lot))
     else if (lot.sector === "storage") this.at(arrive, `check-in lot ${lot.lotId}`, () => this.directHandover(lot))
@@ -228,6 +272,11 @@ export class SectorEngine {
   private async onTransportNeeded(a: EventArgs<"TransportNeeded">, block: bigint) {
     const parent = this.lots.get(a.lotId.toString())
     if (!parent) return
+    return this.onceLive(block, `transport for lot ${parent.lotId}`, () => this.arrangeTransport(parent, a, block))
+  }
+
+  private async arrangeTransport(parent: LotInfo, a: EventArgs<"TransportNeeded">, block: bigint) {
+    if (this.childOf(parent.lotId, "truck")) return // already booked (seen on chain, e.g. before a restart)
     const truck = pickTruck(this.trucks, parent.place, parent.currency)
     if (!truck) {
       this.at(block + this.rules.arriveBlocks, `direct pickup lot ${parent.lotId}`, () => this.directHandover(parent))
@@ -255,12 +304,18 @@ export class SectorEngine {
     })
   }
 
-  private async onStorageNeeded(a: EventArgs<"StorageNeeded">) {
+  private async onStorageNeeded(a: EventArgs<"StorageNeeded">, block: bigint) {
     const parent = this.lots.get(a.lotId.toString())
     if (!parent) return
+    this.storageRequested.add(`${a.lotId}:${lc(a.requester)}`)
+    this.storageFor.set(parent.lotId.toString(), lc(a.requester))
+    return this.onceLive(block, `storage for lot ${parent.lotId}`, () => this.listStorage(parent, a))
+  }
+
+  private async listStorage(parent: LotInfo, a: EventArgs<"StorageNeeded">) {
+    if (this.childOf(parent.lotId, "storage")) return
     const store = this.personas().find((p) => p.kind === "cold_store" && p.place === parent.place && p.currency === parent.currency)
     if (!store) return this.note(`no cold store at ${parent.place} for lot ${parent.lotId}`)
-    this.storageFor.set(parent.lotId.toString(), lc(a.requester))
     const qty = slotDays(a.qty, this.rules.slotKg, a.days_)
     await this.list(
       this.addr(store.id),
@@ -274,6 +329,7 @@ export class SectorEngine {
     const seller = this.persona(lot.seller)
     if (!seller || !["seller", "compute_provider"].includes(seller.kind) || !(GOODS.includes(lot.sector) || lot.sector === "compute")) return
     if (lot.relists >= this.rules.maxRelists) return this.note(`lot ${lot.lotId}: no more relists`)
+    if (this.childOf(lot.lotId, lot.sector)) return // already relisted
     const next = relistFloor(lot.firstFloor, lot.floor, this.rules.relistStepBps, this.rules.relistMinBps)
     if (next === null) return this.note(`lot ${lot.lotId}: floor at minimum, not relisting`)
     await this.intent(lot.seller, "relist", lot.lotId, `${unsold} left, relisting ${money(next, lot.currency)} lower`.slice(0, 80))
@@ -281,6 +337,7 @@ export class SectorEngine {
   }
 
   private async requestStorage(lot: LotInfo, holder: Address) {
+    if (this.storageRequested.has(`${lot.lotId}:${holder}`)) return
     const tokens = await this.o.chain.tokenBalance(lot.lotId, holder)
     const need = this.o.runtime.agents.get(holder)?.mandate?.qty
     const units = tokens / UNIT - (need && lot.qty > BigInt(need) ? BigInt(need) : 0n)
@@ -363,6 +420,11 @@ export class SectorEngine {
     const spec: LotSpecInput = { ...s, durationBlocks: this.rules.auctionBlocks[s.sector], pickupWindowBlocks: this.rules.pickupBlocks[s.sector], seller, metadataURI: "" }
     await this.intent(seller, "list", undefined, reason.slice(0, 80), s.market)
     return this.o.wallets.queue(seller, () => this.o.chain.createLot(seller, spec))
+  }
+
+  private childOf(parentLotId: bigint, sector: Sector) {
+    for (const l of this.lots.values()) if (l.parentLotId === parentLotId && l.sector === sector) return l
+    return undefined
   }
 
   private freeTruck(parentLotId: bigint, deliveredTo?: Address) {

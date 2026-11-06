@@ -13,7 +13,9 @@
     "fund:arkiv": "tsx scripts/fund-arkiv.ts",
     "eval": "tsx scripts/eval.ts",
     "load": "tsx scripts/load.ts",
-    "record": "tsx scripts/record.ts"
+    "record": "tsx scripts/record.ts",
+    "arkiv:stats": "tsx scripts/arkiv-stats.ts",
+    "arkiv:seed": "tsx scripts/arkiv-seed.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.85",

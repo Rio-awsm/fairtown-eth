@@ -20,6 +20,7 @@ export type LedgerWriterOptions = {
   hasArkivFunds?: (owner: Address) => boolean
   onError?: (e: unknown, event: string) => void
   now?: () => Date
+  retryDelaysMs?: number[] // Arkiv write retries; writes dedupe on their natural key, so a retry never duplicates
 }
 
 type LotInfo = {
@@ -41,6 +42,9 @@ export class LedgerWriter {
   private queue: Promise<void> = Promise.resolve()
   private stop?: () => void
   readonly written: Record<string, number> = {}
+  readonly failed: Record<string, number> = {}
+  readonly retried: Record<string, number> = {}
+  pending = 0
 
   constructor(private readonly o: LedgerWriterOptions) {}
 
@@ -54,7 +58,11 @@ export class LedgerWriter {
   }
 
   enqueue(e: ChainEvent) {
-    this.queue = this.queue.then(() => this.handle(e)).catch((err) => this.o.onError?.(err, e.eventName))
+    this.pending++
+    this.queue = this.queue
+      .then(() => this.handle(e))
+      .catch((err) => this.o.onError?.(err, e.eventName))
+      .finally(() => this.pending--)
   }
 
   async writeAgent(p: Persona, owner: Address) {
@@ -64,9 +72,21 @@ export class LedgerWriter {
   }
 
   private async put(schema: keyof typeof S, values: Record<string, string | bigint | Uint8Array>, owner: Address, seconds: number, dedupe?: Record<string, string | bigint>, key?: Hex) {
-    const r = await this.o.arkiv.put(S[schema], values, { owner, expiresInSeconds: seconds, ...(dedupe ? { dedupe } : {}), ...(key ? { key } : {}) })
-    this.written[schema] = (this.written[schema] ?? 0) + 1
-    return r.key
+    const delays = this.o.retryDelaysMs ?? [1000, 3000]
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const r = await this.o.arkiv.put(S[schema], values, { owner, expiresInSeconds: seconds, ...(dedupe ? { dedupe } : {}), ...(key ? { key } : {}) })
+        this.written[schema] = (this.written[schema] ?? 0) + 1
+        return r.key
+      } catch (e) {
+        if (attempt >= delays.length) {
+          this.failed[schema] = (this.failed[schema] ?? 0) + 1
+          throw e
+        }
+        this.retried[schema] = (this.retried[schema] ?? 0) + 1
+        await new Promise((r) => setTimeout(r, delays[attempt]))
+      }
+    }
   }
 
   private async secondsUntil(block: bigint, extra: number) {
@@ -148,6 +168,7 @@ export class LedgerWriter {
           { lotId, agent: lc(e.args.owner), maxPerUnit: fromQ96(e.args.priceQ96), amount: e.args.amount, block: e.blockNumber, reason: "" },
           owner,
           lot ? await this.secondsUntil(lot[1].endBlock, 3600) : 3600,
+          { lotId, agent: lc(e.args.owner), block: e.blockNumber, maxPerUnit: fromQ96(e.args.priceQ96) },
         )
         return
       }
@@ -193,6 +214,8 @@ export class LedgerWriter {
           },
           this.o.writer,
           180 * DAY,
+          // One entity per record state per day, so a replayed event after a restart never duplicates it.
+          { seller: lc(a.seller), cleanLots: BigInt(a.cleanLots), noShows: BigInt(a.noShows), day: today(now) },
         )
         return
       }
@@ -203,6 +226,7 @@ export class LedgerWriter {
           { kind: fromKey(a.signalKind), place: fromKey(a.place), severity: BigInt(a.severity), expiresAtBlock: a.expiresAtBlock, label: a.label },
           this.o.writer,
           await this.secondsUntil(a.expiresAtBlock, 0),
+          { kind: fromKey(a.signalKind), place: fromKey(a.place), expiresAtBlock: a.expiresAtBlock },
         )
         return
       }

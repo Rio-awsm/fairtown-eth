@@ -79,3 +79,16 @@
 - At D-50 durations on Base Sepolia (200 ms blocks), `full_day` lasts far longer than the 4-minute demo: the no-show scene alone needs the 3000-block pickup window plus the 600-block contest window (~12 min). For the video, play `day.recorded.jsonl` with relay replay, or run single scenes.
 - Director routes have no auth. On the public tunnel, anyone could start scenes (at most 3 at once, one per name). Keep `/control` presenter-only.
 - `npx vitest run` inside `services/relay` also runs the opt-in live tests; use `pnpm -F relay test` for unit tests.
+
+## 2026-11-06, S2 7.1 hardening and Arkiv deliverables
+
+**Built:** `src/chain/feed.ts` (shared chain watcher with backfill and replay to late subscribers), engine replay mode and idempotency guards, ledger retries and failure counters, natural-key dedupe on bid, reputation and signal, `src/health.ts` (extended `/api/health`), listing floor wired to Arkiv clears, `pnpm -F agents arkiv:stats` (needs only an access key) and `arkiv:seed`. Arkiv files: `arkiv/schema.md`, `friction.md`, `reach.md`, `why-arkiv.md`, `how-you-use-arkiv.md`; README Arkiv section.
+
+**Found while writing the files (fixed):**
+- Rabdi held 1 live Fairtown entity: the Base Sepolia runs never had the ledger on live Arkiv, and earlier test entities had short lifetimes. Seeded a simulated day (D-78).
+- `reputation`, `bid` and `signal` creates had no dedupe, so a restart replay would have duplicated them.
+- The listing floor's `recentPrices` hook was never wired, so floors ignored Arkiv clears.
+- Every component ran its own HTTP log poller against the rate-limited public RPC; now one feed.
+- Arkiv `readonly` blocks patches by anyone, but the owner can still delete (Arkiv lifecycle skill, flags table); why-arkiv.md says so.
+
+**Arkiv numbers:** seed 186 writes in 1,206 s (about 6.5 s each, one writer queue), 0 retried, 0 failed. Price query about 260 to 300 ms from Mumbai.

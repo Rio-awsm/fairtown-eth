@@ -21,6 +21,9 @@ import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
 import { SectorEngine } from "./sectors/engine"
 import { MarketState, moveOnSignal } from "./market/state"
 import { SessionStore } from "./handover/sessions"
+import { ChainFeed, withFeed } from "./chain/feed"
+import { healthExtras } from "./health"
+import { ARKIV_SCHEMAS } from "@fairtown/shared/arkiv"
 import { creBridgeSignals, Director, fakeSignals } from "./director/director"
 import { loadCalendar } from "./humans/routes"
 import { findReference } from "./listing/references"
@@ -37,11 +40,26 @@ const ai = createGateway({ config: aiConfig })
 
 if (!config.AGENT_MNEMONIC && config.CHAIN_MODE !== "fake") throw new Error("AGENT_MNEMONIC is required outside CHAIN_MODE=fake")
 const wallets = new Wallets(config.AGENT_MNEMONIC ?? generateMnemonic(english))
-const { chain, arkiv, writer, fake, viem } = await createAdapters(config, wallets.accountFor)
+const adapters = await createAdapters(config, wallets.accountFor)
+const { arkiv, writer, fake, viem } = adapters
+// Base Sepolia: one shared watcher that starts a lookback before the head, so a restart rebuilds every component.
+const startHead = viem ? await viem.blockNumber() : 0n
+const feed = viem ? new ChainFeed(viem, startHead > config.CHAIN_BACKFILL_BLOCKS ? startHead - config.CHAIN_BACKFILL_BLOCKS : 0n) : undefined
+const chain = feed ? withFeed(adapters.chain, feed) : adapters.chain
+const stopFeed = feed?.start() ?? (() => {})
 const sellers = new SellerDirectory(PERSONAS, (p) => wallets.address(PERSONAS.indexOf(p)))
 
 const drafts = new DraftStore()
-const listing = { ai, sellers, photos: new PhotoStore(resolve(root, config.STORAGE_DIR)), drafts, references: loadReferences() }
+// Floors use the last clears on the Arkiv ledger; if Arkiv is down the floor falls back to the reference.
+const recentPrices = async (commodity: string, place: string) => {
+  try {
+    const page = await arkiv.query(ARKIV_SCHEMAS.price, { commodity, place }, { limit: 10, orderBy: { field: "lotId", dir: "desc" } })
+    return page.entities.map((e) => BigInt(e.values.finalClearingPerUnit as bigint)).reverse()
+  } catch {
+    return []
+  }
+}
+const listing = { ai, sellers, photos: new PhotoStore(resolve(root, config.STORAGE_DIR)), drafts, references: loadReferences(), recentPrices }
 let log: (msg: string, extra?: object) => void = () => {}
 
 const ledger = new LedgerWriter({
@@ -105,6 +123,7 @@ const stopRuntime = runtime.start()
 // Fake mode mines a block every 2 s (not 200 ms), so it uses the D-12 durations and windows (D-50 divided by 10).
 const disputes = { chain, wallets, photos: listing.photos, drafts, baseUrl: config.PUBLIC_BASE_URL }
 const sectors = new SectorEngine({
+  ...(feed ? { replayUntil: startHead, caughtUpTo: () => feed.caughtUpTo } : {}),
   chain,
   wallets,
   publisher,
@@ -146,6 +165,7 @@ const app = buildApp({
   handover: { chain, wallets, runtime, sellers, sessions, photos: listing.photos, drafts, config, ticketValidBlocks: fake ? 150n : 1500n },
   humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config },
   director,
+  health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI }),
 })
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)
 await app.listen({ port: config.AGENTS_PORT, host: "0.0.0.0" })
@@ -157,6 +177,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     stopSectors()
     stopMarket()
     stopDirector()
+    stopFeed()
     stopLedger()
     await app.close()
     process.exit(0)

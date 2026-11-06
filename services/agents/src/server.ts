@@ -1,4 +1,6 @@
 import { HealthResponse } from "@fairtown/shared/api"
+import { z } from "zod"
+import type { HealthExtras } from "./health"
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify"
 import type { AiGateway } from "./ai/gateway"
 import type { ArkivStore } from "./arkiv/ArkivStore"
@@ -14,7 +16,18 @@ import { registerListingRoutes, type ListingDeps } from "./listing/routes"
 import { registerAgentRoutes } from "./runtime/routes"
 import type { AgentRuntime } from "./runtime/runtime"
 
-export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; market?: MarketDeps; handover?: HandoverDeps; humans?: HumanDeps; director?: Director; logger?: boolean }
+export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; market?: MarketDeps; handover?: HandoverDeps; humans?: HumanDeps; director?: Director; health?: () => Promise<HealthExtras>; logger?: boolean }
+
+const Dep = z.object({ ok: z.boolean(), detail: z.string() })
+const ExtendedHealth = HealthResponse.extend({
+  status: z.enum(["ok", "degraded", "down"]),
+  degraded: z.array(z.string()),
+  relay: Dep.optional(),
+  ledger: Dep.optional(),
+  feed: Dep.optional(),
+  runtime: Dep.optional(),
+  llm: Dep.optional(),
+})
 
 export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
 
@@ -52,7 +65,12 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       }
     }
     const ai = await deps.ai.health()
-    return HealthResponse.parse({ ok: chain.ok && arkiv.ok && ai.ok, chain, arkiv, ai, addons: {} })
+    const extras = deps.health ? await deps.health() : undefined
+    // Only the chain is fatal: Arkiv, AI, relay and the ledger all degrade (see each detail).
+    const parts: Record<string, { ok: boolean }> = { arkiv, ai, ...(extras ?? {}) }
+    const degraded = Object.entries(parts).filter(([, v]) => !v.ok).map(([k]) => k)
+    const status = !chain.ok ? "down" : degraded.length ? "degraded" : "ok"
+    return ExtendedHealth.parse({ ok: chain.ok && arkiv.ok && ai.ok, status, degraded, chain, arkiv, ai, addons: {}, ...(extras ?? {}) })
   })
 
   if (deps.runtime) registerAgentRoutes(app, deps.runtime)
