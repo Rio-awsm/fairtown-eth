@@ -4,12 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "tsx src/index.ts",
     "smoke": "tsx scripts/smoke.ts",
+    "scenario": "tsx scripts/scenario.ts",
+    "status": "tsx scripts/status.ts",
+    "events": "tsx scripts/events.ts",
     "test": "vitest run",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@fairtown/shared": "workspace:*",
+    "pino": "10.4.0",
     "tsx": "catalog:",
     "viem": "catalog:"
   },
