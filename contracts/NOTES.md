@@ -200,6 +200,23 @@ The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depe
 
 **v1 archived** at `deployments/archive/base-sepolia-v1.json`. The keeper still runs against v1: reading `rulingTimeoutBlocks` from the stub reverts, so dispute handling switches off with one warning (a network error is still thrown).
 
+## 2026-11-06, S1 4.2
+
+**CRE CLI v1.39.0 and SDK 1.23.0.** Installed with the official script once the network's GitHub API quota (60 anonymous calls an hour) reset; the script needs one API call to find the release. `cre workflow supported-chains` for this account: Base Sepolia selector `10344971235874465080`, mock forwarder `0x82300bd7…`, production forwarder `0xF8344CFd…`. Deploy access is not enabled, so W1 runs in simulation only. Limits (`cre workflow limits export`): 10 chain writes, 15 HTTP calls, 50 consensus calls per execution; HTTP timeout at most 10 s; execution 5 min.
+
+**Frankfurter.** `/v2/rates?base=USD&quotes=EUR,NOK,INR,KES,NGN` returns `[{date, base, quote, rate}]` for all five; v1 `/latest` lacks KES and NGN. Rates are JSON numbers: they are turned back into their decimal text (shortest round trip, exponents refused) and scaled to `perUsdE8` exactly.
+
+**Doc and source mismatches (CRE).**
+- Javy (the WASM compiler) refuses exported functions with parameters in the entry file: "Exported functions with parameters are not supported". `main.ts` exports only `main`; the logic is in `src/workflow.ts`.
+- zod `.url()` fails inside WASM (no `URL` built-in): config validation said "Invalid URL" for valid URLs. A regex is used.
+- In simulation the cron payload's `scheduledExecutionTime` is the **next** slot, not now, and the simulator's log timestamps are local time with a `Z` suffix (13:23 "Z" was 07:53 UTC). The first broadcast stamped reports 36 min ahead of block time; SignalOracle's stale guard rejected all ten (`ReportFromFuture`), the forwarder swallowed it (`ReportProcessed(..., false)`), and the simulator still printed success. Fixed by DON time (D-69).
+- `ConsensusAggregationByFields` takes the field factories themselves (`median`, `identical`), not their results. `ReceiverContractExecutionStatus` is not exported from the SDK entry; its values (0 success, 1 reverted) come from the generated `client_pb`. The SDK fills a missing receiver status with 0, so success can't be told from "not reported".
+- Context7's forwarder directory table shows placeholder-looking addresses; the CLI's own `supported-chains` is the source.
+
+**Broadcasts (Base Sepolia, CRE wallet `0xF678…5338`).** First run: 10 txs mined, 0 values stored (logs `*-FAILED-asof-*`). Second run after D-69: 10 of 10 landed, verified from receipts and SignalOracle views (`cre/logs/w1-fx-reference-verify-onchain-2026-11-06.log`). EUR 0.88915, NOK 9.2757, INR 94.45, KES 129.81, NGN 1346.12 per USD; cod@bergen 8.30 EUR, tomato@lagos 0.38, marigold@mumbai 0.95, gpu_hour@any_dc 2.00, truck_capacity@dallas 0.055 USD (base units in the log).
+
+**Reference data is illustrative.** `/api/reference` (stream-2-brain `services/agents`, run from a detached worktree with no `.env`, so fake chain, in-memory Arkiv and mock AI) dates every price 2026-11-05 with source "illustrative"; cod says "replace with the Rafisklaget minimum price before the demo". W1 publishes what the service says and logs that source; S2 owns replacing the data.
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.

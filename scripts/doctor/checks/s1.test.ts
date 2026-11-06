@@ -9,6 +9,8 @@ const KEY_0 = generatePrivateKey()
 const ADDR_0 = privateKeyToAccount(KEY_0).address
 const KEY_1 = generatePrivateKey()
 const KEY_2 = generatePrivateKey()
+const KEY_3 = generatePrivateKey()
+const ADDR_3 = privateKeyToAccount(KEY_3).address
 
 const tools: Record<string, string> = {
   forge: "forge Version: 1.9.0-stable\nCommit SHA: 6056c58",
@@ -90,6 +92,7 @@ const liveEnv: Env = {
   DEPLOYER_PRIVATE_KEY: KEY_0,
   KEEPER_PRIVATE_KEY: KEY_1,
   OPERATOR_PRIVATE_KEY: KEY_2,
+  CRE_ETH_PRIVATE_KEY: KEY_3,
 }
 const ctx = (env: Env): Ctx => ({ env, envFileFound: true, versions: { node: "22.18.0", pnpm: "9.15.9" } })
 const row = async (d: S1Deps, env: Env, id: string) =>
@@ -105,6 +108,7 @@ describe("S1 doctor checks", () => {
       ["cca-pin", "ok"],
       ["rpc-chain", "ok"],
       ["wallet-balances", "ok"],
+      ["cre-wallet", "ok"],
       ["deployment", "ok"],
     ])
   })
@@ -142,6 +146,27 @@ describe("S1 doctor checks", () => {
     const r = await row(deps(), { ...liveEnv, OPERATOR_PRIVATE_KEY: "" }, "wallet-balances")
     expect(r.status).toBe("fail")
     expect(r.detail).toContain("OPERATOR_PRIVATE_KEY unset")
+  })
+
+  it("cre-wallet: warns when unset or low, fails when empty or unreadable, never prints the key", async () => {
+    const unset = await row(deps(), { ...liveEnv, CRE_ETH_PRIVATE_KEY: "" }, "cre-wallet")
+    expect(unset.status).toBe("warn")
+    expect(unset.detail).toContain("--broadcast")
+    const bad = await row(deps(), { ...liveEnv, CRE_ETH_PRIVATE_KEY: "0x1234" }, "cre-wallet")
+    expect(bad.status).toBe("fail")
+    expect(bad.detail).not.toContain("0x1234")
+    const low = await row(
+      deps({ rpc: fakeRpc({ balances: { [ADDR_3.toLowerCase()]: parseEther("0.001") } }) }),
+      liveEnv,
+      "cre-wallet",
+    )
+    expect(low.status).toBe("warn")
+    expect(low.detail).toContain(ADDR_3)
+    const empty = await row(deps({ rpc: fakeRpc({ balances: { [ADDR_3.toLowerCase()]: 0n } }) }), liveEnv, "cre-wallet")
+    expect(empty.status).toBe("fail")
+    const ok = await row(deps(), liveEnv, "cre-wallet")
+    expect(ok.status).toBe("ok")
+    for (const r of [unset, bad, low, empty, ok]) expect(r.detail).not.toContain(KEY_3.slice(2))
   })
 
   it("parses tool versions from banners", () => {

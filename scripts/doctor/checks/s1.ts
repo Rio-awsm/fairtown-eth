@@ -11,6 +11,8 @@ export const BASE_SEPOLIA_CHAIN_ID = 84532
 export const MIN_DEPLOYER_WEI = parseEther("0.1")
 export const MIN_KEEPER_WEI = parseEther("0.05")
 export const MIN_OPERATOR_WEI = parseEther("0.01")
+/** CRE simulation writes (`cre workflow simulate --broadcast`, S1 4.2): ~10 reports per W1 run at Base fees. */
+export const MIN_CRE_WEI = parseEther("0.005")
 export const ANVIL_RPC = "http://127.0.0.1:8545"
 const RPC_TIMEOUT_MS = 8_000
 
@@ -171,6 +173,34 @@ export function makeS1Checks(deps: S1Deps): Check[] {
           }
         }
         return { status, detail: parts.join("; ") }
+      },
+    },
+    {
+      id: "cre-wallet",
+      owner: "S1",
+      title: "CRE broadcast key funded",
+      run: async ({ env }) => {
+        if (!live(env)) return skipped(env)
+        if (!env.CRE_ETH_PRIVATE_KEY) {
+          return {
+            status: "warn",
+            detail: "CRE_ETH_PRIVATE_KEY unset: only needed for cre workflow simulate --broadcast",
+          }
+        }
+        const a = addressOf(env.CRE_ETH_PRIVATE_KEY)
+        if ("error" in a) return { status: "fail", detail: `CRE_ETH_PRIVATE_KEY ${a.error}` }
+        const url = rpcUrlFor(env)
+        if (!url) return { status: "fail", detail: `No RPC for CHAIN_MODE=${env.CHAIN_MODE}` }
+        let bal: bigint
+        try {
+          bal = await deps.rpc(url).balance(a.address)
+        } catch (e) {
+          return rpcFailure(e)
+        }
+        const shown = `cre ${a.address} ${formatEther(bal)} ETH`
+        if (bal === 0n) return { status: "fail", detail: `${shown}, empty` }
+        if (bal < MIN_CRE_WEI) return { status: "warn", detail: `${shown}, below ${formatEther(MIN_CRE_WEI)}` }
+        return { status: "ok", detail: shown }
       },
     },
     {
