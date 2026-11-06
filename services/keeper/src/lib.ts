@@ -99,3 +99,20 @@ export function safeErrorMessage(e: unknown, secrets: (string | undefined)[]): s
   else msg = String(e)
   return redact(msg, secrets)
 }
+
+/** getLogs block-range errors from RPC providers ("eth_getLogs is limited to a 200 range", "range too large", ...). */
+const RANGE_ERROR = /range|limit|too many|exceed|response size/i
+
+/**
+ * Next getLogs chunk after an RPC error: the provider's stated limit when the message names one, else half.
+ * Returns undefined when the error is not about the range, or the chunk can't shrink further.
+ */
+export function shrinkLogChunk(message: string, chunk: bigint, min: bigint): bigint | undefined {
+  if (!RANGE_ERROR.test(message) || chunk <= min) return undefined
+  const stated = /limited to (?:a )?(\d+)|(\d+)[ -]block range|max(?:imum)? (?:block )?range (?:of |is )?(\d+)/i.exec(
+    message,
+  )
+  const n = stated ? BigInt(stated[1] ?? stated[2] ?? stated[3]!) : 0n
+  if (n >= min && n < chunk) return n
+  return chunk / 2n >= min ? chunk / 2n : min
+}
