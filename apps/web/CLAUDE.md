@@ -1,5 +1,5 @@
 # Stream 3 rules
-- Phaser 4.2.x, React 19 template. Phaser draws world; React draws HUD and pages; EventBus and store connect them.
+- three.js 0.181 and React 19 (D-43 replaced Phaser 4.2). three.js draws the world (`src/town3d/`); React draws HUD and pages; EventBus and store connect them.
 - Data from relay client and API client. Types from @fairtown/shared only. No write keys in the browser.
 - Scene logic is a pure reducer. Expose window.__TOWN__ read-only outside production.
 - Money formatting goes through src/money/format.ts with the lot's currency. Local display is labelled approximate.

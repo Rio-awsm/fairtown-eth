@@ -3,49 +3,61 @@
 ## 2026-11-06, S3 0.1
 
 **Versions held back for the Node 22.10+ floor (D-36).**
+
 - Vite 7 and 8, `@vitejs/plugin-react` 6 and MSW 3 need Node 22.12+. React Router 8 needs 22.22+.
 - jsdom 30 and 31 need `^24.15.0`, which rejects Node 24.14.1 (this laptop). jsdom 27 to 29 need 22.12+.
 - Using Vite 6.4.5, plugin-react 5.2, MSW 2.15 (the guide says MSW 2), React Router 7.18.5, jsdom 26.1.
 
 **`@playwright/test` 1.65.0 does not install.**
+
 - Published 2026-11-05 18:30 UTC, but it depends on `playwright-core@1.65.0`, which is not on npm (latest 1.64.1). pnpm fails with `ERR_PNPM_NO_MATCHING_VERSION`.
 - Workaround: `~1.64.1`.
 
 **Template changes.**
+
 - Dropped `log.js` from the dev and build scripts: it sends a GET to gryzor.co on every run.
 - `base: "/"` instead of `"./"`, so deep routes like `/town` resolve assets after a refresh.
 - `envDir` is the repo root, so `VITE_*` comes from the same `.env` as every service.
 - EventBus is a small typed emitter, not `Phaser.Events.EventEmitter`, so the store and phone pages never import Phaser.
 
 **Shared package.**
+
 - Import subpaths only. The root `index.ts` re-exports `addresses.ts`, which dynamically imports `node:fs`.
 - `shared/test/samples.ts` is not exported, so `src/test/samples.ts` keeps its own typed sample map.
 
 **Testing.**
+
 - Vitest runs without globals, so Testing Library's auto-cleanup does not register. `src/test/setup.ts` calls `cleanup()` after each test.
 
 **Lint.**
+
 - The root `eslint.config.js` only matches `**/*.ts`, so `.tsx` files are not linted. This needs a combine-owned change.
 
 **Prettier rewrites generated files.**
+
 - `prettier --write apps/web` reformats `public/mockServiceWorker.js` (MSW-generated) and `dist/`. The root `.prettierignore` is combine-owned; it should list `apps/web/public/mockServiceWorker.js` and `**/dist/`. Until then, format with `prettier --write apps/web/src apps/web/e2e apps/web/scripts apps/web/*.ts`, and regenerate the worker with `pnpm exec msw init public --save`.
 
 **Contract 11 gaps in `@fairtown/shared/api` (possible minor ICR for S2).**
+
 - `GET /api/agents` has no list schema. The web client uses `z.array(AgentView)`.
 - `GET /api/lots/meta/:draftId` has no schema. The web client accepts any JSON.
 
 **zod 4.6.7 build warnings.**
+
 - Rollup warns `INVALID_ANNOTATION` for two `@__PURE__` comments in `zod/v4/core/util.js` and `regexes.js`. It drops the comments; output is unaffected. `vite.config.ts` filters that code for zod files only.
 
 **Root lint warnings on generated files.**
+
 - `pnpm lint` passes with 2 warnings: "Unused eslint-disable directive" in `public/mockServiceWorker.js` (MSW-generated, must not be edited) and its copy in `dist-e2e/`. The root ESLint ignore list is combine-owned; it should add `apps/web/public/mockServiceWorker.js` and `apps/web/dist-e2e/`.
 
 **Bundle size for phones.**
+
 - The main chunk is about 504 kB (154 kB gzip). viem comes in through `@fairtown/shared/keys` (`stringToHex`) and `/units` (`parseUnits`). Worth trimming before S3 2.1 tests `/sell` on a phone.
 
 ## 2026-11-06, S3 1.1
 
 **Rules for `public/assets/maps/town.tmj` (checked by `src/game/map/town-map.test.ts`).**
+
 - 60 × 34 tiles of 16 px; the scene zooms to fit 1920 × 1080 (2× for this size).
 - Tilesets **embedded** (Phaser cannot load external `.tsx`), one image each, images in `public/assets/tiles/`, each credited in `CREDITS.md`.
 - Tile Layer Format **CSV** (Phaser cannot read zstd; any compression is rejected).
@@ -53,31 +65,38 @@
 - `pnpm -F web map:stub` rewrites the generated stub map. It overwrites `town.tmj`, so never run it once the hand-built map is in.
 
 **Screenshot baseline.**
+
 - `e2e/town-map.spec.ts-snapshots/town-map-dev-darwin.png` is the stub map, rendered on macOS. When the Tiled map lands, refresh it with `pnpm -F web exec playwright test e2e/town-map.spec.ts --update-snapshots` and check the image. Other platforms create their own `-linux` baseline on first run.
 
 **Playwright cannot `page.route` requests made by MSW's service worker.**
+
 - With `VITE_API_URL=mock`, the MSW worker controls the page and fetches unhandled requests itself, so `page.route("**/town.tmj")` never fires. `page.context().route(...)` sees service worker traffic in Chromium.
 
 **Broken map.**
+
 - If `town.tmj` is missing or invalid, the scene logs the problems, draws them in red and uses the stub layout, so the replay and demo keep running. `__TOWN__.map` reports `status: "error"` with the problem list.
 
 ## 2026-11-06, S3 1.2
 
 **Who can walk where.**
+
 - People: any tile on `collision`, `water` or `buildings` blocks, so a forgotten collision tile under a building cannot let agents through. Trucks: `roads` tiles only.
 - Pathing is easystar 0.4.4 in sync mode, 4 directions (sprites face 4 ways). The 60 × 34 grid is small enough to path on the main thread.
 - Agents stand on tile centres. Queue anchors in the Tiled map should sit on open tiles; one on a blocked tile snaps to the nearest open one.
 
 **Queues and pool.**
+
 - One agent per queue spot, one spot per agent. A full building sends the agent to its entry, never onto a taken spot.
 - At most 80 agent sprites. Agent 81 recycles the least recently active non-human; walk-ins are never recycled.
 
 **Persona sprites.**
+
 - Placeholders until sheets land: a role-coloured disc with a facing notch. To add one, put `<sprite>.png` (16 px frames, rows down, left, right, up, 4 frames each) in `public/assets/sprites/`, list its name in `sprites.json`, and credit it in `CREDITS.md`. The `sprite` value comes from `agent.spawned`.
 
 ## 2026-11-06, S3 1.3
 
 **Effects.**
+
 - Every row of the S3 1.3 table is a reducer command. New local commands (no ICR, web-only): `coinArc`, `openVault`, `signNoShow`, `inspect`, `refundBadge`, `plaque`, `setClock`; `placeStall` carries `seller`.
 - `reduceEnvelope` advances the town block from each envelope's `block` (never backwards) and emits `setClock`. Countdowns are block-based (2 s per block), so screenshots are deterministic.
 - `__TOWN__.effectsSeen` counts what the scene actually played, by command kind or `kind:variant` (for example `setWeather:storm`, `setStatus:paid_in_full`).
@@ -98,6 +117,7 @@
 **Explorer links.** `VITE_EXPLORER_URL`, defaulting to `https://sepolia.basescan.org` (D-02), so every tx and address links somewhere.
 
 **Assumed API fields (S2 to confirm, possible minor ICR).**
+
 - `GET /api/lots/:lotId` (`LotView`, loose): the grade report is read from `gradeReport` or `spec.gradeReport`, with `grade`, `confidence`, `standard`, `defects`, `tee_verified`. The Verified badge shows only for `tee_verified === true`.
 - `GET /api/agents/:agentId` (`AgentView`, loose): `persona`, `currency`, `budget`, `mandate.commodities`, `mandate.maxPerUnit`.
 
@@ -191,7 +211,40 @@
 
 **Bundle watch.** `/control` importing `KEY_BUILDINGS` from `HudLayer` pulled the HUD and the Arkiv SDK into the main chunk (935 kB). The list now lives in `src/hud/keys.ts` (main chunk 597 kB).
 
+## 2026-11-06, landing hero at /
+
+`/` is a scroll-driven hero built from the pasted NORVA hero brief: its layout, motion, Inter Tight, and the brief's CloudFront clip and poster. It was first built exactly as written (iamanirbanbasak: "Exactly as written", "make it in react"), then the words were changed to Fairtown's ("change the content of this landing in accordance to fairtown"). It sits outside the app shell, with its own nav: LIVE or REPLAY (from the town store) and TEST MONEY, "How a deal works" (jumps 30% into the glide), the public board, the FAIRTOWN wordmark, "Sell a lot" and "Open the town". The three.js town and the uncommitted work before it (dark theme, deal talk, 80 × 45 map) were dropped at the user's request; `/town` is the committed pixel town again.
+
+- **Steps.** All four deal steps have a paragraph and open in turn: 01 below p .40, 02 to .60, 03 to .80, then 04. The brief opened only two.
+- **Scroll.** A 420vh track holds a sticky 100vh `<video>`. Everything except the clip is a pure function of p (`src/landing/progress.ts`, unit-tested). The clip is smoothed (`cur += (target − cur) × 0.2`) and seeks only when the video is not already seeking and is more than 1/60 s off, again on `seeked`.
+- **Loader.** It fades 350 ms after the clip's first frame, or after 3.5 s at most, so a blocked CDN never traps the page. e2e blocks the CDN for every check except one, which skips itself when the CDN cannot be reached.
+- **Recorder.** `?rec=1` removes the loader. A 6.5 s Web Animation (on a detached element) drives p: hold 0.55 s, glide 5.04 s, hold. It starts on the clip's first frame, or after 3.5 s. `window.__recTime(video, t)` pauses that clock, scrolls to the matching p, paints and returns the clip time.
+- **Fonts.** The app's global `h1` face is the pixel font; `.landing .landing-title` resets it.
+- **Clip length.** The brief says 5.04 s; the desktop file reports 4.97 s in Chromium. Clip time uses the file's own duration.
+
+## 2026-11-06, /board in the landing's look
+
+`/board` moved out of the pixel app shell into `SiteShell` (`src/landing/`): the landing's top bar (`SiteNav`, now shared, solid and sticky here), the night ground and Inter Tight. The board itself (`src/board/board.css`): a large title as the landing sets its headline; price weather as the page's centrepiece, with each market's band in large coloured words and its 30 days as a cyan sparkline; the query box with pill selects and cyan query text; live auctions, latest clears and seller records down a hairline rail. Small labels are white at 60%, because 46% fails 4.5:1 on night. `WalkinQr` takes `look="night"` and `TxLink` a `className` for the board; elsewhere they keep the pixel look. Sized in rem, so `?demo=1` still grows it. The other app pages are unchanged.
+
+## 2026-11-06, D-43: the 3D town and the night skin
+
+**Renderer.** three.js replaces Phaser for /town (`src/town3d/`). `engine.ts` is the old `scenes/Town.ts` ported command by command; the reducer, `TownCommand`s, EventBus events and `__TOWN__` are unchanged, and positions stay in map pixels (one tile = one world unit), so pathing, queues and the e2e probe read them as before. The probe gains `camera` (zoom, 1 = whole town; the view's centre in map pixels).
+
+**Look.** Kenney's CC0 glTF models (City Kits, Car Kit, Mini Characters, Nature, Watercraft) dressed in one graphite clay: each kit's palette texture is redrawn as clay, and its pale-blue glass texels become an emissive map, so windows glow warm at one of four levels. A CC0 Poly Haven night HDRI lights glass, water and paint. Bloom (its blur at half size) and one finishing pass (tilt-shift, vignette, grain). Cyan routes along the roads into a glowing settlement hub; outskirts past the map edge fade into the fog. Sellers, drivers and walk-ins are Kenney's rigged characters walking and idling with their own animations; AI agents are glowing orbs by role. "Lit miniature", not photoreal: the models are low-poly and the realism comes from the light.
+
+**Camera.** Mouse wheel: one step a notch towards the cursor; trackpad scroll and pinch (ctrl + wheel; Safari gesture events): smooth, then settle on a step (1, 1.5, 2, 3, 4, 6). Drag pans when zoomed in; + − 0 on the keyboard. Any of them pauses the director for 20 s.
+
+**Labels.** Names, speech, stall cards, signs, plaques and weather are DOM chips pinned in 3D (`CSS2DRenderer`). Offsets use the `translate` property: CSS2DRenderer positions labels by `transform`, which margins do not move. Every 150 ms a declutter pass hides the less important of any two that would overlap (speech, stalls, weather and plaques, signs, name tags) and treats the HUD's windows as fixed obstacles; from far away stall cards show only price and status.
+
+**Loading.** Commands that arrive while models load are queued and played once the city is built, before the store sends the current state; a fast replay under load used to pass its truck events before the town was ready. A model that fails to load becomes a clay box and is listed in `map:status` problems.
+
+**Light mode.** Software WebGL (SwiftShader in headless Chromium, llvmpipe) or `?quality=low`: no bloom chain, no shadows, half-size backbuffer. On the GPU the shadow map is redrawn only when casters change. e2e runs Chromium on the GPU on macOS (`playwright.config.ts`); elsewhere it falls back to light mode.
+
+**Pages.** Every app page sits in `SiteShell` (`src/landing/`): the landing's top bar (none on /town, whose HUD carries the same bar) and one night skin (`src/styles/night.css`). The skin is unlayered CSS, which beats Tailwind 4's layered utilities and our pixel-era component classes, so the markup and its accessible names are unchanged. The pixel people on /sell, /buy and /walkin stay for now. The town's top bar no longer lists signals as chips; they show as weather over the market and in the ticker.
+
 ## Open questions
+
+- iamanirbanbasak: licence for the landing's clip and poster (hotlinked from the NORVA brief, unconfirmed), or a Fairtown clip to replace them.
 
 - S2: confirm the `LotView.gradeReport` and `AgentView` fields above, or add them to `@fairtown/shared/api`.
 - S2: add `winners: [{ buyer, tokenAmount }]` to `LotView` (D-38), so lots with several buyers get handover codes.
