@@ -4,7 +4,8 @@ import { createMemoryRouter, RouterProvider } from "react-router"
 import { describe, expect, it, vi } from "vitest"
 import { routes } from "./App"
 
-vi.mock("./game/PhaserGame", () => ({ PhaserGame: () => <div data-testid="phaser" /> }))
+// jsdom has no WebGL: the 3D town is stood in for.
+vi.mock("./town3d/TownCanvas", () => ({ TownCanvas: () => <div data-testid="town-3d" /> }))
 
 const PAGES = [
   ["/town", "Town"],
@@ -32,10 +33,11 @@ describe("routes", () => {
     expect(screen.getByText(/^(LIVE|REPLAY)$/)).toBeInTheDocument()
   })
 
-  it("redirects / to /town", async () => {
+  it("/ is the landing hero, full-screen without the app's top bar", async () => {
     const router = renderAt("/")
-    expect(await screen.findByRole("heading", { level: 1, name: "Town" })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/town")
+    expect(await screen.findByRole("heading", { level: 1, name: /One Fair Price/ })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/")
+    expect(screen.queryByRole("navigation", { name: "Pages" })).toBeNull()
   })
 
   it.each(["/sell", "/scan", "/walkin"])("%s uses no crypto words", async (path) => {

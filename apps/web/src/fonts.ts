@@ -1,4 +1,4 @@
-/** Families the town canvas draws with; Phaser text made before these load keeps the fallback face. */
+/** Families the pages and HUD use; loaded before the town starts so its first words never reflow. */
 export const TOWN_FONTS = ['400 16px "Jersey 10"', '400 16px "Atkinson Hyperlegible"']
 
 type FontDoc = { fonts?: { load(font: string): Promise<unknown> } }

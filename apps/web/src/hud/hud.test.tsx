@@ -12,6 +12,7 @@ import { townStore } from "../state/townStore"
 import { BUYER, SAMPLE_EVENTS as S, SELLER, TRUCK, TX } from "../test/samples"
 import { AgentPanel } from "./AgentPanel"
 import { BuildingPanel } from "./BuildingPanel"
+import { MemoryRouter } from "react-router"
 import { HudLayer } from "./HudLayer"
 import { LotPanel } from "./LotPanel"
 import { Ticker } from "./Ticker"
@@ -68,18 +69,19 @@ const seed = (town: TownState) =>
 const wrap = (ui: ReactNode) =>
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      {ui}
+      <MemoryRouter>{ui}</MemoryRouter>
     </QueryClientProvider>,
   )
 
 beforeEach(() => seed(bergen()))
 
 describe("TopBar", () => {
-  it("shows block, active signals, relay status, REPLAY and TEST MONEY", () => {
+  it("shows block, relay status, REPLAY and TEST MONEY, and no signal chips", () => {
     seed(run([S.signal], bergen()))
     wrap(<TopBar />)
     expect(screen.getByText("Block 1050")).toBeInTheDocument()
-    expect(screen.getByText("Storm forecast")).toBeInTheDocument()
+    // Signals show in the town itself (weather over the market) and in the ticker, not as chips here.
+    expect(screen.queryByText("Storm forecast")).toBeNull()
     expect(screen.getByText("replay")).toBeInTheDocument()
     expect(screen.getByText("REPLAY")).toBeInTheDocument()
     expect(screen.getByText("TEST MONEY")).toBeInTheDocument()

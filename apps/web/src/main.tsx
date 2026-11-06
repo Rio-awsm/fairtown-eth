@@ -26,7 +26,7 @@ async function startMockApi() {
 
 async function boot(root: HTMLElement) {
   if (env.api.mode === "mock") await startMockApi()
-  // Before the relay starts: Phaser bakes text when it is created, so the pixel font must be ready,
+  // Before the relay starts: the HUD and labels measure their words, so the fonts must be ready,
   // and the HUD's keys must be listening before a fast replay can finish.
   await loadFonts(document)
   // Outside React, so StrictMode's double effects never open a second relay connection.

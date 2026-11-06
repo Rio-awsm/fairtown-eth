@@ -5,9 +5,9 @@ import { shortAddress } from "./model"
 export const explorerTx = (tx: string) => `${env.explorerUrl}/tx/${tx}`
 export const explorerAddress = (address: string) => `${env.explorerUrl}/address/${address}`
 
-export function TxLink({ tx }: { tx: string }) {
+export function TxLink({ tx, className = "font-mono text-harbour underline" }: { tx: string; className?: string }) {
   return (
-    <a href={explorerTx(tx)} target="_blank" rel="noreferrer" className="font-mono text-harbour underline" title={tx}>
+    <a href={explorerTx(tx)} target="_blank" rel="noreferrer" className={className} title={tx}>
       {shortAddress(tx)}
     </a>
   )

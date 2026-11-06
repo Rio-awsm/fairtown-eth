@@ -16,7 +16,7 @@ import { TownPage } from "../pages/Town"
 import { townStore } from "../state/townStore"
 import { SAMPLE_EVENTS as S, TX } from "../test/samples"
 
-vi.mock("../game/PhaserGame", () => ({ PhaserGame: () => <div data-testid="phaser" /> }))
+vi.mock("../town3d/TownCanvas", () => ({ TownCanvas: () => <div data-testid="town-3d" /> }))
 vi.mock("../hud/PriceChart", () => ({ PriceChart: () => <div /> }))
 
 const server = setupServer(...handlers)
