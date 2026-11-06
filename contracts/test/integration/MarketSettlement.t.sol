@@ -375,10 +375,11 @@ contract MarketSettlementTest is SettlementFixture {
 
     function test_transportNeededOnlyForGoodsThatMove() public {
         bytes32[3] memory none = [Keys.STORAGE, Keys.COMPUTE, Keys.TRUCK];
+        address[3] memory lister = [vault, northlight, lars]; // role per sector (D-62)
         for (uint256 i; i < none.length; i++) {
             LotFactory.LotSpec memory s = _bigCod();
             s.sector = none[i];
-            s.seller = lars;
+            s.seller = lister[i];
             vm.recordLogs();
             _sellTo(s, buyerA, 100e6);
             _assertNoEvent(vm.getRecordedLogs(), TransportNeeded.selector);
@@ -733,21 +734,6 @@ contract MarketSettlementTest is SettlementFixture {
         a.exitBid(0);
         a.claimTokens(0);
         return _bal(factory.getLot(lotId).token, who);
-    }
-
-    function _indexOf(Vm.Log[] memory logs, bytes32 sel, uint256 lotId) internal pure returns (uint256) {
-        for (uint256 i; i < logs.length; i++) {
-            if (logs[i].topics.length > 1 && logs[i].topics[0] == sel && uint256(logs[i].topics[1]) == lotId) {
-                return i;
-            }
-        }
-        revert("event not found");
-    }
-
-    function _assertNoEvent(Vm.Log[] memory logs, bytes32 sel) internal pure {
-        for (uint256 i; i < logs.length; i++) {
-            require(logs[i].topics.length == 0 || logs[i].topics[0] != sel, "unexpected event");
-        }
     }
 }
 

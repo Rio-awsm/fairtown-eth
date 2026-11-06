@@ -158,6 +158,26 @@ The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depe
 
 **Stream test command.** `bun test --cwd cre` can't run yet: `cre/` arrives in S1 4.2.
 
+## 2026-11-06, S1 3.1
+
+**Already there from 1.3.** `relist` (strictly lower floor, burns unsold, new token), `requestStorage` (holders only), `TransportNeeded` only for produce, fish and flowers, and the 10% truck advance. 3.1 adds the floor minimum, sector roles and parents, and relisted truck lots as carriers.
+
+**Minimum relist floor (D-60).** 50% of the chain's first floor, rounded up, at least `MIN_FLOOR_PER_UNIT`. The first floor is stored per relisted lot (`_rootFloor`), so a chain 9.00 -> 6.00 -> 4.50 stops at 4.50. Solidity can't read another contract's constant by name (`LotFactory.MIN_FLOOR_PER_UNIT` fails with error 9582), so settlement mirrors the 1000 and `test_relistFloor_roundsUpAndNeverBelowProductMinimum` asserts they match.
+
+**Both 2.1 contract gaps are closed.** `assignCarrier` now reverts `NoTransport` for any lot that isn't produce, fish or flowers, so a truck lot can't be a carrier's parent. A relisted truck lot resolves its goods lot at settle (D-61). `releaseExpired` keeps `refunded` after a finalized no-show; it only sets `picked_up` when there was no refund.
+
+**Ticks put the floor a hair under the stated price.** `floorToTick` rounds the Q96 floor down, so a bid of exactly `qty x floor` clears a few wei of tokens more than `qty`: cod at 9.00 with EUR 1,620 sold 180 kg + 9,678 wei, and 100 GPU hours sold 100 + 5,377 wei. Money is still exact (1,620.000000 raised). Two effects:
+- relist would have relisted 419 kg of the remaining 420 (fixed, D-63)
+- `LotSettled.soldUnits` and `TransportNeeded.qty` round up (D-42), so that lot reports 181 kg, not 180. That's a display issue only, no money. **Open:** decide in 4.1 whether `soldUnits` should ignore dust under `TOKEN_DUST` too
+
+`soldTokens + unsold` can be 1 wei under supply (CCA rounding).
+
+**Storage parents.** Storage lots may name a produce, fish or flowers lot as parent, but settlement never acts on it (direct handover, no carrier). `requestStorage` still accepts any lot whose tokens the caller holds, including compute lots; S2 only reacts for goods.
+
+**ABIs not regenerated.** New errors (`FloorBelowMinimum`, `NoTransport`, `WrongRole`, `ParentNotAllowed`, `BadParent`) and the views `minRelistFloorOf` and `MIN_RELIST_FLOOR_BPS` arrive in `packages/shared/src/abi/generated.ts` with the v2 deploy in S1 4.1 (`pnpm deploy:*` runs `gen:abi`), under the 4.1 ICR. Until then, S2 can't decode these reverts by name. No section 7 signature or event changed. Base Sepolia v1 doesn't have any of 3.1; the keeper's `stillNeeded` check (`saleOf(truck).parentLotId === goods lot`) keeps it from sending a carrier the v1 contract would reject.
+
+**Sizes.** MarketSettlement 18,151 B (was 17,510), LotFactory 13,146 B (was 12,572).
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.

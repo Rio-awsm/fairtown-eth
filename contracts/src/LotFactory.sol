@@ -96,6 +96,9 @@ contract LotFactory is AccessControl {
     error FloorTooLow(uint256 floorPerUnit);
     error UnknownParent(uint256 parentLotId);
     error UnknownLot(uint256 lotId);
+    error WrongRole(address seller, bytes32 sector, uint8 role);
+    error ParentNotAllowed(bytes32 sector);
+    error BadParent(uint256 parentLotId, bytes32 parentSector);
 
     /// @param settlement_ MarketSettlement, predicted by the deploy script (D-41) so both sides are immutable.
     /// @param resolver_ DisputeResolver, or address(0) before S1 4.1.
@@ -136,10 +139,19 @@ contract LotFactory is AccessControl {
     // ------------------------------------------------------------------ listing
 
     /// @notice Caller is the seller (who can list) or an operator listing for a seller who can list.
+    ///         The seller's role must match the sector (D-62): truck lots TRUCK, storage lots STORAGE, everything
+    ///         else SELLER. Only truck and storage lots may name a parent, and it must be produce, fish or flowers.
     function createLot(LotSpec calldata spec) external returns (uint256 lotId, address auction, address token) {
         if (msg.sender != spec.seller && !hasRole(OPERATOR_ROLE, msg.sender)) revert NotAuthorized(msg.sender);
         if (!registry.canList(spec.seller)) revert SellerCannotList(spec.seller);
-        if (spec.parentLotId != 0 && spec.parentLotId > lotCount) revert UnknownParent(spec.parentLotId);
+        uint8 role = registry.roleOf(spec.seller);
+        if (role != Keys.listerRole(spec.sector)) revert WrongRole(spec.seller, spec.sector, role);
+        if (spec.parentLotId != 0) {
+            if (spec.parentLotId > lotCount) revert UnknownParent(spec.parentLotId);
+            if (!Keys.isChained(spec.sector)) revert ParentNotAllowed(spec.sector);
+            bytes32 parentSector = _lots[spec.parentLotId].spec.sector;
+            if (!Keys.needsTransport(parentSector)) revert BadParent(spec.parentLotId, parentSector);
+        }
         return _create(spec);
     }
 

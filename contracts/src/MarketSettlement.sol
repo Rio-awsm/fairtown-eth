@@ -44,6 +44,10 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
         keccak256("Handover(uint256 lotId,address buyer,uint256 tokenAmount,uint64 expiryBlock)");
     /// @notice Tokens left below this (CCA round-down dust, 1e-6 of a unit) count as fully handed over.
     uint256 public constant TOKEN_DUST = 1e12;
+    /// @notice A relist floor may not go below this share of the first floor in its relist chain (D-60).
+    uint16 public constant MIN_RELIST_FLOOR_BPS = 5000;
+    /// @dev Same value as LotFactory.MIN_FLOOR_PER_UNIT (contract 5); a test keeps them equal.
+    uint256 internal constant MIN_FLOOR_PER_UNIT = 1000;
     uint256 internal constant UNIT = 1e18;
     uint256 internal constant BPS = 10_000;
 
@@ -133,6 +137,8 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
     mapping(uint256 lotId => mapping(address buyer => Report)) internal _reports;
     mapping(address seller => Record) internal _records;
     mapping(bytes32 digest => bool) public ticketUsed;
+    /// @dev First floor of a relist chain, set on every relisted lot. Zero for a lot that was never relisted into.
+    mapping(uint256 lotId => uint256) internal _rootFloor;
 
     event LotSettled(
         uint256 indexed lotId,
@@ -194,6 +200,8 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
     error LotClosed(uint256 lotId);
     error NothingUnsold(uint256 lotId);
     error FloorNotLower(uint256 newFloor, uint256 oldFloor);
+    error FloorBelowMinimum(uint256 newFloor, uint256 minFloor);
+    error NoTransport(uint256 lotId);
     error NotImplemented();
 
     /// @param factory_ LotFactory. @param trigger_ ChainTrigger. Both are deployed against this contract's
@@ -244,6 +252,12 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
         s.token = lot.token;
         s.sector = lot.spec.sector;
         s.parentLotId = lot.spec.parentLotId;
+        // A relisted truck lot names the old truck lot as its parent (relist history). Carry the goods lot it serves
+        // instead, so assignCarrier and the drop-off scan see it (D-61). The old truck lot settled before it could be
+        // relisted, so its own parent is already resolved and one hop is enough.
+        if (Keys.isTruck(s.sector) && s.parentLotId != 0 && Keys.isTruck(_sales[s.parentLotId].sector)) {
+            s.parentLotId = _sales[s.parentLotId].parentLotId;
+        }
 
         Settled memory m;
         // The sweep must come first: the amounts it returns decide everything below. The auction is CCA code
@@ -305,6 +319,7 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
     }
 
     /// @notice Seller or operator relists the unsold whole units at a strictly lower floor, as a new lot and token.
+    ///         The floor may not fall below `MIN_RELIST_FLOOR_BPS` of the first floor in the relist chain (D-60).
     function relist(uint256 lotId, uint256 newFloorPerUnit, uint64 durationBlocks)
         external
         nonReentrant
@@ -315,6 +330,10 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
         uint256 units = _takeUnsold(lotId, s);
         LotFactory.LotSpec memory spec = factory.getLot(lotId).spec;
         if (newFloorPerUnit >= spec.floorPerUnit) revert FloorNotLower(newFloorPerUnit, spec.floorPerUnit);
+        uint256 root = _rootFloor[lotId];
+        if (root == 0) root = spec.floorPerUnit;
+        uint256 minFloor = _minRelistFloor(root);
+        if (newFloorPerUnit < minFloor) revert FloorBelowMinimum(newFloorPerUnit, minFloor);
         spec.qty = units;
         spec.floorPerUnit = newFloorPerUnit;
         spec.durationBlocks = durationBlocks;
@@ -323,7 +342,21 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
         // The new lot id comes back from the immutable LotFactory; unsold tokens were burned above.
         // forge-lint: disable-next-line(unused-return)
         (newLotId,,) = factory.createRelistedLot(spec);
+        _rootFloor[newLotId] = root; // after the call: the id comes from the immutable LotFactory
         emit LotRelisted(lotId, newLotId, newFloorPerUnit);
+    }
+
+    /// @notice Lowest floor `relist(lotId, ...)` accepts: half the chain's first floor, rounded up, and never below
+    ///         the product minimum. A relist must also be strictly below the lot's own floor.
+    function minRelistFloorOf(uint256 lotId) external view returns (uint256) {
+        uint256 root = _rootFloor[lotId];
+        if (root == 0) root = factory.getLot(lotId).spec.floorPerUnit;
+        return _minRelistFloor(root);
+    }
+
+    function _minRelistFloor(uint256 root) internal pure returns (uint256) {
+        uint256 m = Math.ceilDiv(root * MIN_RELIST_FLOOR_BPS, BPS);
+        return m < MIN_FLOOR_PER_UNIT ? MIN_FLOOR_PER_UNIT : m;
     }
 
     /// @notice Seller closes the unsold supply: tokens are burned (D-43), the seller keeps the goods.
@@ -333,21 +366,25 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
         _takeUnsold(lotId, s);
     }
 
-    /// @dev Burns all unsold tokens once. Returns the whole units available to relist.
+    /// @dev Burns all unsold tokens once. Returns the whole units available to relist. A remainder within
+    ///      TOKEN_DUST of the next whole unit counts as that unit (D-63): the floor is rounded down to a tick, so
+    ///      CCA can clear a few wei over a whole number, and 419.99999999999999 kg unsold is 420 kg of fish.
     function _takeUnsold(uint256 lotId, Sale storage s) internal returns (uint256 units) {
         if (!s.settled) revert NotSold(lotId);
         if (s.unsoldResolved || s.unsold == 0) revert NothingUnsold(lotId);
-        units = s.unsold / UNIT;
+        units = (s.unsold + TOKEN_DUST) / UNIT;
         s.unsoldResolved = true;
         LotToken(s.token).burnFrom(address(this), s.unsold);
     }
 
     // ================================================================== transport
 
-    /// @notice Anyone. The truck lot must be settled and sold, and chained to this lot as its direct parent.
+    /// @notice Anyone. The truck lot must be settled and sold, and chained to this goods lot (directly, or through a
+    ///         relisted truck lot, D-61). Only produce, fish and flowers lots take a carrier.
     function assignCarrier(uint256 lotId, uint256 truckLotId) external nonReentrant {
         Sale storage p = _sales[lotId];
         if (!p.settled || p.soldTokens == 0) revert NotSold(lotId);
+        if (!Keys.needsTransport(p.sector)) revert NoTransport(lotId);
         if (p.complete || p.released) revert LotClosed(lotId);
         if (p.carrier != address(0)) revert CarrierAlreadyAssigned(lotId);
         Sale storage t = _sales[truckLotId];
@@ -511,7 +548,8 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
         s.heldRemaining -= amount;
         s.outstanding = s.reportedTokens;
         s.released = true;
-        if (s.reportedTokens == 0) s.status = PICKED_UP; // SoT 8.6: buyer silent, held goes to seller
+        // SoT 8.6: buyer silent, held goes to seller. A lot with a finalized refund stays `refunded` (D-44).
+        if (s.reportedTokens == 0 && !s.anyRefund) s.status = PICKED_UP;
         emit HeldReleased(lotId, amount);
         amount += _maybeComplete(lotId);
 
