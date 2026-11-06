@@ -1,0 +1,76 @@
+{
+  "bids": {
+    "A_outbid": {
+      "id": "0",
+      "lastFullyFilled": "106",
+      "maxPrice": "612037555422691975",
+      "outbid": "121",
+      "path": "partial",
+      "startBlock": "101"
+    },
+    "B_atFinal": {
+      "id": "2",
+      "lastFullyFilled": "106",
+      "maxPrice": "635806004176971275",
+      "outbid": "0",
+      "path": "partial",
+      "startBlock": "106"
+    },
+    "C_atFinal": {
+      "id": "1",
+      "lastFullyFilled": "106",
+      "maxPrice": "635806004176971275",
+      "outbid": "0",
+      "path": "partial",
+      "startBlock": "103"
+    },
+    "D_aboveFinal": {
+      "id": "3",
+      "maxPrice": "796243033268356550",
+      "path": "exitBid",
+      "startBlock": "121"
+    }
+  },
+  "checkpoints": {
+    "101": {
+      "clearingPrice": "594211218856982500",
+      "prev": "0"
+    },
+    "103": {
+      "clearingPrice": "594211218856982500",
+      "prev": "101"
+    },
+    "106": {
+      "clearingPrice": "594211218856982500",
+      "prev": "103"
+    },
+    "121": {
+      "clearingPrice": "635806004176971275",
+      "prev": "106"
+    },
+    "126": {
+      "clearingPrice": "635806004176971275",
+      "prev": "121"
+    },
+    "131": {
+      "clearingPrice": "635806004176971275",
+      "prev": "126"
+    },
+    "136": {
+      "clearingPrice": "635806004176971275",
+      "prev": "131"
+    },
+    "141": {
+      "clearingPrice": "635806004176971275",
+      "prev": "136"
+    },
+    "146": {
+      "clearingPrice": "635806004176971275",
+      "prev": "141"
+    }
+  },
+  "endBlock": "146",
+  "finalClearing": "635806004176971275",
+  "finalPerUnit": "8024999",
+  "lastCheckpointed": "146"
+}

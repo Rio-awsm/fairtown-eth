@@ -42,7 +42,7 @@ export type LlmStrategyOptions = {
   ai: Pick<AiGateway, "decide">
   context?: ContextFn
   bioOf?: (agent: RuntimeAgent) => string | undefined
-  cacheBlocks?: bigint // D-64
+  cacheBlocks?: bigint // D-85
   blockMs?: number
   timeoutMs?: number
   onFallback?: (code: string, agent: RuntimeAgent) => void

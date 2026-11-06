@@ -1,0 +1,26 @@
+Initializing...
+Loading settings...
+! Using default private key for chain write simulation. To use your own key, set CRE_ETH_PRIVATE_KEY in your .env file or system environment.
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: 4dc41ef78231b62b210080a6a79c8b050c3b459d8db5e533c723a552c01725de
+  Config hash: 050426b17d7fa94f14e6d40af7473be250a8b8cd6064174d9c59e96a29d7eac7
+2026-11-06T13:18:30Z [SIMULATION] Simulator Initialized
+2026-11-06T13:18:30Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T13:18:30Z [USER LOG] W1 ref cod@bergen = 8300000 EUR base units, dated 2026-11-05, source "illustrative: scene value; replace with the Rafisklaget minimum price before the demo" https://www.rafisklaget.no/minstepriser: written
+2026-11-06T13:18:31Z [USER LOG] W1 ref tomato@lagos = 380000 USD base units, dated 2026-11-05, source "illustrative" : written
+2026-11-06T13:18:32Z [USER LOG] W1 ref marigold@mumbai = 950000 USD base units, dated 2026-11-05, source "illustrative" : written
+2026-11-06T13:18:32Z [USER LOG] W1 ref gpu_hour@any_dc = 2000000 USD base units, dated 2026-11-05, source "illustrative" : written
+2026-11-06T13:18:33Z [USER LOG] W1 ref truck_capacity@dallas = 55000 USD base units, dated 2026-11-05, source "illustrative" : written
+✓ Workflow Simulation Result:
+"W1 ref: 5 written, 0 failed, 0 skipped"
+2026-11-06T13:18:33Z [SIMULATION] Execution finished signal received
+2026-11-06T13:18:33Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯

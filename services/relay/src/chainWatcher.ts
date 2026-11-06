@@ -4,8 +4,8 @@ import {
   continuousClearingAuctionAbi,
   lotFactoryAbi,
   marketSettlementAbi,
-  stubDisputeResolverAbi,
-  stubSignalOracleAbi,
+  disputeResolverAbi,
+  signalOracleAbi,
 } from "@fairtown/shared/abi"
 import type { Deployment } from "@fairtown/shared/addresses"
 import { fromKey, type TownEnvelope } from "@fairtown/shared"
@@ -19,8 +19,8 @@ const EVENTS_ABI = [
   ...chainTriggerAbi,
   ...agentRegistryAbi,
   ...continuousClearingAuctionAbi,
-  ...stubSignalOracleAbi,
-  ...stubDisputeResolverAbi,
+  ...signalOracleAbi,
+  ...disputeResolverAbi,
 ].filter((x) => x.type === "event") as Abi
 
 const CHUNK = 200n // public Base Sepolia RPC limits eth_getLogs to a 200-block range

@@ -18,7 +18,7 @@ const portFree = (port: number) =>
     srv.listen(port, "127.0.0.1")
   })
 
-// What each add-on reads at runtime (S2 8.x). World (8.3) is dropped (D-81). Add-ons run inside the agents service on 8787.
+// What each add-on reads at runtime (S2 8.x). World (8.3) is dropped (D-102). Add-ons run inside the agents service on 8787.
 const ADDONS: Record<string, string[]> = {
   ADDON_ENS: ["ENS_SEPOLIA_RPC_URL", "ENS_PARENT_NAME", "ENS_PRIVATE_KEY"],
   ADDON_HEDERA: ["HEDERA_ACCOUNT_ID", "HEDERA_AGENT_ACCOUNT_ID", "HEDERA_AGENT_PRIVATE_KEY", "X402_FACILITATOR_URL"],
@@ -86,7 +86,7 @@ async function vision(env: Env, deps: S2Deps): Promise<Result> {
   }
 }
 
-// Seller sessions (ICR-006) and the public web URL that handover links and phones use.
+// Seller sessions (ICR-009) and the public web URL that handover links and phones use.
 function humans(env: Env): Result {
   const notes: string[] = []
   let status: Result["status"] = "ok"

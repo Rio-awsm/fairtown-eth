@@ -25,7 +25,7 @@ reader.select({ $key: true, finalClearingPerUnit: true, avgPerUnit: true, soldUn
 
 ## Owners today (honest)
 
-Every live entity is currently owned by the writer `0x8BA90d413a1b48321De0D77CCF8C201A7086b2ef` (decision D-60). The 27 agent wallets exist (HD from `AGENT_MNEMONIC`) but are not funded with Rabdi gas yet; `pnpm -F agents fund:arkiv` funds them, after which `lot`, `bid`, `capacity` and `agent` entities are created by the agent that owns them, as the table says. `price`, `reputation` and `signal` stay with the writer by design: they are the public record, not any one agent's claim.
+Every live entity is currently owned by the writer `0x8BA90d413a1b48321De0D77CCF8C201A7086b2ef` (decision D-81). The 27 agent wallets exist (HD from `AGENT_MNEMONIC`) but are not funded with Rabdi gas yet; `pnpm -F agents fund:arkiv` funds them, after which `lot`, `bid`, `capacity` and `agent` entities are created by the agent that owns them, as the table says. `price`, `reputation` and `signal` stay with the writer by design: they are the public record, not any one agent's claim.
 
 ## Live counts
 

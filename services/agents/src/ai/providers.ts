@@ -10,7 +10,7 @@ export type AiTrace = {
   model?: string
   cost?: { amount: string; currency: string } // 0G billing.total_cost (the Router reports "usd", micro-USD, on mainnet)
   trustMode?: string // X-0G-Provider-Trust-Mode we sent
-  fallback?: { from: string; reason: string } // answered by the fallback provider, not the primary (D-79)
+  fallback?: { from: string; reason: string } // answered by the fallback provider, not the primary (D-100)
   raw?: unknown
 }
 

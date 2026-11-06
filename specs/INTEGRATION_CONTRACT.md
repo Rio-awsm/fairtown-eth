@@ -122,6 +122,7 @@ ADVANCE_TRUCK_BPS=1000
 PROVEN_AFTER_CLEAN_LOTS=3
 CONTEST_WINDOW_BLOCKS=600
 REPORT_WINDOW_BLOCKS=3000
+RULING_TIMEOUT_BLOCKS=3000           # no CRE ruling after this many blocks: anyone may expire the dispute, seller paid, no refund (D-65)
 PICKUP_WINDOW_FISH=3000
 PICKUP_WINDOW_FLOWERS=3000
 PICKUP_WINDOW_PRODUCE=4500
@@ -130,6 +131,7 @@ PICKUP_WINDOW_STORAGE=1500
 PICKUP_WINDOW_COMPUTE=600
 RELIST_STEP_BPS=1500
 LAST_BLOCK_SHARE_BPS=7500
+KEEPER_CHECKPOINT_BLOCKS=25        # keeper checkpoints a live auction with bids after this many quiet blocks (D-54)
 
 # ---------- Arkiv ----------
 ARKIV_MODE=live                    # live | memory
@@ -182,6 +184,13 @@ WEB_PORT=8080
 ADDONS_PORT=8790
 RELAY_INTERNAL_TOKEN=change-me
 CRE_BRIDGE_TOKEN=change-me
+CRE_BRIDGE_W1_MINUTES=30              # CRE bridge timers (0 = off): W1 FX + reference prices (S1 4.5, ICR-006)
+CRE_BRIDGE_WEATHER_MINUTES=60         # W2 weather
+CRE_BRIDGE_CALENDAR_MINUTES=360       # W2 calendar
+CRE_BRIDGE_BROADCAST=1                # 0 = dry runs only
+CRE_BRIDGE_W3=1                       # 0 = don't watch DisputeOpened
+CRE_BRIDGE_TIMEOUT_MS=480000          # per run
+CRE_BIN=                              # cre CLI path; default ~/.cre/bin/cre, else cre on PATH
 STORAGE_DIR=./.data
 PUBLIC_BASE_URL=http://localhost:8787
 PUBLIC_WEB_URL=https://<tunnel>.trycloudflare.com
@@ -332,6 +341,7 @@ function releaseExpired(uint256 lotId) external;                     // anyone, 
 
 // --- rulings ---
 function resolveRuling(uint256 lotId, address buyer, uint256 tokenAmount, uint16 refundBps) external; // only DisputeResolver
+function onDisputeOpened(uint256 lotId, address buyer, uint256 tokenAmount) external; // only DisputeResolver; holds the disputed share back (ICR-005)
 
 // --- seller record ---
 function markProven(address seller, bool proven) external;           // onlyOperator; seeded demo sellers, disclosed
@@ -341,6 +351,8 @@ function sellerRecord(address seller) external view returns (uint32 cleanLots, u
 // --- views ---
 function heldOf(uint256 lotId) external view returns (uint256 held, uint256 soldTokens, uint64 pickupDeadline, address carrier);
 function statusOf(uint256 lotId) external view returns (uint8); // index into LOT_STATUS
+function minRelistFloorOf(uint256 lotId) external view returns (uint256); // D-60 (ICR-005)
+function disputedTokensOf(uint256 lotId, address buyer) external view returns (uint256); // open quality dispute (ICR-005)
 
 event LotSettled(uint256 indexed lotId, uint256 finalClearingPerUnit, uint256 avgPerUnit, uint256 soldUnits, uint256 raised, uint256 sellerPaid, uint256 held, uint256 fee, uint16 advanceBps, uint64 pickupDeadline);
 event LotRelisted(uint256 indexed lotId, uint256 indexed newLotId, uint256 newFloorPerUnit);
@@ -378,9 +390,11 @@ event StorageNeeded(uint256 indexed lotId, address indexed requester, uint256 qt
 ```solidity
 function onReport(bytes calldata metadata, bytes calldata report) external; // only forwarder
 // report = abi.encode(uint8 kind, bytes body)
-// kind 1 reference: abi.encode(bytes32 commodity, bytes32 market, uint256 perUnit, bytes32 currencyCode, bytes32 sourceTag)
+// kind 1 reference: abi.encode(bytes32 commodity, bytes32 market, uint256 perUnit, bytes32 currencyCode, bytes32 sourceTag, uint64 asOf)
 // kind 2 signal:    abi.encode(bytes32 signalKind, bytes32 place, uint8 severity, uint64 expiresAtBlock, string label)
-// kind 3 fx:        abi.encode(bytes32 currencyCode, uint256 perUsdE8)
+// kind 3 fx:        abi.encode(bytes32 currencyCode, uint256 perUsdE8, uint64 asOf)
+// asOf (ICR-005, D-64): the workflow's trigger time in unix seconds, stored as updatedAt. Stale reports revert: asOf not
+// newer than the stored one, more than 1 hour old, or more than 60 s ahead of the block. Kind 2 reverts once expired.
 function referencePrice(bytes32 commodity, bytes32 market) external view returns (uint256 perUnit, bytes32 currencyCode, bytes32 sourceTag, uint64 updatedAt);
 function fxRate(bytes32 currencyCode) external view returns (uint256 perUsdE8, uint64 updatedAt);
 event ReferencePriceUpdated(bytes32 indexed commodity, bytes32 indexed market, uint256 perUnit, bytes32 currencyCode, bytes32 sourceTag, uint64 updatedAt);
@@ -396,6 +410,14 @@ function onReport(bytes calldata metadata, bytes calldata report) external; // o
 // report = abi.encode(uint256 disputeId, uint16 refundBps, bytes32 reasonHash)
 event DisputeOpened(uint256 indexed disputeId, uint256 indexed lotId, address indexed buyer, uint8 kind, uint256 tokenAmount, bytes32 evidenceHash, string evidenceURI); // kind 0 quality, 1 no_show
 event DisputeResolved(uint256 indexed disputeId, uint256 indexed lotId, uint16 refundBps, bytes32 reasonHash);
+// ICR-005: every dispute ends. After rulingTimeoutBlocks with no ruling anyone may expire it: no refund, seller paid (D-65).
+function expireDispute(uint256 disputeId) external;
+function disputeOf(uint256 disputeId) external view returns (Dispute memory); // lotId, buyer, kind, open, openedBlock, tokenAmount
+function disputeCount() external view returns (uint256);
+function rulingTimeoutBlocks() external view returns (uint64);
+event DisputeExpired(uint256 indexed disputeId, uint256 indexed lotId);
+// Receivers: forwarder() settable by the admin (simulation MockKeystoneForwarder -> production KeystoneForwarder);
+// optional expectedWorkflowOwner checked against the forwarder metadata.
 ```
 
 ### 7.9 CCA events consumed (from v2.1.0 source, checked)
@@ -507,6 +529,17 @@ JSON validated by `@fairtown/shared/api`. Errors: `{ error: { code, message } }`
 | `GET /api/director/status` | | Scenario, step | control |
 
 ---
+
+### 11.1 CRE bridge (S1 4.5, ICR-006)
+
+`pnpm -F keeper cre:bridge`, port 8789, `127.0.0.1` by default. SIMULATION: runs `cre workflow simulate --broadcast` (test transactions through the mock forwarder).
+
+| Route | Body | Response |
+|---|---|---|
+| `POST /run` with `Authorization: Bearer $CRE_BRIDGE_TOKEN` | `{ workflow: "w1-fx-reference" \| "w2-signals" \| "w3-rulings", trigger?, forceSignals?, txHash?, eventIndex? }` | `202 { runId, workflow, trigger, state }`, or 400 / 401 / 413 / 429 |
+| `GET /health` | | `{ ok, simulation: true, workflows: { [name]: { built, running, queued, last } } }` |
+
+`forceSignals` (w2-signals only, max 10): `[{ kind, place, severity 1-5, label, expiresAtBlock (decimal string) }]`. Runs W2 trigger 1 with only those signals; labels always end in " (forced)". `w3-rulings` needs `txHash` and `eventIndex` (the log's index within its transaction). Runs answer at once and happen in the background; with broadcast on, one run at a time across all workflows (one signing key).
 
 ## 12. Relay protocol
 
@@ -632,9 +665,11 @@ The agents service publishes `agent.*`, `human.joined` and `clock` phase events 
 | ICR-001 | S1 (maxspxtr) | Minor: add `packages/shared/fixtures/price-vectors.json` (20 vectors from Solidity `PriceMath`, written by `forge test`) and `packages/shared/test/price-vectors.test.ts`. No source or interface change | S1 1.1 requires TS and Solidity price math to match | shared | maxspxtr (S1) | Approved 2026-11-06 |
 | ICR-002 | S1 (maxspxtr) | Minor: `LAST_BLOCK_SHARE_BPS` default 5000 -> 7500 in section 4 and `.env.example`. Value only, no interface change | S1 1.2 spread test: early vs late bidder at the same max were 10.7% apart at 5000, 4.5% at 7500 (target 5%) | S1, S2 (agents reading the schedule) | maxspxtr (S1) | Approved 2026-11-06 |
 | ICR-003 | S1 (maxspxtr) | Minor: block windows x10 in section 4 and `.env.example` (contest 600, report 3000, pickup fish 3000, flowers 3000, produce 4500, truck 3000, storage 1500, compute 600). Auction durations x10 too (D-50): fish 450, flowers 600, produce 900, truck/storage/compute 300. Values only | Base Sepolia and Base mainnet measured at ~5 blocks/s (200 ms), not ~2 s; the old values ran 10x faster than SoT 14 intends (contest 12 s, pickup 60 s) | S1, S2 (agents, director timers), S3 (countdowns) | maxspxtr (S1) | Approved 2026-11-06 |
-| ICR-004 | S2 (Rio-awsm) | Add `@fairtown/shared/env` (env loader moved from `scripts/doctor/env.ts`, node-only, not in the main index), `@fairtown/shared/fixtures` (`Persona`, `SellerMessage`, `SCENES`, `fixtureUrl`) and `fixtures/day.jsonl` (297 envelopes, all 24 event types, 7 scenes), `agents.json` (27 personas), `messages.json` (20 messages). Generated by `pnpm -F agents gen:fixtures` | S2 0.1 fixtures for S3; one tested env loader for services and doctor | S3, doctor | S2 | Minor, awaiting S3 ack |
-| ICR-005 | S2 (Rio-awsm) | Add `@fairtown/shared/arkiv`: the seven section 10 schemas as descriptors (`ARKIV_SCHEMAS`: columns, indexed, owner, flags) and SDK schemas (`ARKIV_SDK_SCHEMAS`). Money columns are `u256`, blocks `u64`, addresses `addr`, `details`/`mandate` are `bytes` JSON. Adds `@arkiv-network/sdk` 1.0.1 to shared | S2 2.1; S3 reads Arkiv with the same schemas | S3 | S2 | Minor, awaiting S3 ack |
-
-| ICR-006 | S2 (Rio-awsm) | Minor, section 11 and 4: new `POST /api/sessions/seller` `{ sellerId, pin }` -> `{ token, sellerId, expiresAt }` (2 h); `POST /api/handover/ticket` and `POST /api/noshow/contest` now need `Authorization: Bearer <seller session>` whose seller matches `sellerId` (401 no session, 403 wrong seller or not your lot). `fallbackUrl` is `${PUBLIC_WEB_URL}/scan#t=<base64url qrText>`. Walk-in bid response `{ bidId, tx }` (no shared schema yet). New env: `SELLER_PIN`, `TRUST_PROXY` (tunnel IP/CIDR), `WALKIN_BUDGET` (500), `WALKIN_CAP` (50), `LLM_MAX_RPM` (60, from S2 5.1), `CRE_BRIDGE_TOKEN` use, `CHAIN_BACKFILL_BLOCKS` (9000, S2 7.1), `VISION_TRUST_MODE`, `VISION_FALLBACK`, `VISION_FALLBACK_BASE_URL`, `VISION_FALLBACK_API_KEY`, `VISION_FALLBACK_MODEL` (S2 8.1). Draft `trace` (loose object) gains `model`, `fallback`, `verification: { state, label }`. No `packages/shared` code change | S2 6.1: the seller key signs only inside that seller's session (guide); no session existed in the contract | S3 `/sell`, `/scan`, `/walkin`; `.env.example` | S2 | Minor, proposed, awaiting S3 ack |
-| ICR-007 | S2 (Rio-awsm) | Minor: add `packages/shared/fixtures/day.recorded.jsonl` (516 envelopes, `full_day` played on FakeChain, chain events mapped by the relay's `ChainMapper`, `ts` = day start + block x 2 s), generated by `pnpm -F agents record`. `GET /api/director/status` adds `running[]` and `log[]` next to `scenario` and `step` (schema is loose, no code change) | S2 6.2 recorded day for S3 replay and the demo fallback | S3 | S2 | Minor, proposed, awaiting S3 ack |
-| ICR-008 | S2 (Rio-awsm) | Minor, sections 1, 3, 4, 11: add-ons run inside the agents service on 8787 (no `services/addons` on 8790); new env `CORS_ORIGINS`, `ENS_PRIVATE_KEY`, `HEDERA_AGENT_ACCOUNT_ID`, `HEDERA_AGENT_PRIVATE_KEY`, `ADDON_SWARM`, `SWARM_*` (added to `.env.example`); routes `GET /api/photos/:hash` (used by `DisputeEvidence`) and `GET /api/intel/:commodity` (x402, ADDON_HEDERA); `LotView` gains `winners[{buyer, tokenAmount}]` and `gradeReport.tee_verified` (loose schema, no code change); seller profile payouts are rows `{lotId, kind, amount, currency}`; walk-in bid uses shared `BidResponse` shape `{bidId, tx}` | Pre-integration audit (D-84); S3 already reads these fields | S3, C | S2 | Minor, proposed, awaiting S3 ack |
+| ICR-004 | S1 (maxspxtr) | Minor: add `KEEPER_CHECKPOINT_BLOCKS=25` to section 4 and `.env.example` (keeper only, optional, default 25). No interface change | D-15 "every 2 blocks" is 0.4 s at Base's ~200 ms blocks (D-50), faster than one broadcast round trip; 25 blocks is ~5 s (D-54) | S1 | maxspxtr (S1) | Approved 2026-11-06 |
+| ICR-005 | S1 (maxspxtr) | Minor, v2 (S1 4.1): `uint64 asOf` appended to SignalOracle kind 1 and 3 bodies (stale guard, D-64); `RULING_TIMEOUT_BLOCKS=3000` in section 4 and `.env.example`, `DisputeResolver.expireDispute`, `DisputeExpired`, `disputeOf`, `disputeCount`, `rulingTimeoutBlocks` (D-65); `MarketSettlement.onDisputeOpened`, `disputedTokensOf`, `minRelistFloorOf` (3.1); receiver admin `setForwarder`, `setExpectedWorkflowOwner`; new errors from 3.1 and 4.1; regenerated `abi/generated.ts` (`signalOracleAbi`, `disputeResolverAbi` replace the stub ABIs). No section 7 event or existing signature changed | SoT 10: receivers drop stale reports, but kinds 1 and 3 had no time field; every lot state needs a timeout, and a ruling that never arrives would hold money forever | S1 (W1 encodes asOf), S2 (decodes new errors, may call `openDispute`/read `disputeOf`), S3 (dispute status) | maxspxtr (S1) | Approved 2026-11-06 |
+| ICR-006 | S1 (maxspxtr) | Minor: CRE bridge API (section 11.1, the body S2's director already sends) and bridge env vars in section 4 and `.env.example` (`CRE_BRIDGE_W1_MINUTES`, `CRE_BRIDGE_WEATHER_MINUTES`, `CRE_BRIDGE_CALENDAR_MINUTES`, `CRE_BRIDGE_BROADCAST`, `CRE_BRIDGE_W3`, `CRE_BRIDGE_TIMEOUT_MS`, `CRE_BIN`). W2 forced signals may carry `expiresAtBlock` instead of `hours` | S1 4.5 bridge; S2's director already posts `{ workflow: "w2-signals", forceSignals }` | S1, S2 (director, nothing to change) | maxspxtr (S1) | Approved 2026-11-06 |
+| ICR-007 | S2 (Rio-awsm) | Add `@fairtown/shared/env` (env loader moved from `scripts/doctor/env.ts`, node-only, not in the main index), `@fairtown/shared/fixtures` (`Persona`, `SellerMessage`, `SCENES`, `fixtureUrl`) and `fixtures/day.jsonl` (297 envelopes, all 24 event types, 7 scenes), `agents.json` (27 personas), `messages.json` (20 messages). Generated by `pnpm -F agents gen:fixtures` | S2 0.1 fixtures for S3; one tested env loader for services and doctor | S3, doctor | S2 | Minor, awaiting S3 ack |
+| ICR-008 | S2 (Rio-awsm) | Add `@fairtown/shared/arkiv`: the seven section 10 schemas as descriptors (`ARKIV_SCHEMAS`: columns, indexed, owner, flags) and SDK schemas (`ARKIV_SDK_SCHEMAS`). Money columns are `u256`, blocks `u64`, addresses `addr`, `details`/`mandate` are `bytes` JSON. Adds `@arkiv-network/sdk` 1.0.1 to shared | S2 2.1; S3 reads Arkiv with the same schemas | S3 | S2 | Minor, awaiting S3 ack |
+| ICR-009 | S2 (Rio-awsm) | Minor, section 11 and 4: new `POST /api/sessions/seller` `{ sellerId, pin }` -> `{ token, sellerId, expiresAt }` (2 h); `POST /api/handover/ticket` and `POST /api/noshow/contest` now need `Authorization: Bearer <seller session>` whose seller matches `sellerId` (401 no session, 403 wrong seller or not your lot). `fallbackUrl` is `${PUBLIC_WEB_URL}/scan#t=<base64url qrText>`. Walk-in bid response `{ bidId, tx }` (no shared schema yet). New env: `SELLER_PIN`, `TRUST_PROXY` (tunnel IP/CIDR), `WALKIN_BUDGET` (500), `WALKIN_CAP` (50), `LLM_MAX_RPM` (60, from S2 5.1), `CRE_BRIDGE_TOKEN` use, `CHAIN_BACKFILL_BLOCKS` (9000, S2 7.1), `VISION_TRUST_MODE`, `VISION_FALLBACK`, `VISION_FALLBACK_BASE_URL`, `VISION_FALLBACK_API_KEY`, `VISION_FALLBACK_MODEL` (S2 8.1). Draft `trace` (loose object) gains `model`, `fallback`, `verification: { state, label }`. No `packages/shared` code change | S2 6.1: the seller key signs only inside that seller's session (guide); no session existed in the contract | S3 `/sell`, `/scan`, `/walkin`; `.env.example` | S2 | Minor, proposed, awaiting S3 ack |
+| ICR-010 | S2 (Rio-awsm) | Minor: add `packages/shared/fixtures/day.recorded.jsonl` (516 envelopes, `full_day` played on FakeChain, chain events mapped by the relay's `ChainMapper`, `ts` = day start + block x 2 s), generated by `pnpm -F agents record`. `GET /api/director/status` adds `running[]` and `log[]` next to `scenario` and `step` (schema is loose, no code change) | S2 6.2 recorded day for S3 replay and the demo fallback | S3 | S2 | Minor, proposed, awaiting S3 ack |
+| ICR-011 | S2 (Rio-awsm) | Minor, sections 1, 3, 4, 11: add-ons run inside the agents service on 8787 (no `services/addons` on 8790); new env `CORS_ORIGINS`, `ENS_PRIVATE_KEY`, `HEDERA_AGENT_ACCOUNT_ID`, `HEDERA_AGENT_PRIVATE_KEY`, `ADDON_SWARM`, `SWARM_*` (added to `.env.example`); routes `GET /api/photos/:hash` (used by `DisputeEvidence`) and `GET /api/intel/:commodity` (x402, ADDON_HEDERA); `LotView` gains `winners[{buyer, tokenAmount}]` and `gradeReport.tee_verified` (loose schema, no code change); seller profile payouts are rows `{lotId, kind, amount, currency}`; walk-in bid uses shared `BidResponse` shape `{bidId, tx}` | Pre-integration audit (D-105); S3 already reads these fields | S3, C | S2 | Minor, proposed, awaiting S3 ack |

@@ -1,0 +1,8 @@
+# CRE project settings (S1 4.2). One target: local simulation against Base Sepolia.
+# Secrets come from the repo-root .env, passed with `-e ../.env` (never copied here). RPC_URL is the Base Sepolia RPC.
+# Your account's Base Sepolia mock forwarder (cre workflow supported-chains, 2026-11-06):
+# 0x82300bd7c3958625581cc2f77bc6464dcecdf3e5, the one the v2 receivers accept (D-67).
+local-simulation:
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia-base-1
+      url: ${RPC_URL}

@@ -1,7 +1,7 @@
 
 ## 2026-11-06, S2 3.1 backlog: ViemChain on Base Sepolia
 
-**Pulled from stream-1 without merging:** `deployments/*.json`, `packages/shared/src/abi/generated.ts`, price vectors and `.env.example` (ICR-003 windows x10). Records reconciled: S2 decisions renumbered D-54 to D-61, S2 ICRs to ICR-004 and ICR-005.
+**Pulled from stream-1 without merging:** `deployments/*.json`, `packages/shared/src/abi/generated.ts`, price vectors and `.env.example` (ICR-003 windows x10). Records reconciled: S2 decisions renumbered D-75 to D-82, S2 ICRs to ICR-007 and ICR-008.
 
 **ViemChain** (`src/chain/viem/ViemChain.ts`) implements `ChainAdapter` against the deployed contracts, using the call sequence from S1's smoke script: ERC-20 approve of Permit2 once per token, Permit2 allowance per auction, `submitBid(maxPriceQ96, amount, owner, "0x")`, events by HTTP log polling over every deployed contract plus each seen auction (no WebSocket needed).
 
@@ -34,10 +34,10 @@
 **Built:** `src/strategies/llm.ts` (persona prompt under 150 words from bio and kind, compact observation in display units, `BidAdvice` schema converted to a bigint `Decision` in code, 10-block cache, rule fallback, stats), `marketContext` (reference from `references.json`, last clears from Arkiv `price`, 30 s cache, survives Arkiv errors), `src/eval/bidderEval.ts` and `pnpm -F agents eval [n]` (report in `eval/report.{json,md}`, mock run in `eval/report-mock.*`). Runtime: strategies with `parallel: true` decide all agents on a lot at once, then bids execute in order; rules stay sequential. `index.ts` uses the LLM when `MOCK_AI=0`.
 
 **Gotchas found live:**
-- **The team LiteLLM key allows 60 requests/min across all roles.** The first live eval (200 decisions at once) "failed" with 40% invalid output: every one was an HTTP 429 that the gateway's JSON-retry loop swallowed, and its 2 retries made the overload worse. Fixes (D-66): `APICallError` maps to `rate_limited` (429) or `provider_error` and is never retried as bad JSON; optional `LLM_MAX_RPM` sliding window shared by all roles, bidder capped at 80% and falls back to rules at once, listing and vision wait. **Set `LLM_MAX_RPM=60` in `.env`.**
+- **The team LiteLLM key allows 60 requests/min across all roles.** The first live eval (200 decisions at once) "failed" with 40% invalid output: every one was an HTTP 429 that the gateway's JSON-retry loop swallowed, and its 2 retries made the overload worse. Fixes (D-87): `APICallError` maps to `rate_limited` (429) or `provider_error` and is never retried as bad JSON; optional `LLM_MAX_RPM` sliding window shared by all roles, bidder capped at 80% and falls back to rules at once, listing and vision wait. **Set `LLM_MAX_RPM=60` in `.env`.**
 - LiteLLM's 429 body includes a hashed key id; gateway errors now carry the status code only.
 - At 60 RPM a busy town can't ask the model for every agent every tick: hard passes skip the model, the cache absorbs repeats, and the rest fall back to rules. Expect a mix of LLM and rule reasons on a crowded lot.
-- The guide's "cache for 2 blocks" assumed 2 s blocks; at 200 ms it is 10 blocks (D-64).
+- The guide's "cache for 2 blocks" assumed 2 s blocks; at 200 ms it is 10 blocks (D-85).
 - First reasons leaned on "I'll bid the reference price" with no symbol; the prompt now asks for the symbol and one deciding fact.
 
 ## 2026-11-06, S2 5.2 sectors and handover behaviour
@@ -45,7 +45,7 @@
 **Built:** `src/sectors/engine.ts` (event queue plus a block scheduler: relists, truck lots on `TransportNeeded`, cold-store lots on `StorageNeeded`, storage requests, scripted pickup and drop-off tickets, compute access, no-show reports, dispute flag), `src/sectors/rules.ts` (D-50 durations, relist floor, truck pick with backhaul, slot-days, family pool split), `src/sectors/compute.ts` (simulated GPU provider, labelled), `src/handover/tickets.ts` (only place seller keys sign), `src/handover/disputes.ts` (`POST /api/disputes`, fixture photos for the scene). Runtime gained lot-only duty mandates so a parent's buyer can bid on its truck or storage lot through the same guardrails. Wired in `index.ts`; fake mode uses the D-12 durations (blocks are 2 s there).
 
 **Gotchas:**
-- Guardrail rate limit (6 bids per agent per minute, D-61) is wall-clock. A buyer busy outbidding on its main lot can be blocked for up to a minute on its own truck or storage lot. Tests use a fake clock; in the demo, watch the Lagos cold-storage chain.
+- Guardrail rate limit (6 bids per agent per minute, D-82) is wall-clock. A buyer busy outbidding on its main lot can be blocked for up to a minute on its own truck or storage lot. Tests use a fake clock; in the demo, watch the Lagos cold-storage chain.
 - Relist counting relies on the child lot's `parentLotId` pointing at the relisted lot (FakeChain does this). Check the real `MarketSettlement.relist` once S1 3.1 lands.
 - On Base Sepolia v1, `openDispute` is `NotImplemented` (D-48 stubs); the route returns 409 `NotImplemented` until S1 4.1.
 - No anvil (Foundry not installed). The guide's anvil chain test is covered by FakeChain scenarios now; a Base Sepolia run of cod, truck, pickup, drop-off needs S1 3.1 contracts.
@@ -70,7 +70,7 @@
 
 ## 2026-11-06, S2 6.2 director, load test, recorded day
 
-**Built:** `src/director/` (seven scenes plus `full_day` as block-offset scripts, FakeChain and CRE-bridge signal sinks, `POST /api/director/scenario`, `GET /api/director/status`), `src/load/loadTest.ts` with `pnpm -F agents load` (report in `eval/load-report.{json,md}`), `src/load/record.ts` with `pnpm -F agents record` (writes `packages/shared/fixtures/day.recorded.jsonl`, ICR-007).
+**Built:** `src/director/` (seven scenes plus `full_day` as block-offset scripts, FakeChain and CRE-bridge signal sinks, `POST /api/director/scenario`, `GET /api/director/status`), `src/load/loadTest.ts` with `pnpm -F agents load` (report in `eval/load-report.{json,md}`), `src/load/record.ts` with `pnpm -F agents record` (writes `packages/shared/fixtures/day.recorded.jsonl`, ICR-010).
 
 **Results:** 10 min, 50 agents, 6 lot kinds kept open on FakeChain at 200 ms blocks: 1,207 writes, 100% success, 0 nonce errors, relay p95 2 ms over 9,669 envelopes. Recording: 516 envelopes over 1,200 blocks, every lot ends `paid_in_full` (10) or `refunded` (2).
 
@@ -85,7 +85,7 @@
 **Built:** `src/chain/feed.ts` (shared chain watcher with backfill and replay to late subscribers), engine replay mode and idempotency guards, ledger retries and failure counters, natural-key dedupe on bid, reputation and signal, `src/health.ts` (extended `/api/health`), listing floor wired to Arkiv clears, `pnpm -F agents arkiv:stats` (needs only an access key) and `arkiv:seed`. Arkiv files: `arkiv/schema.md`, `friction.md`, `reach.md`, `why-arkiv.md`, `how-you-use-arkiv.md`; README Arkiv section.
 
 **Found while writing the files (fixed):**
-- Rabdi held 1 live Fairtown entity: the Base Sepolia runs never had the ledger on live Arkiv, and earlier test entities had short lifetimes. Seeded a simulated day (D-78).
+- Rabdi held 1 live Fairtown entity: the Base Sepolia runs never had the ledger on live Arkiv, and earlier test entities had short lifetimes. Seeded a simulated day (D-99).
 - `reputation`, `bid` and `signal` creates had no dedupe, so a restart replay would have duplicated them.
 - The listing floor's `recentPrices` hook was never wired, so floors ignored Arkiv clears.
 - Every component ran its own HTTP log poller against the rate-limited public RPC; now one feed.
@@ -116,7 +116,7 @@
 - `register` on the ETHRegistrar takes the subregistry and resolver, so `fairtown.eth` was registered already pointing at our UserRegistry (no separate `setSubregistry`).
 - No Solidity toolchain (Foundry not installed), so no custom registrar contract; the service wallet is the registrar.
 
-## 2026-11-06, S2 8.4 Hedera x402 market intel (8.3 World dropped, D-81)
+## 2026-11-06, S2 8.4 Hedera x402 market intel (8.3 World dropped, D-102)
 
 **Built:** `src/addons/hedera/intel.ts` (paid route, x402 resource server, intel from Arkiv and signals), `buyer.ts` (agent client with spending policy, mirror-node balances), LLM strategy `intel` option, `pnpm -F agents hedera:setup` and `hedera:pay`, `test/hedera.test.ts`. Behind `ADDON_HEDERA`.
 
@@ -134,10 +134,10 @@
 
 **Gotchas:** Homebrew formula broken (`File.exists?`); a light node shuts down if not funded in time; uploads return in milliseconds (Bee pushes chunks in the background), and bzz.limo served the file at once.
 
-## 2026-11-06, pre-integration audit and fixes (D-84, ICR-008)
+## 2026-11-06, pre-integration audit and fixes (D-105, ICR-011)
 
-Three read-only audits (build guide, contract, S3 branch) found integration blockers on the S2 side, now fixed: no CORS on agents or relay; `.env.example` `PUBLIC_WEB_URL` placeholder crashed config (also in `.env`, now `http://localhost:8080`); ICR-006 vars missing from `.env.example`; a chain or RPC error in a loop tick could crash the process and print the keyed RPC URL; `LotView` lacked `winners` and `gradeReport.tee_verified`; seller payouts were not in the row shape S3 reads; health `addons` always empty; no `clock` phase events; ledger expiries used 2 s blocks on Base Sepolia; doctor rows out of date.
+Three read-only audits (build guide, contract, S3 branch) found integration blockers on the S2 side, now fixed: no CORS on agents or relay; `.env.example` `PUBLIC_WEB_URL` placeholder crashed config (also in `.env`, now `http://localhost:8080`); ICR-009 vars missing from `.env.example`; a chain or RPC error in a loop tick could crash the process and print the keyed RPC URL; `LotView` lacked `winners` and `gradeReport.tee_verified`; seller payouts were not in the row shape S3 reads; health `addons` always empty; no `clock` phase events; ledger expiries used 2 s blocks on Base Sepolia; doctor rows out of date.
 
-**Left for S3** (their side, see the audit): seller session PIN step and `Authorization: Bearer` on ticket and contest (ICR-006); read the fallback link as `/scan#t=<base64url>`; use `ARKIV_SDK_SCHEMAS` from `@fairtown/shared/arkiv` (their local copy types `day` as u64 and `seller` as str; S2 writes str and addr). **Left for Combine:** a Vite proxy for `/api`, `/snapshot`, `/ws` behind the tunnel so phones reach the APIs.
+**Left for S3** (their side, see the audit): seller session PIN step and `Authorization: Bearer` on ticket and contest (ICR-009); read the fallback link as `/scan#t=<base64url>`; use `ARKIV_SDK_SCHEMAS` from `@fairtown/shared/arkiv` (their local copy types `day` as u64 and `seller` as str; S2 writes str and addr). **Left for Combine:** a Vite proxy for `/api`, `/snapshot`, `/ws` behind the tunnel so phones reach the APIs.
 
 **Not done (low):** pHash photo reuse (exact SHA-256 only); cod reference still illustrative; `LotView.bids` empty; bid `reason` and reputation `lastLotId` not filled; relay reconnect test.

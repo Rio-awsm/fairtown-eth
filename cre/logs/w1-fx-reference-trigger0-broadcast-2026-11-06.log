@@ -1,0 +1,26 @@
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: d41633710f5ed0d89e5f2b81dc3a852a2ba8e9824dd62d23af179f54b335de63
+  Config hash: 050426b17d7fa94f14e6d40af7473be250a8b8cd6064174d9c59e96a29d7eac7
+2026-11-06T13:27:58Z [SIMULATION] Simulator Initialized
+2026-11-06T13:27:58Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T13:27:58Z [USER LOG] W1 fx: source https://api.frankfurter.dev/v2/rates?base=USD&quotes=EUR,NOK,INR,KES,NGN dates [EUR=2026-11-06,NOK=2026-11-06,INR=2026-11-06,KES=2026-11-06,NGN=2026-11-06] asOf 1793951878
+2026-11-06T13:28:00Z [USER LOG] W1 fx EUR = 0.88915000 per USD (perUsdE8 88915000): written 0xc2082a7263a97516eb7b65ec8c812ede9ef261ea3b050e6d372c141b15cb22ca
+2026-11-06T13:28:03Z [USER LOG] W1 fx NOK = 9.27570000 per USD (perUsdE8 927570000): written 0x31aeb9fcf9b8439d4b41ccf85eda8383aed56878dda1b6e7dd0a45680825d06b
+2026-11-06T13:28:04Z [USER LOG] W1 fx INR = 94.45000000 per USD (perUsdE8 9445000000): written 0x661d1b95f66ed4c96624504ce4e52604fdec93b6e912e7761573450fe6336c48
+2026-11-06T13:28:07Z [USER LOG] W1 fx KES = 129.81000000 per USD (perUsdE8 12981000000): written 0x9dfafa940ba2513206c8258312ca84fc9f74b89cf332fc2206a39a7f087d6d4b
+2026-11-06T13:28:09Z [USER LOG] W1 fx NGN = 1346.12000000 per USD (perUsdE8 134612000000): written 0xd37247043d2b5fb2ddcf10e697eb7d551c1e9206e9fcf5cd7dd20e9bc606cc53
+✓ Workflow Simulation Result:
+"W1 fx: 5 written, 0 unconfirmed, 0 failed, 0 skipped"
+2026-11-06T13:28:09Z [SIMULATION] Execution finished signal received
+2026-11-06T13:28:09Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯

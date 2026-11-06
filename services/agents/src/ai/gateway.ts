@@ -28,7 +28,7 @@ export class AiError extends Error {
   }
 }
 
-// fallbacks: answered on a JSON retry (attempt 2 or 3). switched: answered by the fallback provider (vision, D-79).
+// fallbacks: answered on a JSON retry (attempt 2 or 3). switched: answered by the fallback provider (vision, D-100).
 type Counters = { calls: number; ok: number; fallbacks: number; failures: number; timeouts: number; switched: number }
 const emptyCounters = (): Counters => ({ calls: 0, ok: 0, fallbacks: 0, failures: 0, timeouts: 0, switched: 0 })
 
@@ -46,7 +46,7 @@ export type GatewayOptions = {
 const apiError = (role: AiRole, e: unknown) =>
   APICallError.isInstance(e) ? new AiError(e.statusCode === 429 ? "rate_limited" : "provider_error", `${role}: provider HTTP ${e.statusCode ?? "error"}`, e.statusCode) : undefined
 
-// D-79: after a 402 (credits gone) the primary vision provider is skipped for 10 minutes; after 3 failures in a row, 1 minute.
+// D-100: after a 402 (credits gone) the primary vision provider is skipped for 10 minutes; after 3 failures in a row, 1 minute.
 const PAUSE_PAYMENT_MS = 10 * 60_000
 const PAUSE_FAILURES_MS = 60_000
 const FAILURES_TO_PAUSE = 3
@@ -156,7 +156,7 @@ export function createGateway(opts: GatewayOptions) {
       const started = Date.now()
       const ms = input.timeoutMs ?? defaultTimeoutMs
       const fb = role === "vision" ? visionFallback : undefined
-      // With a fallback, the primary gets at most 10 s so a slow 0G answer still leaves the fallback time (D-79).
+      // With a fallback, the primary gets at most 10 s so a slow 0G answer still leaves the fallback time (D-100).
       const attempt = async (target?: RoleTarget) => {
         const budget = fb && !target ? Math.min(ms, PRIMARY_MAX_MS) : ms
         const signal = AbortSignal.timeout(budget)

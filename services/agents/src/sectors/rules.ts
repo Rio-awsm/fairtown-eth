@@ -21,7 +21,7 @@ export type SectorRules = {
   storageFloor: Record<Currency, bigint> // per slot_day
 }
 
-// D-67
+// D-88
 export const DEFAULT_RULES: SectorRules = {
   auctionBlocks: AUCTION_BLOCKS,
   pickupBlocks: PICKUP_BLOCKS,

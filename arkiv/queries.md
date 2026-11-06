@@ -38,4 +38,4 @@ const all = { $key: true, $owner: true, $expiresAt: true } as const
 | signal | writer | until the signal expires | |
 | agent | agent wallet | 30 days | permissionlessExtension |
 
-The 27 agent wallets exist (HD from `AGENT_MNEMONIC`) but hold no Rabdi gas yet, so the writer key `0x8BA90d413a1b48321De0D77CCF8C201A7086b2ef` owns every entity today (D-60). `pnpm -F agents arkiv:stats` runs these against Rabdi with only an access key.
+The 27 agent wallets exist (HD from `AGENT_MNEMONIC`) but hold no Rabdi gas yet, so the writer key `0x8BA90d413a1b48321De0D77CCF8C201A7086b2ef` owns every entity today (D-81). `pnpm -F agents arkiv:stats` runs these against Rabdi with only an access key.

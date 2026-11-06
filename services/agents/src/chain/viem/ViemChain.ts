@@ -7,8 +7,8 @@ import {
   lotTokenAbi,
   marketSettlementAbi,
   mockStableAbi,
-  stubDisputeResolverAbi,
-  stubSignalOracleAbi,
+  disputeResolverAbi,
+  signalOracleAbi,
 } from "@fairtown/shared/abi"
 import type { Deployment } from "@fairtown/shared/addresses"
 import { HANDOVER_TYPES, handoverDomain, type HandoverMessage, type HandoverTicket } from "@fairtown/shared/handover"
@@ -44,8 +44,8 @@ const EVENTS_ABI = [
   ...chainTriggerAbi,
   ...agentRegistryAbi,
   ...continuousClearingAuctionAbi,
-  ...stubSignalOracleAbi,
-  ...stubDisputeResolverAbi,
+  ...signalOracleAbi,
+  ...disputeResolverAbi,
 ].filter((x) => x.type === "event") as Abi
 
 export type ViemChainOptions = {
@@ -260,7 +260,7 @@ export class ViemChain implements ChainAdapter {
     return { tx: r.transactionHash, lotId: ev.args.lotId, auction: lc(ev.args.auction), token: lc(ev.args.token) }
   }
 
-  // The executor passes base units; the price goes on chain as Q96 rounded up to the auction tick (D-54).
+  // The executor passes base units; the price goes on chain as Q96 rounded up to the auction tick (D-75).
   async submitBid(from: Address, bid: BidInput) {
     const { auction, tick } = await this.cached(bid.lotId)
     const priceQ96 = ceilToTick(toQ96(bid.maxPerUnit), tick)

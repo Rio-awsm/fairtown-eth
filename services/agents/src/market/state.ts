@@ -10,7 +10,7 @@ import type { Signal } from "../strategies/llm"
 export type LiveSignal = Signal & { id: bigint; expiresAtBlock: bigint }
 export type Fx = z.infer<typeof FxResponse>
 
-// D-70 (multipliers, needs Rio-awsm): which sectors a signal kind moves, and how hard. Severity is 1 to 5.
+// D-91 (multipliers, needs Rio-awsm): which sectors a signal kind moves, and how hard. Severity is 1 to 5.
 export const SIGNAL_SECTORS: Record<SignalKind, readonly Sector[]> = {
   weather: ["fish", "produce"],
   festival: ["flowers", "produce"],

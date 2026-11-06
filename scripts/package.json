@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "doctor": "tsx doctor.ts",
+    "chain:fork": "tsx chain-fork.ts",
+    "with-env": "tsx with-env.ts",
     "test": "vitest run",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@fairtown/shared": "workspace:*",
     "tsx": "catalog:",
-    "@fairtown/shared": "workspace:*"
+    "viem": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

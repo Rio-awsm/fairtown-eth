@@ -3,7 +3,7 @@ import type { Decision, Observation, Strategy } from "../runtime/types"
 const fmt = (v: bigint, cur: string) => `${cur === "EUR" ? "€" : "$"}${(Number(v) / 1e6).toFixed(2)}`
 const STEP_TICKS = 3n
 
-// Signals scale the step (D-70): 3 ticks normally, up to 5 in a severity-5 storm or festival, down to 2 in a dip.
+// Signals scale the step (D-91): 3 ticks normally, up to 5 in a severity-5 storm or festival, down to 2 in a dip.
 export const stepTicks = (urgencyBps = 10000) => {
   const t = (STEP_TICKS * BigInt(urgencyBps) + 9999n) / 10000n
   return t < 1n ? 1n : t

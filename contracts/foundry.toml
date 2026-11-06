@@ -1,0 +1,46 @@
+[profile.default]
+src = "src"
+out = "out"
+test = "test"
+script = "script"
+libs = ["lib"]
+# Explicit remappings.txt only: auto-detection pulls dozens of nested CCA deps (optimism, extra OZ and solady copies).
+auto_detect_remappings = false
+solc = "0.8.26"
+optimizer = true
+optimizer_runs = 200
+bytecode_hash = "none"
+ffi = false
+fs_permissions = [
+  { access = "read", path = "./" },
+  { access = "read-write", path = "../packages/shared/fixtures" },
+  { access = "read-write", path = "../deployments" },
+  { access = "read-write", path = "../services/keeper/test/fixtures" },
+]
+
+# Mirrors lib/continuous-clearing-auction/foundry.toml at v2.1.0: the CCA factory (which embeds the
+# ~20 KB auction creation code) only compiles via IR. Kept at CCA's 11111 runs so the factory and
+# auction match what Uniswap tests; our own contracts use 200 (DECISIONS D-36).
+additional_compiler_profiles = [{ name = "via_ir", optimizer_runs = 11111, via_ir = true }]
+compilation_restrictions = [
+  { paths = "lib/continuous-clearing-auction/src/ContinuousClearingAuctionFactory.sol", via_ir = true },
+]
+
+[profile.default.fuzz]
+runs = 256
+
+[rpc_endpoints]
+base_sepolia = "${RPC_URL}"
+
+[etherscan]
+base_sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 84532 }
+
+[lint]
+# Gas lint only: PriceMath/Schedules revert on bad input by design; tests sweep them in loops.
+exclude_lints = ["require-revert-in-loop"]
+
+[fmt]
+line_length = 120
+tab_width = 4
+quote_style = "double"
+number_underscore = "thousands"
