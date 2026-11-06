@@ -1,0 +1,306 @@
+@import "@fontsource-variable/inter-tight";
+
+/*
+ * The night skin (D-113): the landing's language for every app page and the town HUD. Night
+ * #0f1626, Inter Tight, white text at 72% and 60% (46% fails 4.5:1 small), hairlines, lime for the
+ * one action that matters, cyan for data and links, pills for buttons and badges.
+ *
+ * Unlayered on purpose: Tailwind 4 puts its utilities and our pixel-era components in cascade
+ * layers, and plain CSS outside a layer wins over them, so the existing markup (rpg-* classes,
+ * parchment ink colours) takes this look without touching page logic or accessible names.
+ */
+/* No grass field behind these pages: the night runs to the bottom of the window. */
+html:has(.ft-skin),
+body:has(.ft-skin) {
+  background: #0f1626;
+}
+.ft-site {
+  min-height: 100vh;
+  background: #0f1626;
+}
+
+.ft-skin {
+  --night: #0f1626;
+  --night-2: #131c30;
+  --ink: #f4f6fa;
+  --ink-72: rgb(244 246 250 / 0.72);
+  --ink-60: rgb(244 246 250 / 0.6);
+  --pill: #2a3245;
+  --lime: #c6ff2e;
+  --cyan: #3fd8ff;
+  --gold: #ffc857;
+  --bad: #ff8a7a;
+  --ok: #7ee2a8;
+  --hair: rgb(255 255 255 / 0.22);
+  --line: rgb(255 255 255 / 0.1);
+  --glass: rgb(11 17 32 / 0.82);
+  color: var(--ink);
+  font-family: "Inter Tight Variable", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.ft-skin .font-display,
+.ft-skin h1,
+.ft-skin h2,
+.ft-skin h3,
+.ft-skin h4 {
+  font-family: inherit;
+  letter-spacing: -0.015em;
+}
+.ft-skin h2 {
+  font-weight: 600;
+}
+
+/* Page titles: set like the landing's headline, smaller. */
+.ft-skin .rpg-banner {
+  display: block;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink);
+  font-size: clamp(2rem, 1.4rem + 2.2vw, 3rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+/* Windows become night glass with a hairline; wells and notes, quieter panels inside them. */
+.ft-skin .rpg-window {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px -22px rgb(0 0 0 / 0.85);
+  color: var(--ink);
+}
+.ft-skin .rpg-well,
+.ft-skin .rpg-note,
+.ft-skin .rpg-planks {
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: none;
+  color: var(--ink);
+}
+/* A card you can pick: lifts, and lights lime when chosen. */
+.ft-skin .rpg-card {
+  border-radius: 16px;
+  transition:
+    transform 150ms ease-out,
+    border-color 150ms ease-out;
+}
+.ft-skin .rpg-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--hair);
+}
+.ft-skin .rpg-card[aria-pressed="true"],
+.ft-skin .rpg-card[aria-current="true"],
+.ft-skin .rpg-card[aria-selected="true"] {
+  border-color: rgb(198 255 46 / 0.7);
+  box-shadow: 0 0 0 1px rgb(198 255 46 / 0.35);
+}
+
+/* Buttons become pills: grey by default, lime for go, cyan when on, red outline for danger. */
+.ft-skin .rpg-btn {
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--pill);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+  text-shadow: none;
+  transition:
+    transform 0.2s,
+    filter 0.2s;
+}
+.ft-skin .rpg-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.12);
+}
+.ft-skin .rpg-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+.ft-skin .rpg-btn:disabled {
+  opacity: 0.45;
+}
+.ft-skin .rpg-btn-go {
+  background: var(--lime);
+  border-color: transparent;
+  color: var(--night);
+}
+.ft-skin .rpg-btn-quiet {
+  background: rgb(255 255 255 / 0.05);
+  border-color: var(--hair);
+}
+.ft-skin .rpg-btn-info,
+.ft-skin .rpg-btn[aria-pressed="true"] {
+  background: rgb(63 216 255 / 0.14);
+  border-color: rgb(63 216 255 / 0.6);
+  color: var(--cyan);
+}
+.ft-skin .rpg-btn-danger {
+  background: rgb(255 138 122 / 0.12);
+  border-color: rgb(255 138 122 / 0.6);
+  color: var(--bad);
+}
+.ft-skin .rpg-btn-sm {
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  font-size: 0.75rem;
+}
+
+/* Fields: a dark pill-cornered well with a cyan focus ring. */
+.ft-skin .rpg-input {
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  color: var(--ink);
+  box-shadow: none;
+}
+.ft-skin .rpg-input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgb(63 216 255 / 0.2);
+}
+.ft-skin .rpg-input::placeholder {
+  color: var(--ink-60);
+}
+.ft-skin select.rpg-input option {
+  background: var(--night);
+}
+.ft-skin .rpg-tab {
+  border-radius: 999px;
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-72);
+  box-shadow: none;
+}
+.ft-skin .rpg-tab[aria-selected="true"],
+.ft-skin .rpg-tab[aria-current="true"],
+.ft-skin .rpg-tab[aria-current="page"] {
+  background: var(--ink);
+  color: var(--night);
+}
+
+/* Badges become small pills: outlined by default; LIVE red, TEST MONEY and good news lime. */
+.ft-skin .rpg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.6rem;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  background: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  box-shadow: none;
+}
+.ft-skin .rpg-badge.bg-brick {
+  background: #e0483b;
+  border-color: transparent;
+  color: #fff;
+}
+.ft-skin .rpg-badge.bg-moss {
+  background: none;
+  color: var(--lime);
+  border-color: rgb(198 255 46 / 0.45);
+}
+.ft-skin .rpg-badge.bg-coin {
+  background: none;
+  color: var(--gold);
+  border-color: rgb(255 200 87 / 0.5);
+}
+.ft-skin .rpg-badge.bg-plum-tint,
+.ft-skin .rpg-badge.bg-harbour {
+  background: none;
+  color: var(--cyan);
+  border-color: rgb(63 216 255 / 0.45);
+}
+.ft-skin .rpg-badge.bg-meadow-tint {
+  background: none;
+  color: var(--ok);
+  border-color: rgb(126 226 168 / 0.45);
+}
+.ft-skin .rpg-badge.bg-brick-tint {
+  background: none;
+  color: var(--bad);
+  border-color: rgb(255 138 122 / 0.5);
+}
+.ft-skin .rpg-badge > span[aria-hidden="true"] {
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* Parchment-era ink and tint colours, mapped to night. */
+.ft-skin .text-ink,
+.ft-skin .text-parchment-light {
+  color: var(--ink);
+}
+.ft-skin .text-ink-soft {
+  color: var(--ink-72);
+}
+.ft-skin .text-brick {
+  color: var(--bad);
+}
+.ft-skin .text-gold-ink {
+  color: var(--gold);
+}
+.ft-skin .text-moss-ink {
+  color: var(--ok);
+}
+.ft-skin .text-harbour,
+.ft-skin a.font-mono {
+  color: var(--cyan);
+}
+.ft-skin .bg-meadow-tint {
+  background-color: rgb(126 226 168 / 0.1);
+}
+.ft-skin .bg-brick-tint {
+  background-color: rgb(255 138 122 / 0.12);
+}
+.ft-skin .bg-parchment,
+.ft-skin .bg-parchment-deep {
+  background-color: rgb(255 255 255 / 0.05);
+}
+.ft-skin .bg-coin:not(.rpg-badge) {
+  background-color: var(--cyan);
+}
+.ft-skin .bg-brick:not(.rpg-badge) {
+  background-color: #e0483b;
+}
+.ft-skin .bg-moss:not(.rpg-badge) {
+  background-color: #2f9e6a;
+}
+.ft-skin table th {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+}
+.ft-skin table td,
+.ft-skin table th {
+  border-color: var(--line);
+}
+.ft-skin main a:not([class]) {
+  color: var(--cyan);
+}
+.ft-skin :focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-skin .rpg-btn,
+  .ft-skin .rpg-card {
+    transition: none;
+  }
+}

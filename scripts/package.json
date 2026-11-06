@@ -5,11 +5,24 @@
   "type": "module",
   "scripts": {
     "doctor": "tsx doctor.ts",
+    "chain:fork": "tsx chain-fork.ts",
+    "with-env": "tsx with-env.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "e2e:lot": "tsx e2e/lot.ts",
+    "e2e:town-live": "tsx e2e/town-live.ts",
+    "dev:all": "tsx dev-all.ts",
+    "e2e:first-lot": "tsx e2e/first-lot.ts",
+    "e2e:trust": "tsx e2e/trust.ts",
+    "e2e:chainlink": "tsx e2e/chainlink.ts",
+    "e2e:arkiv": "tsx e2e/arkiv.ts",
+    "e2e:day": "tsx e2e/day.ts"
   },
   "dependencies": {
-    "tsx": "catalog:"
+    "@arkiv-network/sdk": "1.0.1",
+    "@fairtown/shared": "workspace:*",
+    "tsx": "catalog:",
+    "viem": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

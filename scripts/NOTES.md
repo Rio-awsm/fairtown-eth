@@ -9,7 +9,7 @@
 
 **dotenv-expand jumped to 1000.0.0.**
 - npm shows `dotenv-expand` 13.0.0 (2026-04-17), then 1000.0.0 (2026-07-29) as `latest`, same maintainer.
-- The doctor reads `.env` with private keys, so the plan's dotenv plus dotenv-expand was replaced by Node's built-in `util.parseEnv` and a tested `${VAR}` expander (`scripts/doctor/env.ts`). D-34.
+- The doctor reads `.env` with private keys, so the plan's dotenv plus dotenv-expand was replaced by Node's built-in `util.parseEnv` and a tested `${VAR}` expander (now `packages/shared/src/env.ts`, ICR-001). D-34.
 - Node's `--env-file` and `parseEnv` do not expand `${VAR}`. Every service that loads `.env.example`-style files needs expansion, or values like `VISION_BASE_URL=${LLM_BASE_URL}` arrive as literal text.
 
 **`pnpm test:all` needs Foundry and Bun.**

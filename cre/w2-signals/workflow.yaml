@@ -1,0 +1,8 @@
+# CRE workflow settings (S1 4.3). Trigger 0 writes weather signals, trigger 1 calendar and forced signals (kind 2).
+local-simulation:
+  user-workflow:
+    workflow-name: "w2-signals"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+    secrets-path: ""

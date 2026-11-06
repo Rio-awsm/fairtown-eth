@@ -11,13 +11,17 @@
     "./api": "./src/api.ts",
     "./handover": "./src/handover.ts",
     "./addresses": "./src/addresses.ts",
-    "./abi": "./src/abi/generated.ts"
+    "./abi": "./src/abi/generated.ts",
+    "./env": "./src/env.ts",
+    "./fixtures": "./src/fixtures.ts",
+    "./arkiv": "./src/arkiv.ts"
   },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@arkiv-network/sdk": "1.0.1",
     "viem": "catalog:",
     "zod": "catalog:"
   },

@@ -1,0 +1,640 @@
+[
+  {
+    "id": "ingrid",
+    "name": "Ingrid Solheim",
+    "role": "SELLER",
+    "kind": "seller",
+    "building": "fish_dock",
+    "sprite": "fisher",
+    "place": "bergen",
+    "currency": "EUR",
+    "budget": "0",
+    "sectors": [
+      "fish"
+    ],
+    "scenes": [
+      "bergen_cod"
+    ],
+    "bio": "Runs a small boat out of Bergen. Lands cod before dawn.",
+    "fixtureAgentId": "0xb7a393bcebc840a4b1e1c5a678ee3bead10ef92a"
+  },
+  {
+    "id": "ganesh",
+    "name": "Ganesh Pawar",
+    "role": "SELLER",
+    "kind": "seller",
+    "building": "flower_hall",
+    "sprite": "farmer",
+    "place": "pune",
+    "currency": "USD",
+    "budget": "0",
+    "sectors": [
+      "flowers"
+    ],
+    "scenes": [
+      "diwali_marigold"
+    ],
+    "bio": "Grows marigolds near Pune. Diwali is his biggest week.",
+    "fixtureAgentId": "0xcd39738e1c33a8410d06c1546688fa4935fe5e8d"
+  },
+  {
+    "id": "wanjiru",
+    "name": "Wanjiru Kamau",
+    "role": "SELLER",
+    "kind": "seller",
+    "building": "flower_hall",
+    "sprite": "farmer",
+    "place": "nairobi",
+    "currency": "EUR",
+    "budget": "0",
+    "sectors": [
+      "flowers"
+    ],
+    "scenes": [
+      "rose_flight"
+    ],
+    "bio": "Rose farm at Naivasha. Ships to Amsterdam by air.",
+    "fixtureAgentId": "0x98086a605eef6c76b017e9c6a4c9dea9debc3efb"
+  },
+  {
+    "id": "amina",
+    "name": "Amina Bello",
+    "role": "SELLER",
+    "kind": "seller",
+    "building": "harvest_hall",
+    "sprite": "trader",
+    "place": "lagos",
+    "currency": "USD",
+    "budget": "0",
+    "sectors": [
+      "produce"
+    ],
+    "scenes": [
+      "lagos_cold"
+    ],
+    "bio": "Sells tomatoes at Mile 12 market in Lagos.",
+    "fixtureAgentId": "0x507c3dfb2523ab129e9425128db841c06f0e40f2"
+  },
+  {
+    "id": "pedro",
+    "name": "Pedro Alvarez",
+    "role": "SELLER",
+    "kind": "seller",
+    "building": "harvest_hall",
+    "sprite": "farmer",
+    "place": "houston",
+    "currency": "USD",
+    "budget": "0",
+    "sectors": [
+      "produce"
+    ],
+    "seeded": {
+      "proven": true
+    },
+    "scenes": [
+      "dallas_return"
+    ],
+    "bio": "Onion farm outside Houston. Seeded as a proven seller, disclosed.",
+    "fixtureAgentId": "0xd4e4cfa571538f4bab0557b82f0b31ff69ea8d67"
+  },
+  {
+    "id": "coastal_catch",
+    "name": "Coastal Catch",
+    "role": "SELLER",
+    "kind": "seller",
+    "building": "fish_dock",
+    "sprite": "fisher",
+    "place": "bergen",
+    "currency": "EUR",
+    "budget": "0",
+    "sectors": [
+      "fish"
+    ],
+    "seeded": {
+      "noShow": true
+    },
+    "scenes": [
+      "no_show"
+    ],
+    "bio": "Seeded seller that takes the advance and never hands over. Shown on purpose.",
+    "fixtureAgentId": "0x7187d75d2988a509bfe652f7fa811f8de12a6f32"
+  },
+  {
+    "id": "hanse_kitchen",
+    "name": "Hanse Kitchen Group",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "chef",
+    "place": "hamburg",
+    "currency": "EUR",
+    "budget": "20000000000",
+    "sectors": [
+      "fish"
+    ],
+    "mandate": {
+      "commodities": [
+        "cod",
+        "haddock"
+      ],
+      "maxPerUnit": "9400000",
+      "minGrade": "fresh_a",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "bergen_cod",
+      "no_show"
+    ],
+    "bio": "Hamburg restaurant group. Buys Norwegian cod daily.",
+    "fixtureAgentId": "0x092c4a7d30a6644b40542d7f0527124ea1347a24"
+  },
+  {
+    "id": "fjord_processing",
+    "name": "Fjord Processing",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "worker",
+    "place": "bergen",
+    "currency": "EUR",
+    "budget": "15000000000",
+    "sectors": [
+      "fish"
+    ],
+    "mandate": {
+      "commodities": [
+        "cod",
+        "haddock"
+      ],
+      "maxPerUnit": "9100000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "bergen_cod",
+      "no_show"
+    ],
+    "bio": "Bergen fish processor.",
+    "fixtureAgentId": "0x8a8a048516897086cc189c6278cc67c8f07010c8"
+  },
+  {
+    "id": "oslo_fiskehall",
+    "name": "Oslo Fiskehall",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "chef",
+    "place": "oslo",
+    "currency": "EUR",
+    "budget": "8000000000",
+    "sectors": [
+      "fish"
+    ],
+    "mandate": {
+      "commodities": [
+        "cod",
+        "haddock"
+      ],
+      "maxPerUnit": "8000000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "bergen_cod",
+      "no_show"
+    ],
+    "bio": "Fish hall in Oslo. Bids low, buys when others pass.",
+    "fixtureAgentId": "0xe26601ba8b5fbd9704608757788956ace971a2d8"
+  },
+  {
+    "id": "gulf_produce",
+    "name": "Gulf Produce",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "trader",
+    "place": "houston",
+    "currency": "USD",
+    "budget": "10000000000",
+    "sectors": [
+      "truck",
+      "produce"
+    ],
+    "mandate": {
+      "commodities": [
+        "truck_capacity",
+        "onion",
+        "tomato"
+      ],
+      "maxPerUnit": "70000",
+      "place": "dallas",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "dallas_return"
+    ],
+    "bio": "Houston wholesaler moving produce up from Dallas.",
+    "fixtureAgentId": "0x474651a9c1ed8f715228c89fd1427bf3d443eb45"
+  },
+  {
+    "id": "atlas_labs",
+    "name": "Atlas Labs",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "robot",
+    "place": "any_dc",
+    "currency": "USD",
+    "budget": "5000000000",
+    "sectors": [
+      "compute"
+    ],
+    "mandate": {
+      "commodities": [
+        "gpu_hour"
+      ],
+      "maxPerUnit": "2200000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "gpu_night"
+    ],
+    "bio": "AI lab agent with its own compute budget.",
+    "fixtureAgentId": "0x7f3c8ce5a30810673167a9c77dd8c49de87ba1de"
+  },
+  {
+    "id": "kestrel_ai",
+    "name": "Kestrel AI",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "robot",
+    "place": "any_dc",
+    "currency": "USD",
+    "budget": "1500000000",
+    "sectors": [
+      "compute"
+    ],
+    "mandate": {
+      "commodities": [
+        "gpu_hour"
+      ],
+      "maxPerUnit": "1950000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "gpu_night"
+    ],
+    "bio": "Small model shop that buys idle GPU hours.",
+    "fixtureAgentId": "0xecba90c94b94bae2caaf703229fe1b89e3dd59dc"
+  },
+  {
+    "id": "vector_mind",
+    "name": "Vector Mind",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "robot",
+    "place": "any_dc",
+    "currency": "USD",
+    "budget": "400000000",
+    "sectors": [
+      "compute"
+    ],
+    "mandate": {
+      "commodities": [
+        "gpu_hour"
+      ],
+      "maxPerUnit": "2000000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "gpu_night"
+    ],
+    "bio": "Research agent on a tight budget.",
+    "fixtureAgentId": "0xf97af75534e4d80204a5861629130b4d7e65fca9"
+  },
+  {
+    "id": "dadar_traders",
+    "name": "Dadar Flower Traders",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "trader",
+    "place": "mumbai",
+    "currency": "USD",
+    "budget": "6000000000",
+    "sectors": [
+      "flowers"
+    ],
+    "mandate": {
+      "commodities": [
+        "marigold"
+      ],
+      "maxPerUnit": "1200000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "diwali_marigold"
+    ],
+    "bio": "Flower wholesaler at Dadar market, Mumbai.",
+    "fixtureAgentId": "0xb2acf66a642b21d8c6cd6a8dad997e7087eed41c"
+  },
+  {
+    "id": "pune_phool",
+    "name": "Pune Phool Mandi",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "trader",
+    "place": "pune",
+    "currency": "USD",
+    "budget": "2000000000",
+    "sectors": [
+      "flowers"
+    ],
+    "mandate": {
+      "commodities": [
+        "marigold"
+      ],
+      "maxPerUnit": "1000000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "diwali_marigold"
+    ],
+    "bio": "Local flower market buyer in Pune.",
+    "fixtureAgentId": "0x977597279cc519ff235c90e7b17e9986f19cca6b"
+  },
+  {
+    "id": "bloom_co",
+    "name": "Bloom & Co",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "florist",
+    "place": "amsterdam",
+    "currency": "EUR",
+    "budget": "8000000000",
+    "sectors": [
+      "flowers",
+      "truck"
+    ],
+    "mandate": {
+      "commodities": [
+        "rose",
+        "cargo_slot"
+      ],
+      "maxPerUnit": "4800000",
+      "minGrade": "bloom_a",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "rose_flight"
+    ],
+    "bio": "Amsterdam florist buying roses for Valentine's Day.",
+    "fixtureAgentId": "0x652d3abaac261166782fed6d5dc39fdac381d151"
+  },
+  {
+    "id": "amstel_bloemen",
+    "name": "Amstel Bloemen",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "florist",
+    "place": "amsterdam",
+    "currency": "EUR",
+    "budget": "3000000000",
+    "sectors": [
+      "flowers"
+    ],
+    "mandate": {
+      "commodities": [
+        "rose"
+      ],
+      "maxPerUnit": "4200000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "rose_flight"
+    ],
+    "bio": "Second Amsterdam florist, bids conservatively.",
+    "fixtureAgentId": "0x107e906d2eab2cab2afdf54c82a5b1c6ea99327c"
+  },
+  {
+    "id": "mile12_coop",
+    "name": "Mile 12 Cooperative",
+    "role": "BUYER",
+    "kind": "buyer",
+    "building": "town_gate",
+    "sprite": "worker",
+    "place": "lagos",
+    "currency": "USD",
+    "budget": "5000000000",
+    "sectors": [
+      "produce",
+      "storage"
+    ],
+    "mandate": {
+      "commodities": [
+        "tomato",
+        "storage_slot"
+      ],
+      "maxPerUnit": "550000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "lagos_cold"
+    ],
+    "bio": "Traders' cooperative at Mile 12 market.",
+    "fixtureAgentId": "0x359af009694a1929ba9be0b35c2e28eb5e7432c5"
+  },
+  {
+    "id": "lars",
+    "name": "Lars",
+    "role": "TRUCK",
+    "kind": "truck",
+    "building": "freight_yard",
+    "sprite": "driver",
+    "place": "bergen",
+    "currency": "EUR",
+    "budget": "0",
+    "sectors": [
+      "truck"
+    ],
+    "scenes": [
+      "bergen_cod"
+    ],
+    "bio": "Reefer truck between Bergen and Oslo.",
+    "fixtureAgentId": "0x70c570b6b976d7a09c71fe06f721cdd9bd02871b"
+  },
+  {
+    "id": "maya",
+    "name": "Maya Torres",
+    "role": "TRUCK",
+    "kind": "truck",
+    "building": "freight_yard",
+    "sprite": "driver",
+    "place": "dallas",
+    "currency": "USD",
+    "budget": "0",
+    "sectors": [
+      "truck"
+    ],
+    "seeded": {
+      "proven": true
+    },
+    "scenes": [
+      "dallas_return"
+    ],
+    "bio": "Dallas truck owner. Seeded as proven, disclosed.",
+    "fixtureAgentId": "0x59941a6cf33b90fac101604ffd4628627bea9422"
+  },
+  {
+    "id": "kofi",
+    "name": "Kofi Mensah",
+    "role": "TRUCK",
+    "kind": "truck",
+    "building": "freight_yard",
+    "sprite": "driver",
+    "place": "lagos",
+    "currency": "USD",
+    "budget": "0",
+    "sectors": [
+      "truck"
+    ],
+    "scenes": [
+      "lagos_cold"
+    ],
+    "bio": "Runs a box truck around Lagos markets.",
+    "fixtureAgentId": "0x55a3d218b7f0f9c2f0792e409fc91b4478eb5eef"
+  },
+  {
+    "id": "nairobi_air_cargo",
+    "name": "Nairobi Air Cargo",
+    "role": "TRUCK",
+    "kind": "truck",
+    "building": "freight_yard",
+    "sprite": "pilot",
+    "place": "nairobi",
+    "currency": "EUR",
+    "budget": "0",
+    "sectors": [
+      "truck"
+    ],
+    "scenes": [
+      "rose_flight"
+    ],
+    "bio": "Sells cargo slots on the Nairobi to Amsterdam flight.",
+    "fixtureAgentId": "0x35dfdbedf312d05f8da504117fcb87126c671b15"
+  },
+  {
+    "id": "lagos_cold_hub",
+    "name": "Lagos Cold Hub",
+    "role": "STORAGE",
+    "kind": "cold_store",
+    "building": "cold_vault",
+    "sprite": "worker",
+    "place": "lagos",
+    "currency": "USD",
+    "budget": "0",
+    "sectors": [
+      "storage"
+    ],
+    "scenes": [
+      "lagos_cold"
+    ],
+    "bio": "Solar-powered cold room near Mile 12.",
+    "fixtureAgentId": "0xa45b157d03b8a95a23410756ca000616f4356efa"
+  },
+  {
+    "id": "bergen_frost",
+    "name": "Bergen Frost",
+    "role": "STORAGE",
+    "kind": "cold_store",
+    "building": "cold_vault",
+    "sprite": "worker",
+    "place": "bergen",
+    "currency": "EUR",
+    "budget": "0",
+    "sectors": [
+      "storage"
+    ],
+    "scenes": [
+      "bergen_cod"
+    ],
+    "bio": "Freezer space at the Bergen harbour.",
+    "fixtureAgentId": "0xf11bf59e0fd96a41ffa21a0cd97d2ab3770692bf"
+  },
+  {
+    "id": "shanti_niwas",
+    "name": "Shanti Niwas",
+    "role": "SOCIETY",
+    "kind": "society",
+    "building": "neighbourhood_pool",
+    "sprite": "family",
+    "place": "mumbai",
+    "currency": "USD",
+    "budget": "1500000000",
+    "sectors": [
+      "produce",
+      "flowers"
+    ],
+    "mandate": {
+      "commodities": [
+        "tomato",
+        "marigold"
+      ],
+      "maxPerUnit": "500000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "lagos_cold"
+    ],
+    "bio": "Mumbai housing society agent pooling family orders.",
+    "fixtureAgentId": "0x0737ea054ad5a1182fe024fb936fde3c1f170232"
+  },
+  {
+    "id": "eko_court",
+    "name": "Eko Court Residents",
+    "role": "SOCIETY",
+    "kind": "society",
+    "building": "neighbourhood_pool",
+    "sprite": "family",
+    "place": "lagos",
+    "currency": "USD",
+    "budget": "1000000000",
+    "sectors": [
+      "produce"
+    ],
+    "mandate": {
+      "commodities": [
+        "tomato"
+      ],
+      "maxPerUnit": "450000",
+      "avoidNoShowSellers": true
+    },
+    "scenes": [
+      "lagos_cold"
+    ],
+    "bio": "Lagos residents' pool buying tomatoes together.",
+    "fixtureAgentId": "0xddab66fad288ea9c5f4d82005d307bb0fd2bfa09"
+  },
+  {
+    "id": "northlight",
+    "name": "Northlight Compute",
+    "role": "SELLER",
+    "kind": "compute_provider",
+    "building": "compute_yard",
+    "sprite": "robot",
+    "place": "any_dc",
+    "currency": "USD",
+    "budget": "0",
+    "sectors": [
+      "compute"
+    ],
+    "scenes": [
+      "gpu_night"
+    ],
+    "bio": "GPU provider selling idle hours. Simulated in this demo, labelled.",
+    "fixtureAgentId": "0xa817daf7a18447de431275e6c9938e45253563a0"
+  }
+]

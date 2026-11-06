@@ -1,0 +1,49 @@
+{
+  "name": "@fairtown/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run --exclude \"test/live/**\"",
+    "typecheck": "tsc -p .",
+    "gen:fixtures": "tsx scripts/gen-fixtures.ts",
+    "test:live": "vitest run test/live",
+    "fund:arkiv": "tsx scripts/fund-arkiv.ts",
+    "eval": "tsx scripts/eval.ts",
+    "load": "tsx scripts/load.ts",
+    "record": "tsx scripts/record.ts",
+    "arkiv:stats": "tsx scripts/arkiv-stats.ts",
+    "arkiv:seed": "tsx scripts/arkiv-seed.ts",
+    "probe:0g": "tsx scripts/probe-0g.ts",
+    "ens:setup": "tsx scripts/ens-setup.ts",
+    "ens:agents": "tsx scripts/ens-agents.ts",
+    "hedera:setup": "tsx scripts/hedera-setup.ts",
+    "hedera:pay": "tsx scripts/hedera-pay.ts",
+    "swarm:fund": "tsx scripts/swarm-fund.ts",
+    "swarm:check": "tsx scripts/swarm-check.ts",
+    "swarm:node": "sh scripts/bee-start.sh"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.85",
+    "@arkiv-network/sdk": "1.0.1",
+    "@fairtown/shared": "workspace:*",
+    "@fastify/cors": "11.3.1",
+    "@hiero-ledger/sdk": "2.90.1",
+    "@x402/core": "2.29.0",
+    "@x402/hedera": "2.29.0",
+    "ai": "^7.0.163",
+    "fastify": "^5.12.8",
+    "p-limit": "^7.3.3",
+    "viem": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "fast-check": "^4.10.2",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

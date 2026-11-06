@@ -1,0 +1,390 @@
+/*
+ * Public board in the landing's look (D-112): night ground, Inter Tight, white text at 72% and 60%,
+ * hairlines, cyan for data (sparklines, receipts, query text), lime only for the call to action.
+ * Sized in rem so ?demo=1 grows it for a projector. Small labels use 60% white: 46% fails 4.5:1.
+ */
+body:has(.ft-site) {
+  background: #0f1626;
+}
+
+.ft-site {
+  --night-2: #131c30;
+  --ink-60: rgb(244 246 250 / 0.6);
+  --line: rgb(255 255 255 / 0.1);
+  min-height: 100vh;
+  background: var(--night);
+  color: var(--ink);
+  font-family: "Inter Tight Variable", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.ft-loading {
+  padding: 2rem;
+  color: var(--ink-72);
+}
+
+.ft-board {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 2.5rem 2.25rem 4rem;
+}
+
+/* Head: the title as the landing sets its headline, the lede, the ledger chip; the join QR right. */
+.ft-board-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--hair);
+}
+.ft-site .ft-board-title {
+  margin: 0;
+  font-family: inherit;
+  font-size: clamp(2.5rem, 1.6rem + 3vw, 4rem);
+  font-weight: 600;
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+}
+.ft-board-lede {
+  max-width: 34rem;
+  margin: 1rem 0 1.1rem;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--ink-72);
+}
+.ft-ledger {
+  display: inline-flex;
+  align-items: center;
+  height: 1.6rem;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-72);
+}
+.ft-ledger-live {
+  color: var(--cyan);
+  border-color: rgb(63 216 255 / 0.5);
+}
+
+/* Join QR: a white tile (scanners need it) on a quiet panel. */
+.ft-qr {
+  flex: none;
+  width: 11rem;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: rgb(255 255 255 / 0.03);
+  text-align: center;
+}
+.ft-qr img,
+.ft-qr canvas,
+.ft-qr svg {
+  border-radius: 0.5rem;
+}
+.ft-qr-title {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.ft-qr-warn {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #ffb35c;
+}
+.ft-qr-hide {
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--ink-72);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Two columns: price weather and the query take the room; the market's activity runs down a rail. */
+.ft-board-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 3rem;
+  padding-top: 2rem;
+}
+.ft-board-main,
+.ft-board-rail {
+  display: grid;
+  /* One column that never grows past its track, whatever a long raw value inside wants. */
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  align-content: start;
+  gap: 2.5rem;
+}
+.ft-board-rail {
+  gap: 0;
+  padding-left: 3rem;
+  border-left: 1px solid var(--line);
+}
+.ft-board-rail .ft-section + .ft-section {
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.ft-site .ft-section-title {
+  margin: 0 0 0.9rem;
+  font-family: inherit;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ft-empty,
+.ft-footnote {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ink-72);
+}
+.ft-footnote {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+}
+.ft-board [role="alert"] {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgb(255 122 107 / 0.45);
+  color: #ffb4a8;
+  font-size: 0.875rem;
+}
+
+/* Price weather: the board's headline. Each market's band in large type, its 30 days in cyan. */
+.ft-weather {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hair);
+}
+.ft-weather li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 10rem;
+  grid-template-areas:
+    "where spark"
+    "band spark"
+    "figures spark";
+  column-gap: 1.5rem;
+  align-items: center;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--hair);
+}
+.ft-weather-where {
+  grid-area: where;
+  font-size: 0.875rem;
+  color: var(--ink-72);
+}
+.ft-weather-band {
+  grid-area: band;
+  margin: 0.15rem 0 0.2rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.ft-weather-figures {
+  grid-area: figures;
+  font-size: 0.875rem;
+  color: var(--ink-72);
+  font-variant-numeric: tabular-nums;
+}
+.ft-weather-spark {
+  grid-area: spark;
+  width: 10rem;
+  height: 2.25rem;
+  color: var(--cyan);
+  filter: drop-shadow(0 0 6px rgb(63 216 255 / 0.45));
+}
+.ft-weather [data-band="much_lower"] .ft-weather-band {
+  color: var(--cyan);
+}
+.ft-weather [data-band="lower"] .ft-weather-band {
+  color: #9be7ff;
+}
+.ft-weather [data-band="normal"] .ft-weather-band {
+  color: var(--ink);
+}
+.ft-weather [data-band="higher"] .ft-weather-band {
+  color: #ffb35c;
+}
+.ft-weather [data-band="much_higher"] .ft-weather-band {
+  color: #ff7a6b;
+}
+
+/* Query the ledger. */
+.ft-query-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.9rem;
+}
+.ft-query-controls label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+}
+.ft-select {
+  min-width: 9rem;
+  height: 2.5rem;
+  padding: 0 2rem 0 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background-color: var(--pill);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-72) 50%),
+    linear-gradient(135deg, var(--ink-72) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1rem) 1.1rem,
+    calc(100% - 0.7rem) 1.1rem;
+  background-size: 0.3rem 0.3rem;
+  background-repeat: no-repeat;
+}
+.ft-select option {
+  background: var(--night);
+}
+.ft-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgb(198 255 46 / 0.45);
+  color: var(--lime);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: transform 0.2s;
+}
+.ft-chip-btn:hover {
+  transform: translateY(-1px);
+}
+.ft-code {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--line);
+  background: var(--night-2);
+  color: var(--cyan);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ft-table-scroll {
+  margin-top: 0.9rem;
+  overflow-x: auto;
+}
+
+/* Tables: uppercase labels as the landing's UI type, hairline rows, figures in tabular numbers. */
+.ft-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.ft-table th {
+  padding: 0 0.75rem 0.5rem 0;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-60);
+  border-bottom: 1px solid var(--hair);
+}
+.ft-table td {
+  padding: 0.6rem 0.75rem 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.ft-table-raw {
+  font-size: 0.8125rem;
+}
+.ft-table-raw th {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ft-row-bad td {
+  color: #ff8a7a;
+}
+.ft-tx {
+  color: var(--cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgb(63 216 255 / 0.45);
+}
+
+/* Live auctions: what is on sale, then where the price stands. */
+.ft-auctions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ft-auctions li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.ft-auction-what {
+  font-weight: 500;
+}
+.ft-auction-now {
+  font-size: 0.875rem;
+  color: var(--ink-72);
+  font-variant-numeric: tabular-nums;
+}
+
+.ft-board :focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1100px) {
+  .ft-board-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ft-board-rail {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+@media (max-width: 760px) {
+  .ft-board {
+    padding: 1.5rem 1rem 3rem;
+  }
+  .ft-board-head {
+    flex-direction: column;
+  }
+  .ft-weather li {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "where" "band" "figures" "spark";
+  }
+  .ft-weather-spark {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ft-chip-btn {
+    transition: none;
+  }
+}

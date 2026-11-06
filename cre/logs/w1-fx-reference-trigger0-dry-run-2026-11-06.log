@@ -1,0 +1,27 @@
+Initializing...
+Loading settings...
+! Using default private key for chain write simulation. To use your own key, set CRE_ETH_PRIVATE_KEY in your .env file or system environment.
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: 4dc41ef78231b62b210080a6a79c8b050c3b459d8db5e533c723a552c01725de
+  Config hash: 050426b17d7fa94f14e6d40af7473be250a8b8cd6064174d9c59e96a29d7eac7
+2026-11-06T13:16:22Z [SIMULATION] Simulator Initialized
+2026-11-06T13:16:22Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T13:16:23Z [USER LOG] W1 fx: source https://api.frankfurter.dev/v2/rates?base=USD&quotes=EUR,NOK,INR,KES,NGN dates [EUR=2026-11-06,NOK=2026-11-06,INR=2026-11-06,KES=2026-11-06,NGN=2026-11-06] asOf 1793953800
+2026-11-06T13:16:23Z [USER LOG] W1 fx EUR = 0.88915000 per USD (perUsdE8 88915000): written
+2026-11-06T13:16:24Z [USER LOG] W1 fx NOK = 9.27570000 per USD (perUsdE8 927570000): written
+2026-11-06T13:16:24Z [USER LOG] W1 fx INR = 94.45000000 per USD (perUsdE8 9445000000): written
+2026-11-06T13:16:25Z [USER LOG] W1 fx KES = 129.81000000 per USD (perUsdE8 12981000000): written
+2026-11-06T13:16:25Z [USER LOG] W1 fx NGN = 1346.12000000 per USD (perUsdE8 134612000000): written
+✓ Workflow Simulation Result:
+"W1 fx: 5 written, 0 failed, 0 skipped"
+2026-11-06T13:16:25Z [SIMULATION] Execution finished signal received
+2026-11-06T13:16:25Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯

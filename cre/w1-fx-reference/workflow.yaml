@@ -1,0 +1,9 @@
+# CRE workflow settings (S1 4.2). Two cron handlers: trigger 0 writes FX (kind 3), trigger 1 writes reference prices
+# (kind 1), so each run stays under ChainWrite.TargetsLimit = 10.
+local-simulation:
+  user-workflow:
+    workflow-name: "w1-fx-reference"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+    secrets-path: ""

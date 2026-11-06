@@ -1,0 +1,330 @@
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
+import type { AddressInfo } from "node:net"
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { z } from "zod"
+import { AiConfigError, parseAiConfig, targetFor, withV1 } from "../src/ai/config"
+import { FakeAi } from "../src/ai/fake"
+import { AiError, createGateway, extractJson } from "../src/ai/gateway"
+import { verificationOf } from "../src/ai/verification"
+import { gradeLot } from "../src/listing/grade"
+
+const Lot = z.object({ commodity: z.string(), qty: z.number(), place: z.string() })
+const GOOD = '{"commodity":"cod","qty":600,"place":"bergen"}'
+
+type Seen = { path: string; body: Record<string, unknown>; auth?: string; trust?: string }
+let server: Server
+let base = ""
+let seen: Seen[] = []
+let replies: Array<string | { delayMs: number; content: string } | { status: number }> = []
+let extra: { trace?: unknown; resKey?: string } = {}
+let primaryStatus: number[] = [] // statuses the primary vision model ("vis-m") returns, one per request
+let inFlight = 0
+let maxInFlight = 0
+
+function completion(content: string) {
+  return {
+    id: "c1",
+    object: "chat.completion",
+    created: 1,
+    model: "m",
+    choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }],
+    usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    ...(extra.trace !== undefined ? { x_0g_trace: extra.trace } : {}),
+  }
+}
+
+async function handler(req: IncomingMessage, res: ServerResponse) {
+  let raw = ""
+  for await (const chunk of req) raw += chunk
+  const path = req.url ?? ""
+  if (path.endsWith("/models")) {
+    res.writeHead(200, { "content-type": "application/json" })
+    res.end(JSON.stringify({ data: [{ id: "bid-m" }, { id: "list-m" }, { id: "vis-m" }] }))
+    return
+  }
+  if (path.endsWith("/audio/transcriptions")) {
+    seen.push({ path, body: {}, auth: req.headers.authorization })
+    res.writeHead(200, { "content-type": "application/json" })
+    res.end(JSON.stringify({ text: "600 kilos of cod" }))
+    return
+  }
+  const parsedBody = JSON.parse(raw)
+  seen.push({ path, body: parsedBody, auth: req.headers.authorization, trust: req.headers["x-0g-provider-trust-mode"] as string | undefined })
+  if (parsedBody.model === "vis-m" && primaryStatus.length) {
+    const status = primaryStatus.shift()!
+    res.writeHead(status, { "content-type": "application/json" })
+    res.end(JSON.stringify({ error: { type: "payment_error", code: "insufficient_balance", message: "deposit more" } }))
+    return
+  }
+  const next = replies.shift() ?? GOOD
+  if (typeof next === "object" && "status" in next) {
+    res.writeHead(next.status, { "content-type": "application/json" })
+    res.end(JSON.stringify({ error: { message: "Rate limit exceeded for api_key: abc123. Current limit: 60", type: "rate_limit" } }))
+    return
+  }
+  inFlight++
+  maxInFlight = Math.max(maxInFlight, inFlight)
+  const { delayMs, content } = typeof next === "string" ? { delayMs: 0, content: next } : next
+  setTimeout(() => {
+    inFlight--
+    if (res.destroyed) return
+    res.writeHead(200, { "content-type": "application/json", ...(extra.resKey ? { "ZG-Res-Key": extra.resKey } : {}) })
+    res.end(JSON.stringify(completion(content)))
+  }, delayMs)
+}
+
+beforeAll(async () => {
+  server = createServer((req, res) => void handler(req, res))
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r))
+  base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+})
+afterAll(() => new Promise<void>((r) => server.close(() => r())))
+beforeEach(() => {
+  seen = []
+  replies = []
+  extra = {}
+  primaryStatus = []
+  inFlight = 0
+  maxInFlight = 0
+})
+
+const live = (over: Record<string, string> = {}) =>
+  parseAiConfig({
+    MOCK_AI: "0",
+    LLM_BASE_URL: base,
+    LLM_API_KEY: "test-key",
+    BIDDER_MODEL: "bid-m",
+    LISTING_MODEL: "list-m",
+    VISION_MODEL: "vis-m",
+    ...over,
+  })
+const ask = { system: "You parse listings.", prompt: "600 kg cod, Bergen", schema: Lot }
+
+describe("AI config", () => {
+  it("adds /v1 and resolves each role", () => {
+    expect(withV1("https://gw.example.com")).toBe("https://gw.example.com/v1")
+    expect(withV1("http://localhost:11434/v1/")).toBe("http://localhost:11434/v1")
+    const c = live({ VISION_EXTRA_BODY: '{"verify_tee":true}' })
+    expect(targetFor(c, "bidder")).toMatchObject({ model: "bid-m", extraBody: {} })
+    expect(targetFor(c, "vision")).toMatchObject({ model: "vis-m", extraBody: { verify_tee: true }, baseURL: `${base}/v1` })
+  })
+  it("rejects bad config", () => {
+    expect(() => live({ VISION_EXTRA_BODY: "[1]" })).toThrow(AiConfigError)
+    expect(() => parseAiConfig({ MOCK_AI: "0", LLM_BASE_URL: base })).toThrow(/BIDDER_MODEL/)
+    expect(parseAiConfig({}).MOCK_AI).toBe(true)
+  })
+})
+
+describe("AI gateway against a stub server", () => {
+  it("uses native structured output on attempt 1", async () => {
+    const r = await createGateway({ config: live() }).decide("listing", ask)
+    expect(r).toMatchObject({ value: { commodity: "cod", qty: 600, place: "bergen" }, attempt: 1 })
+    expect(seen[0]!.path).toBe("/v1/chat/completions")
+    expect(seen[0]!.body.model).toBe("list-m")
+    expect((seen[0]!.body.response_format as { type: string }).type).toBe("json_schema")
+    expect(seen[0]!.auth).toBe("Bearer test-key")
+  })
+
+  it("falls back to JSON mode when structured output is malformed", async () => {
+    replies = ["not json at all", "Sure! ```json\n" + GOOD + "\n```"]
+    const gw = createGateway({ config: live() })
+    const r = await gw.decide("listing", ask)
+    expect(r.attempt).toBe(2)
+    expect(seen[1]!.body.response_format).toBeUndefined()
+    expect(gw.stats().listing).toMatchObject({ calls: 1, ok: 1, fallbacks: 1 })
+  })
+
+  it("retries once with the validation error", async () => {
+    replies = ["nope", '{"commodity":"cod"}', GOOD]
+    const r = await createGateway({ config: live() }).decide("listing", ask)
+    expect(r.attempt).toBe(3)
+    const lastPrompt = JSON.stringify(seen[2]!.body.messages)
+    expect(lastPrompt).toContain("previous answer was invalid")
+    expect(lastPrompt).toContain("qty")
+  })
+
+  it("throws invalid_output after three bad answers so rules can decide", async () => {
+    replies = ["x", "y", "z"]
+    const gw = createGateway({ config: live() })
+    await expect(gw.decide("bidder", ask)).rejects.toMatchObject({ code: "invalid_output" })
+    expect(gw.stats().bidder).toMatchObject({ calls: 1, ok: 0, failures: 1 })
+  })
+
+  it("times out and counts it", async () => {
+    replies = [{ delayMs: 500, content: GOOD }]
+    const gw = createGateway({ config: live() })
+    const started = Date.now()
+    await expect(gw.decide("bidder", { ...ask, timeoutMs: 100 })).rejects.toMatchObject({ code: "timeout" })
+    expect(Date.now() - started).toBeLessThan(400)
+    expect(gw.stats().bidder.timeouts).toBe(1)
+  })
+
+  it("merges VISION_EXTRA_BODY for vision only and captures 0G trace data", async () => {
+    extra = { trace: { request_id: "req-123", provider: "0xprov", tee_verified: true }, resKey: "zg-abc" }
+    const gw = createGateway({ config: live({ VISION_EXTRA_BODY: '{"verify_tee":true}' }) })
+    const r = await gw.decide("vision", { ...ask, images: [{ data: "data:image/png;base64,iVBORw0KGgo=" }] })
+    expect(seen[0]!.body.verify_tee).toBe(true)
+    expect(r.trace).toMatchObject({ requestId: "req-123", provider: "0xprov", teeVerified: true, resKey: "zg-abc" })
+    const msgs = seen[0]!.body.messages as Array<{ role: string; content: Array<{ type: string; image_url?: { url: string } }> }>
+    const content = msgs.find((m) => m.role === "user")!.content
+    expect(content.find((p) => p.type === "image_url")!.image_url!.url).toBe("data:image/png;base64,iVBORw0KGgo=")
+    await gw.decide("bidder", ask)
+    expect(seen[1]!.body.verify_tee).toBeUndefined()
+  })
+
+  it("leaves trace undefined when the provider sends none", async () => {
+    const r = await createGateway({ config: live() }).decide("bidder", ask)
+    expect(r.trace).toBeUndefined()
+  })
+
+  it("caps concurrency", async () => {
+    replies = Array.from({ length: 4 }, () => ({ delayMs: 80, content: GOOD }))
+    const gw = createGateway({ config: live(), concurrency: 2 })
+    await Promise.all(Array.from({ length: 4 }, () => gw.decide("bidder", ask)))
+    expect(maxInFlight).toBe(2)
+  })
+
+  it("reports health and missing models", async () => {
+    expect(await createGateway({ config: live() }).health()).toMatchObject({ ok: true })
+    const bad = await createGateway({ config: live({ VISION_MODEL: "nope" }) }).health()
+    expect(bad).toEqual({ ok: false, detail: "Models not served: vision=nope" })
+    const down = await createGateway({ config: live({ LLM_BASE_URL: "http://127.0.0.1:1" }) }).health()
+    expect(down.ok).toBe(false)
+  })
+})
+
+describe("mock mode and STT", () => {
+  it("uses the fake provider deterministically", async () => {
+    const fake = new FakeAi().on("listing", () => ({ commodity: "cod", qty: 600, place: "bergen" }))
+    const gw = createGateway({ config: parseAiConfig({ MOCK_AI: "1" }), fake })
+    expect((await gw.decide("listing", ask)).value.qty).toBe(600)
+    await expect(gw.decide("bidder", ask)).rejects.toBeInstanceOf(AiError)
+    fake.on("vision", () => ({ commodity: 1 }))
+    await expect(gw.decide("vision", ask)).rejects.toMatchObject({ code: "invalid_output" })
+    expect(await gw.health()).toEqual({ ok: true, detail: "mock" })
+    expect(await gw.transcribe("AAAA")).toEqual({ text: fake.transcript, provider: "mock" })
+  })
+
+  it("routes STT by provider", async () => {
+    await expect(createGateway({ config: live() }).transcribe("AAAA")).rejects.toThrow(/browser/)
+    await expect(createGateway({ config: live({ STT_PROVIDER: "none" }) }).transcribe("AAAA")).rejects.toThrow(/off/)
+    const gw = createGateway({ config: live({ STT_PROVIDER: "openai-compatible", STT_MODEL: "whisper-1" }) })
+    expect(await gw.transcribe("data:audio/webm;base64,AAAA", "en-US")).toEqual({
+      text: "600 kilos of cod",
+      provider: "openai-compatible:whisper-1",
+    })
+    expect(seen[0]!.path).toBe("/v1/audio/transcriptions")
+  })
+})
+
+describe("extractJson", () => {
+  it("finds the first balanced object", () => {
+    expect(extractJson('noise {"a":{"b":"}"}} tail {"c":1}')).toEqual({ a: { b: "}" } })
+    expect(extractJson("no json")).toBeUndefined()
+    expect(extractJson("{broken")).toBeUndefined()
+  })
+})
+
+describe("AI gateway: provider errors and the shared RPM budget", () => {
+  it("maps 429 to rate_limited with one request and no retry, and hides the provider message", async () => {
+    replies = [{ status: 429 }]
+    const g = createGateway({ config: live() })
+    const e = await g.decide("bidder", ask).catch((x) => x)
+    expect(e).toBeInstanceOf(AiError)
+    expect(e.code).toBe("rate_limited")
+    expect(e.message).not.toContain("abc123")
+    expect(seen).toHaveLength(1)
+  })
+
+  it("maps 5xx to provider_error without the JSON retries", async () => {
+    replies = [{ status: 500 }]
+    const e = await createGateway({ config: live() }).decide("listing", ask).catch((x) => x)
+    expect(e.code).toBe("provider_error")
+    expect(seen).toHaveLength(1)
+  })
+
+  it("gives bidders 80% of LLM_MAX_RPM and makes them fall back at once; listing waits for the window", async () => {
+    let t = 1_000_000
+    const g = createGateway({ config: live({ LLM_MAX_RPM: "5" }), now: () => t })
+    for (let i = 0; i < 4; i++) await g.decide("bidder", ask)
+    const e = await g.decide("bidder", ask).catch((x) => x)
+    expect(e.code).toBe("rate_limited")
+    expect(seen).toHaveLength(4)
+    await g.decide("listing", ask) // fifth slot is the seller flow's
+    const waiting = g.decide("listing", { ...ask, timeoutMs: 5000 })
+    await new Promise((r) => setTimeout(r, 300))
+    expect(seen).toHaveLength(5)
+    t += 60_001
+    await waiting
+    expect(seen).toHaveLength(6)
+  })
+})
+
+describe("vision on 0G: verification states and fallback (S2 8.1)", () => {
+  // Primary vision = 0G-style target ("vis-m" with its own base URL); fallback = LLM_BASE_URL with LISTING_MODEL ("list-m").
+  const zg = (over: Record<string, string> = {}) => live({ VISION_BASE_URL: `${base}/zg`, VISION_EXTRA_BODY: '{"verify_tee":true}', VISION_TRUST_MODE: "private", ...over })
+  const models = () => seen.filter((x) => x.path.endsWith("/chat/completions")).map((x) => x.body.model)
+
+  it("reads tee_verified true, false and absent into honest badge states", async () => {
+    for (const [tee, state, trusted] of [[true, "verified", true], [false, "failed", false], [undefined, "logged", true]] as const) {
+      extra = { trace: { request_id: "r-1", provider: "0xprov", ...(tee === undefined ? {} : { tee_verified: tee }) } }
+      const r = await createGateway({ config: zg() }).decide("vision", ask)
+      expect(r.trace).toMatchObject({ requestId: "r-1", provider: "0xprov", model: "vis-m", trustMode: "private" })
+      expect(verificationOf(r.trace)).toMatchObject({ state, trusted })
+    }
+    expect(verificationOf(undefined).state).toBe("none")
+    expect(seen.every((x) => !x.path.endsWith("/chat/completions") || (x.body.verify_tee === true && x.trust === "private"))).toBe(true)
+  })
+
+  it("a failed TEE check flags the grade as untrusted", async () => {
+    extra = { trace: { request_id: "r-2", provider: "0xprov", tee_verified: false } }
+    replies = ['{"grade":"fresh_e","defects":[],"confidence":0.9,"lotCodeVisible":true}']
+    const photo = { hash: "0x01" as const, file: "", mediaType: "image/png", lotCode: "1234", capturedAt: "2026-11-06T00:00:00Z", dataUrl: "data:image/png;base64,AAAA" }
+    const g = await gradeLot("fish", "cod", [photo], createGateway({ config: zg() }))
+    expect(g.report).toMatchObject({ grade: "fresh_e", untrusted: true })
+    expect(g.report.defects).toContain("Grade not attested: TEE check failed")
+  })
+
+  it("falls back to the LLM key on 402, pauses 0G for 10 minutes, then tries it again", async () => {
+    let t = 1_000_000
+    const gw = createGateway({ config: zg(), now: () => t })
+    primaryStatus = [402]
+    const r = await gw.decide("vision", ask)
+    expect(r.value).toEqual({ commodity: "cod", qty: 600, place: "bergen" })
+    expect(r.trace).toMatchObject({ provider: "fallback", model: "list-m", fallback: { from: "vis-m", reason: "primary HTTP 402" } })
+    expect(verificationOf(r.trace).state).toBe("fallback")
+    expect(models()).toEqual(["vis-m", "list-m"])
+    const again = await gw.decide("vision", ask)
+    expect(again.trace?.fallback?.reason).toBe("primary paused: insufficient balance (HTTP 402)")
+    expect(models()).toEqual(["vis-m", "list-m", "list-m"])
+    expect(gw.visionStatus()).toMatchObject({ fallback: "list-m", pauseReason: "insufficient balance (HTTP 402)" })
+    t += 10 * 60_000 + 1
+    await gw.decide("vision", ask)
+    expect(models().at(-1)).toBe("vis-m")
+    expect(gw.stats().vision).toMatchObject({ calls: 3, ok: 3, switched: 2 })
+  })
+
+  it("pauses 0G for a minute after three failures in a row", async () => {
+    let t = 5_000_000
+    const gw = createGateway({ config: zg(), now: () => t })
+    primaryStatus = [503, 503, 503]
+    for (let i = 0; i < 3; i++) expect((await gw.decide("vision", ask)).trace?.fallback?.reason).toBe("primary HTTP 503")
+    await gw.decide("vision", ask)
+    expect(models().filter((m) => m === "vis-m")).toHaveLength(3)
+    t += 60_001
+    await gw.decide("vision", ask)
+    expect(models().at(-1)).toBe("vis-m")
+  })
+
+  it("reports the primary's error when the fallback fails too, and never falls back when switched off", async () => {
+    primaryStatus = [402]
+    replies = ["not json", "not json", "not json"]
+    const e = await createGateway({ config: zg() }).decide("vision", ask).catch((x) => x)
+    expect(e).toMatchObject({ code: "provider_error", status: 402 })
+    seen = []
+    primaryStatus = [402]
+    const off = await createGateway({ config: zg({ VISION_FALLBACK: "0" }) }).decide("vision", ask).catch((x) => x)
+    expect(off.status).toBe(402)
+    expect(models()).toEqual(["vis-m"])
+  })
+})

@@ -11,3 +11,13 @@ coverage
 playwright-report
 test-results
 .DS_Store
+# Deploy script test output (contracts/test/fork/Deploy.t.sol)
+deployments/.test-*
+contracts/broadcast/
+# CRE WASM build leftovers (cre workflow simulate)
+.cre_build_tmp.*
+cre/**/.workflow-temp-*
+cre/*/.forced-*.json
+.env_stream*
+# CRE bridge runtime logs (regenerated every run; curated green-light logs stay in cre/logs/)
+cre/logs/bridge/
