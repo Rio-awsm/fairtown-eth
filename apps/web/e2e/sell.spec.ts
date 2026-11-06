@@ -21,6 +21,9 @@ test("a seller lists from a phone: pick, type, photo with lot code, draft, previ
   await check(page, "picker")
 
   await page.getByRole("button", { name: /Ingrid Solheim/ }).tap()
+  // Seller session (ICR-009): mock mode takes any PIN.
+  await page.getByLabel("PIN").fill("1234")
+  await page.getByRole("button", { name: "Continue" }).tap()
   await page.getByRole("textbox", { name: "What are you selling?" }).fill("600 kg cod, landed 04:40, Bergen")
 
   await page.getByRole("button", { name: "Open camera" }).tap()

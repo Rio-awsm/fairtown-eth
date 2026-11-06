@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw"
+import { MOCK_RESPONSES } from "../mocks/responses"
 import { setupServer } from "msw/node"
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { handlers } from "../mocks/handlers"
@@ -71,5 +72,28 @@ describe("createApiClient", () => {
   it("sends the JSON body for a POST", async () => {
     const ticket = await api.walkin({ body: { name: "Priya" } })
     expect(ticket.token).toBeTruthy()
+  })
+})
+
+describe("seller session header (ICR-009)", () => {
+  const ok = () =>
+    vi.fn(async () => new Response(JSON.stringify(MOCK_RESPONSES.handoverTicket), { status: 200 })) as unknown as typeof fetch
+  const body = { sellerId: "ingrid", lotId: "12", buyer: `0x${"1".repeat(40)}`, tokenAmount: "1" }
+  const headersOf = (f: typeof fetch) => new Headers((vi.mocked(f).mock.calls[0]![1] as RequestInit).headers)
+
+  it("sends the session as a Bearer token on seller routes", async () => {
+    const fetchImpl = ok()
+    const local = createApiClient({ baseUrl: "http://api.test", fetchImpl, sellerToken: () => "s3cret" })
+    await local.handoverTicket({ body })
+    expect(headersOf(fetchImpl).get("authorization")).toBe("Bearer s3cret")
+  })
+
+  it("sends no Authorization without a session, or on other routes", async () => {
+    const none = ok()
+    await createApiClient({ baseUrl: "http://api.test", fetchImpl: none, sellerToken: () => undefined }).handoverTicket({ body })
+    expect(headersOf(none).get("authorization")).toBeNull()
+    const health = vi.fn(async () => new Response(JSON.stringify(MOCK_RESPONSES.health), { status: 200 })) as unknown as typeof fetch
+    await createApiClient({ baseUrl: "http://api.test", fetchImpl: health, sellerToken: () => "s3cret" }).health()
+    expect(new Headers((vi.mocked(health).mock.calls[0]![1] as RequestInit).headers).get("authorization")).toBeNull()
   })
 })

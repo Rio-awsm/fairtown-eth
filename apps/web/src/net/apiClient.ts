@@ -35,6 +35,7 @@ async function call(
   fetchImpl: typeof fetch,
   route: Route,
   args: { params?: Record<string, string>; query?: Record<string, string>; body?: unknown } = {},
+  sellerToken?: () => string | undefined,
 ): Promise<unknown> {
   let body: string | undefined
   if (route.req) {
@@ -47,9 +48,15 @@ async function call(
 
   let res: Response
   try {
+    const token = route.auth === "seller" ? sellerToken?.() : undefined
+    const headers: Record<string, string> = {
+      ...(body === undefined ? {} : { "content-type": "application/json" }),
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    }
     res = await fetchImpl(url, {
       method: route.method.toUpperCase(),
-      ...(body === undefined ? {} : { body, headers: { "content-type": "application/json" } }),
+      ...(body === undefined ? {} : { body }),
+      ...(Object.keys(headers).length > 0 ? { headers } : {}),
     })
   } catch (error: unknown) {
     throw new ApiClientError("network", error instanceof Error ? error.message : "network error", 0)
@@ -74,11 +81,11 @@ async function call(
 }
 
 /** Typed client for contract 11. Requests and responses are validated with the shared zod schemas. */
-export function createApiClient(opts: { baseUrl: string; fetchImpl?: typeof fetch }): ApiClient {
+export function createApiClient(opts: { baseUrl: string; fetchImpl?: typeof fetch; sellerToken?: () => string | undefined }): ApiClient {
   const fetchImpl = opts.fetchImpl ?? ((input, init) => globalThis.fetch(input, init))
   const client: Record<string, (args?: object) => Promise<unknown>> = {}
   for (const [key, route] of Object.entries(API_ROUTES)) {
-    client[key] = (args) => call(opts.baseUrl, fetchImpl, route, args)
+    client[key] = (args) => call(opts.baseUrl, fetchImpl, route, args, opts.sellerToken)
   }
   return client as ApiClient
 }

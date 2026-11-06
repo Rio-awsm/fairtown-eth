@@ -4,6 +4,7 @@ import { useState } from "react"
 import type { z } from "zod"
 import { api } from "../net/api"
 import { ApiClientError } from "../net/apiClient"
+import { hasSellerSession, setSellerSession } from "../net/sellerSession"
 import { CameraCapture, type CapturedPhoto } from "../sell/CameraCapture"
 import { DraftCard } from "../sell/DraftCard"
 import { History } from "../sell/History"
@@ -128,13 +129,67 @@ function Seller({ seller }: { seller: DemoSeller }) {
   )
 }
 
+/** The seller's PIN opens a session; only inside it can the server sign handover codes and replies (ICR-009). */
+function PinStep({ seller, onDone }: { seller: DemoSeller; onDone(): void }) {
+  const [pin, setPin] = useState("")
+  const open = useMutation({
+    mutationFn: () => api.sellerSession({ body: { sellerId: seller.id, pin } }),
+    onSuccess: (s) => {
+      setSellerSession({ token: s.token, sellerId: seller.id, expiresAt: s.expiresAt })
+      onDone()
+    },
+  })
+  const error =
+    open.error instanceof ApiClientError && open.error.code === "bad_pin"
+      ? "That PIN is not right. Please try again."
+      : open.error instanceof ApiClientError && open.error.code === "rate_limited"
+        ? "Too many tries. Please wait a few minutes."
+        : plainError(open.error, "We could not check your PIN just now. Please try again.")
+  return (
+    <form
+      className="space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault()
+        open.mutate()
+      }}
+    >
+      <p className="text-lg">Hello {seller.name}. Enter your PIN to start selling.</p>
+      <label className="block">
+        <span className="text-sm text-ink-soft">PIN</span>
+        <input
+          className="rpg-well mt-1 w-full p-3 text-lg"
+          type="password"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          aria-label="PIN"
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+        />
+      </label>
+      {open.isError && (
+        <p role="alert" className="text-sm text-gold-ink">
+          {error}
+        </p>
+      )}
+      <button className="rpg-btn rpg-btn-go w-full text-lg" disabled={pin.trim() === "" || open.isPending}>
+        {open.isPending ? "Checking…" : "Continue"}
+      </button>
+    </form>
+  )
+}
+
 /** Seller chat (S3 2.1): mobile-first, no crypto words, preview before confirming, test money labelled. */
 export function SellPage() {
   const [seller, setSeller] = useState<DemoSeller | null>(null)
+  const [, setUnlocked] = useState(0)
+  let body
+  if (!seller) body = <Picker onPick={setSeller} />
+  else if (!hasSellerSession(seller.id)) body = <PinStep seller={seller} onDone={() => setUnlocked((n) => n + 1)} />
+  else body = <Seller key={seller.id} seller={seller} />
   return (
     <section className="rpg-window mx-3 my-5 max-w-md space-y-4 p-4 sm:mx-auto">
       <h1 className="rpg-banner">Sell</h1>
-      {seller ? <Seller key={seller.id} seller={seller} /> : <Picker onPick={setSeller} />}
+      {body}
     </section>
   )
 }

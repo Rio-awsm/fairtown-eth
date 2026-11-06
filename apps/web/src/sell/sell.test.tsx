@@ -8,6 +8,7 @@ import type { ReactNode } from "react"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 import { initialTownState, reduce, type TownState } from "../game/reducer"
 import { handlers } from "../mocks/handlers"
+import { clearSellerSession, setSellerSession } from "../net/sellerSession"
 import { SellPage } from "../pages/Sell"
 import { townStore } from "../state/townStore"
 import { SAMPLE_EVENTS as S, TX } from "../test/samples"
@@ -17,6 +18,9 @@ import { MicButton } from "./MicButton"
 const server = setupServer(...handlers)
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }))
 afterEach(() => server.resetHandlers())
+// Selling flows run inside a seller session (ICR-009); the PIN step has its own tests.
+beforeEach(() => setSellerSession({ sellerId: "ingrid", token: "test-session", expiresAt: "2099-01-01T00:00:00.000Z" }))
+afterEach(() => clearSellerSession())
 afterAll(() => server.close())
 
 const CRYPTO = /\b(wallet|gas|token|crypto|blockchain)\b/i
@@ -279,5 +283,32 @@ describe("MicButton", () => {
   it("is hidden when the phone can neither transcribe nor record", () => {
     const { container } = render(<MicButton win={{}} onText={vi.fn()} />)
     expect(container).toBeEmptyDOMElement()
+  })
+})
+
+describe("seller PIN session (ICR-009)", () => {
+  beforeEach(() => clearSellerSession())
+
+  it("asks for the PIN before selling, then opens the chat", async () => {
+    wrap(<SellPage />)
+    fireEvent.click(screen.getByRole("button", { name: /Ingrid Solheim/ }))
+    expect(screen.queryByRole("button", { name: "Send" })).toBeNull()
+    fireEvent.change(screen.getByLabelText("PIN"), { target: { value: "4821" } })
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+    expect(await screen.findByRole("button", { name: "Send" })).toBeInTheDocument()
+  })
+
+  it("says a wrong PIN is wrong, in plain words, and stays on the PIN step", async () => {
+    server.use(
+      http.post("*/api/sessions/seller", () =>
+        HttpResponse.json({ error: { code: "bad_pin", message: "Wrong PIN" } }, { status: 401 }),
+      ),
+    )
+    wrap(<SellPage />)
+    fireEvent.click(screen.getByRole("button", { name: /Ingrid Solheim/ }))
+    fireEvent.change(screen.getByLabelText("PIN"), { target: { value: "0000" } })
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent("That PIN is not right.")
+    expect(screen.queryByRole("button", { name: "Send" })).toBeNull()
   })
 })

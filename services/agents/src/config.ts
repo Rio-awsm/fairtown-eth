@@ -62,6 +62,8 @@ export const AgentsConfig = z.object({
   SWARM_BEE_URL: z.string().url().default("http://127.0.0.1:1633"),
   SWARM_BATCH_ID: z.string().regex(/^[0-9a-f]{64}$/).optional(),
   SWARM_GATEWAY: z.string().url().default("https://bzz.limo"),
+  // Buyers report no-shows automatically after the pickup deadline (D-89). 0 for e2e runs that stage each trust path.
+  AGENTS_AUTO_NOSHOW: z.enum(["0", "1"]).default("1").transform((v) => v === "1"),
   CHAIN_BACKFILL_BLOCKS: blocks.default(9000n), // restart lookback: longest auction + pickup + report + contest windows
   TREASURY_ADDRESS: z
     .string()

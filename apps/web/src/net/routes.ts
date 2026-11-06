@@ -38,7 +38,12 @@ import {
 import { z } from "zod"
 
 export type Method = "get" | "post" | "patch"
-export type Route = { method: Method; path: string; req?: z.ZodType; res: z.ZodType }
+/** `auth: "seller"` routes carry the seller session as `Authorization: Bearer` (ICR-009). */
+export type Route = { method: Method; path: string; req?: z.ZodType; res: z.ZodType; auth?: "seller" }
+
+// ICR-009: no shared schema for seller sessions yet, so these two are local (see NOTES.md).
+export const SellerSessionRequest = z.object({ sellerId: z.string().min(1), pin: z.string().min(1) })
+export const SellerSessionResponse = z.object({ token: z.string().min(1), sellerId: z.string(), expiresAt: z.string() })
 
 /**
  * Contract 11, one entry per route. The shared package has no schema for the agents list or lot
@@ -59,11 +64,13 @@ export const API_ROUTES = {
   patchAgent: { method: "patch", path: "/api/agents/:agentId", req: PatchAgentRequest, res: AgentView },
   walkin: { method: "post", path: "/api/walkin", req: WalkinRequest, res: WalkinResponse },
   walkinBid: { method: "post", path: "/api/walkin/bid", req: WalkinBidRequest, res: BidResponse },
+  sellerSession: { method: "post", path: "/api/sessions/seller", req: SellerSessionRequest, res: SellerSessionResponse },
   handoverTicket: {
     method: "post",
     path: "/api/handover/ticket",
     req: HandoverTicketRequest,
     res: HandoverTicketResponse,
+    auth: "seller",
   },
   handoverConfirm: {
     method: "post",
@@ -72,7 +79,7 @@ export const API_ROUTES = {
     res: HandoverConfirmResponse,
   },
   noshowReport: { method: "post", path: "/api/noshow/report", req: NoShowReportRequest, res: NoShowReportResponse },
-  noshowContest: { method: "post", path: "/api/noshow/contest", req: NoShowContestRequest, res: DisputeResponse },
+  noshowContest: { method: "post", path: "/api/noshow/contest", req: NoShowContestRequest, res: DisputeResponse, auth: "seller" },
   openDispute: { method: "post", path: "/api/disputes", req: DisputeRequest, res: DisputeResponse },
   disputeEvidence: { method: "get", path: "/api/disputes/:disputeId/evidence", res: DisputeEvidence },
   stt: { method: "post", path: "/api/stt", req: SttRequest, res: SttResponse },

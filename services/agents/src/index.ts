@@ -210,6 +210,9 @@ const sectors = new SectorEngine({
     ...(fake ? { arriveBlocks: 3n, travelBlocks: 10n } : {}),
   },
   fileDispute: (buyer, lotId, tokens) => fileDispute(disputes, buyer, lotId, tokens, fixtureDisputePhotos(lotId)),
+  // Lots from POST /api/listings/confirm carry this metadata URI: a person listed them and hands over with the QR code.
+  humanListed: (uri) => uri.includes("/api/lots/meta/"),
+  autoNoShowReports: config.AGENTS_AUTO_NOSHOW,
   onError: (what, err) => log("sector step failed", { what, err: err instanceof Error ? err.message.replace(/https?:\/\/\S+/g, "<url>") : String(err) }),
 })
 const stopSectors = sectors.start()

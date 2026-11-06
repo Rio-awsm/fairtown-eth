@@ -9,6 +9,7 @@ import { createMemoryRouter, RouterProvider } from "react-router"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 import { initialTownState, reduce, type TownState } from "../game/reducer"
 import { handlers } from "../mocks/handlers"
+import { clearSellerSession, setSellerSession } from "../net/sellerSession"
 import { MOCK_HANSE, MOCK_LOT12_UNITS, mockFallbackUrl, mockQrText, mockTicket } from "../mocks/ticket"
 import { ScanPage } from "../pages/Scan"
 import { SellPage } from "../pages/Sell"
@@ -29,6 +30,9 @@ vi.mock("./QrScanner", () => ({
 const server = setupServer(...handlers)
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }))
 afterEach(() => server.resetHandlers())
+// Selling flows run inside a seller session (ICR-009); the PIN step has its own tests.
+beforeEach(() => setSellerSession({ sellerId: "ingrid", token: "test-session", expiresAt: "2099-01-01T00:00:00.000Z" }))
+afterEach(() => clearSellerSession())
 afterAll(() => server.close())
 
 const CRYPTO = /\b(wallet|gas|token|crypto|blockchain)\b/i
@@ -152,6 +156,21 @@ describe("ScanPage", () => {
     expect(document.body.textContent).not.toMatch(CRYPTO)
   })
 
+  it("keeps saying Done after the town hears the handover (C 1.3 live run)", async () => {
+    confirmSpy()
+    routed("/scan", <ScanPage />)
+    fireEvent.click(screen.getByRole("button", { name: /Hanse Kitchen/ }))
+    await screen.findByTestId("scanner")
+    act(() => fakeScan!(code))
+    const card = await screen.findByRole("region", { name: "Handover" })
+    fireEvent.click(within(card).getByRole("button", { name: "Confirm" }))
+    expect(await screen.findByRole("status")).toHaveTextContent("Done. €2,702.70 released to Ingrid Solheim.")
+    // The relay then delivers the handover and the payout; the lot no longer waits for a code.
+    seed(run([S["handover.confirmed"], S["lot.delivered"], S["lot.paid_in_full"]], bergen()))
+    expect(screen.getByRole("status")).toHaveTextContent("Done. €2,702.70 released to Ingrid Solheim.")
+    expect(screen.queryByRole("alert")).toBeNull()
+  })
+
   it("opens a code from the fallback link without the camera", async () => {
     routed(`/scan?code=${encodeURIComponent(code)}`, <ScanPage />)
     fireEvent.click(screen.getByRole("button", { name: /Lars/ }))
@@ -232,6 +251,16 @@ describe("no-show", () => {
     const answer = await screen.findByRole("region", { name: "No-show reported" })
     expect(plain(answer.textContent)).toContain("The buyer says you didn't hand over. Answer in 3:20")
     expect(within(answer).getByRole("button", { name: "Send proof" })).toBeDisabled()
+  })
+
+  it("still lists a sold lot after the phone reloads (snapshot lots carry no settlement)", async () => {
+    const town = bergen()
+    const { settlement: _dropped, ...fromSnapshot } = town.lots["12"]!
+    seed({ ...town, lots: { ...town.lots, "12": fromSnapshot } })
+    wrap(<SellPage />)
+    fireEvent.click(screen.getByRole("button", { name: /Ingrid Solheim/ }))
+    const mine = screen.getByRole("region", { name: "Your sold lots" })
+    expect(within(mine).getByRole("button", { name: "Show handover code" })).toBeInTheDocument()
   })
 
   it("lists the seller's sold lots with a handover code button", async () => {

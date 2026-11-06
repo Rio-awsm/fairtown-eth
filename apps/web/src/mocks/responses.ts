@@ -84,6 +84,8 @@ export const MOCK_RESPONSES: { [K in RouteKey]: z.input<ApiRoutes[K]["res"]> } =
   patchAgent: { agentId: HANSE, name: "Hanse Kitchen", role: "BUYER", paused: true },
   walkin: { agentId: addr(0x10f), address: addr(0x10f), token: "walkin-mock-session" },
   walkinBid: { bidId: "1", tx: TX },
+  // Mock mode takes any PIN (the real API checks SELLER_PIN).
+  sellerSession: { token: "mock-seller-session", sellerId: "ingrid", expiresAt: "2099-01-01T00:00:00.000Z" },
   handoverTicket: {
     ticket: mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS),
     qrText: mockQrText(mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS)),

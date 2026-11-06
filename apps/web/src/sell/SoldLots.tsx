@@ -9,7 +9,8 @@ import { useTown } from "../state/townStore"
 import { CameraCapture, type CapturedPhoto } from "./CameraCapture"
 import { newLotCode } from "./model"
 
-const NEEDS_SELLER = new Set(["sold", "truck_booked", "no_show_reported"])
+// Until paid in full: other buyers may still collect after the first (status `delivered` / `picked_up`).
+const NEEDS_SELLER = new Set(["sold", "truck_booked", "picked_up", "delivered", "no_show_reported"])
 
 /** "Buyer reported a no-show, respond in 2:00", with photo proof (POST /api/noshow/contest). */
 function NoShowAnswer({ lot, sellerId }: { lot: LotState; sellerId: string }) {
@@ -69,7 +70,8 @@ export function SoldLot({ lot, sellerId }: { lot: LotState; sellerId: string }) 
 export function SoldLots({ sellerName, sellerId }: { sellerName: string; sellerId: string }) {
   const lots = useTown((s) => s.town.lots)
   const mine = Object.values(lots).filter(
-    (l) => l.sellerName === sellerName && l.settlement && NEEDS_SELLER.has(l.status),
+    // Status alone: lots rebuilt from the relay snapshot (a reloaded phone) carry no settlement figures (C 1.3).
+    (l) => l.sellerName === sellerName && NEEDS_SELLER.has(l.status),
   )
   if (mine.length === 0) return null
   return (

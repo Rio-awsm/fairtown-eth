@@ -13,9 +13,9 @@ const api = createApiClient({ baseUrl: "http://api.test" })
 const KEYS = Object.keys(API_ROUTES) as (keyof typeof API_ROUTES)[]
 
 describe("MSW handlers for contract 11", () => {
-  it("covers all 26 routes", () => {
-    expect(KEYS).toHaveLength(26)
-    expect(handlers).toHaveLength(26)
+  it("covers all 27 routes (26 plus the seller session, ICR-009)", () => {
+    expect(KEYS).toHaveLength(27)
+    expect(handlers).toHaveLength(27)
     expect(Object.keys(MOCK_RESPONSES).sort()).toEqual([...KEYS].sort())
   })
 

@@ -36,6 +36,9 @@ test("two phones: the seller shows the code, the truck scans it with the camera 
   await seller.goto(`/sell?${READY}`)
   await ready(seller)
   await seller.getByRole("button", { name: /Ingrid Solheim/ }).tap()
+  // Seller session (ICR-009): mock mode takes any PIN.
+  await seller.getByLabel("PIN").fill("1234")
+  await seller.getByRole("button", { name: "Continue" }).tap()
   await seller.getByRole("region", { name: "Your sold lots" }).getByRole("button", { name: "Show handover code" }).tap()
   const code = seller.getByRole("img", { name: "Handover code for Lot 12" })
   await expect(code).toHaveAttribute("data-qr", mockQrText(mockTicket("12", MOCK_HANSE, MOCK_LOT12_UNITS)))
@@ -60,6 +63,8 @@ test("drop-off: the truck shows its code and the buyer opens the link without a 
   await page.goto(`/sell?${READY}`)
   await ready(page)
   await page.getByRole("button", { name: /^Lars/ }).tap()
+  await page.getByLabel("PIN").fill("1234")
+  await page.getByRole("button", { name: "Continue" }).tap()
   const lot20 = page.getByRole("region", { name: "Your sold lots" }).locator("div", { hasText: "Lot 20" }).first()
   await lot20.getByRole("button", { name: "Show handover code" }).tap()
   const link = await page.getByRole("link", { name: "Open without the camera" }).getAttribute("href")

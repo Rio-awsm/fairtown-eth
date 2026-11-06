@@ -6,16 +6,35 @@ import type { LotState, TownState } from "../game/reducer"
 
 const LOT_UNITS = 10n ** 18n
 /** Lots waiting for goods to change hands. */
-const AWAITING: ReadonlySet<LotStatus> = new Set(["sold", "truck_booked"])
+// A lot waits for handovers until it is paid in full: after one buyer of several collects, the contract already says
+// `delivered` (or `picked_up` by a carrier) while others still hold tokens (C 1.3). Spent codes fail on chain.
+const AWAITING: ReadonlySet<LotStatus> = new Set(["sold", "truck_booked", "picked_up", "delivered"])
+// A no-show is about the seller: once a carrier has picked up, the seller showed.
+const NO_SHOW_OPEN: ReadonlySet<LotStatus> = new Set(["sold", "truck_booked"])
 
 export type ReadResult = { ok: true; ticket: TicketJson } | { ok: false; error: string }
 const NOT_OURS: ReadResult = { ok: false, error: "This isn't a Fairtown handover code." }
 
 /** A scanned QR or a pasted fallback link (`…/scan?code=<ticket JSON>`) into a ticket. */
+/** The QR text inside a fallback link: the server's `#t=<base64url>` (ICR-009), or the older `?code=<text>`. */
+function linkCode(link: string): string | null {
+  const url = new URL(link, "http://fallback.local")
+  const t = new URLSearchParams(url.hash.slice(1)).get("t")
+  if (t) {
+    try {
+      const b64 = t.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(t.length / 4) * 4, "=")
+      return new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)))
+    } catch {
+      return null
+    }
+  }
+  return url.searchParams.get("code")
+}
+
 export function readCode(text: string): ReadResult {
   let payload = text.trim()
-  if (/^(https?:\/\/|\/)/.test(payload)) {
-    const code = new URL(payload, "http://fallback.local").searchParams.get("code")
+  if (/^(https?:\/\/|\/|#)/.test(payload)) {
+    const code = linkCode(payload)
     if (!code) return NOT_OURS
     payload = code
   }
@@ -73,5 +92,5 @@ export function handoverParties(lot: LotState, winners: HandoverParty[] | undefi
 
 /** "Seller didn't come" shows only after the pickup deadline, while the lot still waits for a handover. */
 export function noShowReportable(lot: LotState, block: number): boolean {
-  return AWAITING.has(lot.status) && lot.deadlineBlock !== undefined && block > lot.deadlineBlock
+  return NO_SHOW_OPEN.has(lot.status) && lot.deadlineBlock !== undefined && block > lot.deadlineBlock
 }

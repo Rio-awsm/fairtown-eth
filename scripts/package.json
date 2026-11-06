@@ -11,7 +11,9 @@
     "typecheck": "tsc -p .",
     "e2e:lot": "tsx e2e/lot.ts",
     "e2e:town-live": "tsx e2e/town-live.ts",
-    "dev:all": "tsx dev-all.ts"
+    "dev:all": "tsx dev-all.ts",
+    "e2e:first-lot": "tsx e2e/first-lot.ts",
+    "e2e:trust": "tsx e2e/trust.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "1.0.1",

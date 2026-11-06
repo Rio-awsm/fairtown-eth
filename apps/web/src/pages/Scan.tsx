@@ -21,17 +21,23 @@ const ROLE_WORDS: Record<string, string> = {
   HUMAN: "Visitor",
 }
 
-function Confirm({ ticket, lot, receiver }: { ticket: TicketJson; lot: LotState; receiver: AgentState }) {
+function Confirm({
+  ticket,
+  lot,
+  receiver,
+  onDone,
+}: {
+  ticket: TicketJson
+  lot: LotState
+  receiver: AgentState
+  onDone(message: string): void
+}) {
   const [reporting, setReporting] = useState(false)
   const confirm = useMutation({
     mutationFn: () => api.handoverConfirm({ body: { receiverId: receiver.agentId, ticket } }),
+    // The page keeps the result: the relay's handover event re-checks the ticket a moment later (C 1.3).
+    onSuccess: (r) => onDone(`Done. ${lotMoney(lot, r.releasedToSeller)} released to ${lot.sellerName}.`),
   })
-  if (confirm.isSuccess)
-    return (
-      <p role="status" className="rpg-well bg-meadow-tint p-3 text-lg">
-        Done. {lotMoney(lot, confirm.data.releasedToSeller)} released to {lot.sellerName}.
-      </p>
-    )
   return (
     <div className="space-y-3">
       <section aria-label="Handover" className="rpg-window space-y-3 p-4">
@@ -65,12 +71,22 @@ export function ScanPage() {
   const [params] = useSearchParams()
   const town = useTown((s) => s.town)
   const [receiver, setReceiver] = useState<AgentState | null>(null)
-  const [text, setText] = useState<string | null>(() => params.get("code"))
+  // A code arrives by camera, or in the link itself: `?code=` or the server's fallback `#t=` (ICR-009).
+  const [text, setText] = useState<string | null>(
+    () => params.get("code") ?? (/[#&]t=/.test(window.location.hash) ? window.location.hash : null),
+  )
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [done, setDone] = useState<string | null>(null)
   const receivers = Object.values(town.agents).filter((a) => RECEIVER_ROLES.has(a.role))
 
   let body
-  if (!receiver) {
+  if (done) {
+    body = (
+      <p role="status" className="rpg-well bg-meadow-tint p-3 text-lg">
+        {done}
+      </p>
+    )
+  } else if (!receiver) {
     body = (
       <div className="space-y-2">
         <p>Who is receiving the goods?</p>
@@ -108,7 +124,7 @@ export function ScanPage() {
     const checked = read.ok ? checkTicket(read.ticket, town, receiver.agentId) : read
     body =
       read.ok && checked.ok ? (
-        <Confirm ticket={read.ticket} lot={checked.lot} receiver={receiver} />
+        <Confirm ticket={read.ticket} lot={checked.lot} receiver={receiver} onDone={setDone} />
       ) : (
         <div className="space-y-2">
           <p role="alert" className="rpg-well bg-brick-tint p-3">

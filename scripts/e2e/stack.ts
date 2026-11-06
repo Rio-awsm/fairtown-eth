@@ -57,15 +57,30 @@ export class Run {
     process.on("unhandledRejection", (e) => this.fail(e))
     process.on("uncaughtException", (e) => this.fail(e))
     process.on("SIGINT", () => this.fail("interrupted"))
+    process.on("SIGTERM", () => this.fail("terminated"))
+    process.on("SIGHUP", () => this.fail("hung up"))
+    // Last resort on any exit path (a closed pipe, process.exit elsewhere): never leave services behind.
+    process.on("exit", () => this.stop())
   }
 
   redact = (s: string) => this.secrets.reduce<string>((out, x) => (x ? out.split(x).join("<redacted>") : out), s)
   say = (msg: string) => console.log(`  ${((Date.now() - this.started) / 1000).toFixed(0).padStart(4)}s  ${msg}`)
   ok = (lines: string[]) => lines.forEach((l) => this.say(`ok  ${l}`))
 
+  /**
+   * Stops every service. Each runs in its own process group (`detached`), and the whole group is signalled: killing
+   * only the `pnpm` wrapper left the `tsx` service behind, holding its port (C 1.3).
+   */
   stop() {
     this.stopping = true
-    for (const c of this.children) if (c.exitCode === null) c.kill("SIGTERM")
+    for (const c of this.children) {
+      if (c.exitCode !== null || c.pid === undefined) continue
+      try {
+        process.kill(-c.pid, "SIGTERM")
+      } catch {
+        c.kill("SIGTERM")
+      }
+    }
   }
 
   fail(e: unknown): never {
@@ -97,6 +112,7 @@ export class Run {
       cwd: root,
       env: { ...process.env, ...extraEnv, PATH: `${process.env.HOME}/.foundry/bin:${process.env.PATH}` },
       stdio: ["ignore", "pipe", "pipe"],
+      detached: true,
     })
     const write = (b: Buffer) => log.write(this.redact(b.toString()))
     child.stdout!.on("data", write)
@@ -137,7 +153,10 @@ export type Stack = { pub: PublicClient; logsClient: PublicClient }
  * Starts the chain (anvil fork: automine while agents bootstrap, then 1 block/s), keeper and agents, plus relay and
  * web when asked. Anvil runs keep Arkiv in memory and use rule bidders (D-114).
  */
-export async function startStack(run: Run, opts: { relay?: boolean; web?: boolean } = {}): Promise<Stack> {
+export async function startStack(
+  run: Run,
+  opts: { relay?: boolean; web?: boolean; baseSpeed?: boolean; env?: Record<string, string> } = {},
+): Promise<Stack> {
   const network = run.network
   const ports = [
     ...(network === "anvil" ? [FORK_PORT] : []),
@@ -167,8 +186,11 @@ export async function startStack(run: Run, opts: { relay?: boolean; web?: boolea
           ARKIV_MODE: "memory",
           MOCK_AI: "1",
           CHAIN_BACKFILL_BLOCKS: "1",
+          // Handover fallback links must open this laptop's web app, not the tunnel.
+          ...(opts.web ? { PUBLIC_WEB_URL: `http://localhost:${WEB_PORT}` } : {}),
         }
       : { CHAIN_MODE: "base-sepolia", ARKIV_MODE: "live" }
+  Object.assign(services, opts.env ?? {})
 
   if (network === "anvil") {
     run.start("anvil", "anvil", [...anvilArgs(env).args, "--silent"], {})
@@ -211,8 +233,28 @@ export async function startStack(run: Run, opts: { relay?: boolean; web?: boolea
     run.say(`ok  web up on http://localhost:${WEB_PORT}`)
   }
   if (network === "anvil") {
-    await createTestClient({ chain: baseSepolia, mode: "anvil", transport: http(ANVIL_URL) }).setIntervalMining({ interval: 1 })
-    run.say("ok  anvil now mines 1 block per second")
+    const test = createTestClient({ chain: baseSepolia, mode: "anvil", transport: http(ANVIL_URL) })
+    if (opts.baseSpeed) {
+      // Base's pace (~5 blocks/s, D-50), so the UI's real auction lengths (150 blocks on /sell) take ~30 s.
+      const pump = setInterval(() => void test.mine({ blocks: 1 }).catch(() => {}), 200)
+      pump.unref()
+      run.say("ok  anvil now mines about 5 blocks per second (Base pace)")
+    } else {
+      await test.setIntervalMining({ interval: 1 })
+      run.say("ok  anvil now mines 1 block per second")
+    }
   }
   return { pub, logsClient }
+}
+
+/** Runs one live Playwright spec (apps/web/e2e-live) against the running stack; resolves to its exit code. */
+export function runPlaywright(spec: string, extraEnv: Record<string, string> = {}): Promise<number> {
+  return new Promise<number>((resolve) => {
+    const pw = spawn("pnpm", ["-s", "-F", "web", "exec", "playwright", "test", "-c", "playwright.live.config.ts", spec], {
+      cwd: root,
+      env: { ...process.env, E2E_API_URL: API, E2E_WEB_URL: `http://localhost:${WEB_PORT}`, ...extraEnv },
+      stdio: ["ignore", "inherit", "inherit"],
+    })
+    pw.on("exit", (c) => resolve(c ?? 1))
+  })
 }

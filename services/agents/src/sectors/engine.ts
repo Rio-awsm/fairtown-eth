@@ -27,6 +27,8 @@ type LotInfo = {
   relists: number
   parentLotId: bigint
   holders: Map<Address, bigint>
+  /** Listed by a person through /sell: that person hands over with the QR code, never the seller's agent (ICR-009). */
+  human: boolean
 }
 
 export type SectorEngineOptions = {
@@ -39,6 +41,10 @@ export type SectorEngineOptions = {
   references?: ReferenceRow[]
   fileDispute?: (buyer: Address, lotId: bigint, tokenAmount: bigint) => Promise<{ disputeId: bigint }>
   onError?: (what: string, err: unknown) => void
+  /** True for lots a person listed (their metadata URI); scripted handovers skip them (C 1.3). */
+  humanListed?: (metadataURI: string) => boolean
+  /** Buyers report a no-show one block after the pickup deadline (D-89). Off for tests that stage each path. */
+  autoNoShowReports?: boolean
   // Restart: events up to this block are history. State is rebuilt from them; one-time actions (list a truck or storage
   // lot, request storage, relist) wait until the feed has caught up and run only if the chain shows they never happened.
   replayUntil?: bigint
@@ -239,6 +245,7 @@ export class SectorEngine {
       relists: relisted ? parent.relists + 1 : 0,
       parentLotId: a.parentLotId,
       holders: new Map(),
+      human: this.o.humanListed?.(a.metadataURI) ?? false,
     }
     this.lots.set(a.lotId.toString(), lot)
     this.byAuction.set(lc(a.auction), a.lotId)
@@ -284,6 +291,9 @@ export class SectorEngine {
   private async onTransportNeeded(a: EventArgs<"TransportNeeded">, block: bigint) {
     const parent = this.lots.get(a.lotId.toString())
     if (!parent) return
+    // A person's lot: their buyers collect at the dock with the QR code. A truck would hold Paid in full until its own
+    // drop-off, which only a scripted pickup triggers (C 1.3).
+    if (parent.human) return this.note(`lot ${parent.lotId}: listed by a person, buyers collect directly`)
     return this.onceLive(block, `transport for lot ${parent.lotId}`, () => this.arrangeTransport(parent, a, block))
   }
 
@@ -360,6 +370,7 @@ export class SectorEngine {
 
   // Seller's agent signs when the receiver arrives; the carrier confirms each buyer's share.
   private async pickup(parent: LotInfo, carrier: Address): Promise<boolean> {
+    if (parent.human) return this.note(`lot ${parent.lotId}: listed by a person, who hands over with the QR code`), false
     if (this.isNoShowSeller(parent.seller)) return this.note(`lot ${parent.lotId}: seller never shows (seeded)`), false
     let ok = false
     for (const [buyer] of parent.holders) {
@@ -376,6 +387,7 @@ export class SectorEngine {
 
   // Receiver confirms directly: buyer pickup with no truck, drop-off of a truck lot, storage check-in.
   private async directHandover(lot: LotInfo) {
+    if (lot.human) return this.note(`lot ${lot.lotId}: listed by a person, who hands over with the QR code`)
     if (this.isNoShowSeller(lot.seller)) return this.note(`lot ${lot.lotId}: seller never shows (seeded)`)
     for (const [buyer] of lot.holders) {
       const tokens = await this.o.chain.tokenBalance(lot.lotId, buyer)
@@ -417,6 +429,7 @@ export class SectorEngine {
 
   // After the pickup deadline, any buyer still holding tokens reports; the keeper finalizes after the contest window.
   private async reportNoShows(lot: LotInfo) {
+    if (this.o.autoNoShowReports === false) return this.note(`lot ${lot.lotId}: automatic no-show reports are off`)
     const s = (await this.o.chain.getLot(lot.lotId)).settlement
     if (!s || s.heldRemaining === 0n) return
     for (const [buyer] of lot.holders) {

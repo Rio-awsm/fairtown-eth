@@ -52,7 +52,7 @@ export const codSpec = (seller: Address, over: Partial<LotSpecInput> = {}): LotS
   pickupWindowBlocks: 300n,
   parentLotId: 0n,
   seller,
-  metadataURI: "http://localhost:8787/api/lots/meta/d1",
+  metadataURI: "", // an agent or director listing; lots from POST /api/listings/confirm carry /api/lots/meta/<draftId>
   ...over,
 })
 

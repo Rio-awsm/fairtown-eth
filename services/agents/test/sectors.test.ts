@@ -31,7 +31,7 @@ const RULES = {
   travelBlocks: 10n,
 }
 
-async function town() {
+async function town(opts: { autoNoShowReports?: boolean } = {}) {
   const wallets = new Wallets(generateMnemonic(english))
   const chain = new FakeChain({ params, accountFor: wallets.accountFor })
   const publisher = new MemoryPublisher()
@@ -51,6 +51,8 @@ async function town() {
     references: loadReferences(),
     rules: RULES,
     fileDispute: (buyer, lotId, tokens) => fileDispute(dd, buyer, lotId, tokens, fixtureDisputePhotos(lotId)),
+    humanListed: (uri) => uri.includes("/api/lots/meta/"),
+    ...(opts.autoNoShowReports === undefined ? {} : { autoNoShowReports: opts.autoNoShowReports }),
   })
   runtime.watchOnly()
   engine.watchOnly()
@@ -185,6 +187,26 @@ describe("sector engine on FakeChain", () => {
     expect(t.events("NoShowReported").some((r) => r.lotId === bad.lotId)).toBe(true)
     expect(t.events("NoShowRefunded").some((r) => r.lotId === bad.lotId)).toBe(true)
     expect((await t.chain.getLot(bad.lotId)).status).toBe("refunded")
+  })
+
+  it("a lot a person listed through /sell is never handed over by the seller's agent (C 1.3)", async () => {
+    const t = await town()
+    const ingrid = t.addr("ingrid")
+    const { lotId } = await t.chain.createLot(ingrid, codSpec(ingrid, { metadataURI: "http://localhost:8787/api/lots/meta/d-1" }))
+    await t.run(45)
+    expect(t.events("LotSettled").some((s) => s.lotId === lotId)).toBe(true)
+    expect(t.events("HandoverConfirmed").some((h) => h.lotId === lotId)).toBe(false)
+    expect(t.events("LotListed").some((l) => l.parentLotId === lotId)).toBe(false) // no truck: buyers collect directly
+    expect(t.engine.log).toContain(`lot ${lotId}: listed by a person, buyers collect directly`)
+  })
+
+  it("buyers do not report no-shows when automatic reports are off (e2e:trust stages them)", async () => {
+    const t = await town({ autoNoShowReports: false })
+    const coastal = t.addr("coastal_catch")
+    const { lotId } = await t.chain.createLot(coastal, codSpec(coastal, { commodity: "haddock", qty: 400n, floorPerUnit: toBase("6.00"), pickupWindowBlocks: 200n }))
+    await t.run(110)
+    expect(t.events("NoShowReported").some((r) => r.lotId === lotId)).toBe(false)
+    expect(t.engine.log).toContain(`lot ${lotId}: automatic no-show reports are off`)
   })
 
   it("Coastal Catch never signs: buyers report after the deadline and get the held share back", async () => {

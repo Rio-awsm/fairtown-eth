@@ -22,6 +22,17 @@ describe("readCode", () => {
     expect(readCode(`/scan?code=${encodeURIComponent(json)}`)).toEqual({ ok: true, ticket })
   })
 
+  it("reads the server's fallback link: /scan#t=<base64url of the QR text> (ICR-009)", () => {
+    const t = Buffer.from(json).toString("base64url")
+    expect(readCode(`https://x.trycloudflare.com/scan#t=${t}`)).toEqual({ ok: true, ticket })
+    expect(readCode(`#t=${t}`)).toEqual({ ok: true, ticket })
+  })
+
+  it("rejects a fallback link whose code is not base64url ticket text", () => {
+    expect(readCode("/scan#t=%%%")).toEqual({ ok: false, error: "This isn't a Fairtown handover code." })
+    expect(readCode(`/scan#t=${Buffer.from("hello").toString("base64url")}`).ok).toBe(false)
+  })
+
   it.each(["hello", "https://example.com/menu", "{}", JSON.stringify({ ...ticket, sig: "0x12" })])(
     "rejects %s",
     (text) => {
@@ -47,8 +58,13 @@ describe("checkTicket", () => {
     })
   })
 
+  it("accepts the next buyer's code after another buyer of the lot collected (status delivered)", () => {
+    const town = { ...run([S["handover.confirmed"], S["lot.delivered"]], sold()), block: 1100 }
+    expect(checkTicket(ticket, town, BUYER).ok).toBe(true)
+  })
+
   it("rejects a code for a lot that is not waiting for a handover", () => {
-    const town = { ...run([S["handover.confirmed"]], sold()), block: 1100 }
+    const town = { ...run([S["handover.confirmed"], S["lot.delivered"], S["lot.paid_in_full"]], sold()), block: 1100 }
     expect(checkTicket(ticket, town, BUYER)).toEqual({
       ok: false,
       error: "This code is for Lot 12, which isn't waiting for a handover.",
