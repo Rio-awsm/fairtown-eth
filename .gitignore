@@ -21,3 +21,7 @@ cre/*/.forced-*.json
 .env_stream*
 # CRE bridge runtime logs (regenerated every run; curated green-light logs stay in cre/logs/)
 cre/logs/bridge/
+
+# Local tool output: brainstorm mockups and browser-automation screenshots
+.superpowers/
+.playwright-mcp/

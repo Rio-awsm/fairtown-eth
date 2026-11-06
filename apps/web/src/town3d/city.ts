@@ -6,6 +6,7 @@ import { footprintOf, reservedTiles, type Prop } from "../game/map/scenery"
 import type { TiledMap } from "../game/map/tiled"
 import { TILE_PX } from "./coords"
 import { WINDOW_LEVELS, type Look, type Models } from "./models"
+import { LOOKS, type SceneLook } from "./theme"
 
 /** Palette of the night town: slate ground, graphite asphalt, ink-blue water, cyan routes. */
 export const CITY = {
@@ -13,7 +14,7 @@ export const CITY = {
   asphalt: 0x1b212d,
   kerb: 0x2a3142,
   water: 0x0c2342,
-  route: 0x3fd8ff,
+  route: 0x00e5ff,
   lamp: 0xffc27a,
 } as const
 
@@ -94,7 +95,15 @@ export type City = {
   /** Where each market's roof is, for its sign and weather. */
   roofs: Record<MarketBuilding, THREE.Vector3>
   tick(t: number, still: boolean): void
+  /** Day or night (D-122): ground, asphalt, neon and lamp light. */
+  setLook(look: SceneLook): void
 }
+
+/** Something that glows: its own colour, brightened by the look's neon level. */
+type Neon = { mat: THREE.MeshBasicMaterial; base: THREE.Color; k?: number }
+
+const glowMat = (colour: number) =>
+  new THREE.MeshBasicMaterial({ color: colour, toneMapped: false })
 
 /** Runs of road tiles along rows and columns, for the cyan route lines. */
 export function roadRuns(roads: WalkGrid): { x0: number; z0: number; x1: number; z1: number }[] {
@@ -199,18 +208,18 @@ const placeAt = (x: number, z: number, scale: number, turn = 0, y = 0) =>
     new THREE.Vector3(scale, scale, scale),
   )
 
-/** Speckled slate ground: never flat, never busy. */
-function groundTexture(): THREE.Texture {
+/** Speckled ground: slate at night, pale pavement by day. Never flat, never busy. */
+function groundTexture(day = false): THREE.Texture {
   const c = document.createElement("canvas")
   c.width = c.height = 256
   const g = c.getContext("2d")
   if (g) {
-    g.fillStyle = "#1a2232"
+    g.fillStyle = day ? "#9fa8b8" : "#141a2c"
     g.fillRect(0, 0, 256, 256)
     const r = rng(3)
     for (let i = 0; i < 2600; i++) {
-      const v = 22 + Math.floor(r() * 18)
-      g.fillStyle = `rgba(${v}, ${v + 8}, ${v + 22}, ${0.35 + r() * 0.4})`
+      const v = (day ? 140 : 18) + Math.floor(r() * 18)
+      g.fillStyle = `rgba(${v}, ${v + 6}, ${v + (day ? 14 : 24)}, ${0.35 + r() * 0.4})`
       g.fillRect(r() * 256, r() * 256, 1 + r() * 2, 1 + r() * 2)
     }
   }
@@ -280,12 +289,13 @@ export function buildCity(
   const ticks: ((t: number, still: boolean) => void)[] = []
 
   // Ground, running out past the map into the fog.
+  const neons: Neon[] = []
+  const pools: { mat: THREE.MeshBasicMaterial; opacity: number }[] = []
   const tex = groundTexture()
-  tex.repeat.set((w + 80) / 6, (d + 80) / 6)
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(w + 80, d + 80),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, map: tex, roughness: 0.97 }),
-  )
+  const dayTex = groundTexture(true)
+  for (const t of [tex, dayTex]) t.repeat.set((w + 80) / 6, (d + 80) / 6)
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: tex, roughness: 0.97 })
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(w + 80, d + 80), groundMat)
   ground.rotation.x = -Math.PI / 2
   ground.position.set(w / 2, 0, d / 2)
   ground.receiveShadow = true
@@ -300,16 +310,17 @@ export function buildCity(
         new THREE.Matrix4().makeTranslation((i % raw.width) + 0.5, 0.012, Math.floor(i / raw.width) + 0.5),
       )
   })
+  const waterMat = new THREE.MeshStandardMaterial({
+    color: CITY.water,
+    roughness: 0.05,
+    metalness: 0.6,
+    envMapIntensity: 1.6,
+    userData: { reflective: true },
+  })
   if (waterTiles.length) {
     const sea = new THREE.InstancedMesh(
       new THREE.PlaneGeometry(1.001, 1.001).rotateX(-Math.PI / 2),
-      new THREE.MeshStandardMaterial({
-        color: CITY.water,
-        roughness: 0.05,
-        metalness: 0.6,
-        envMapIntensity: 1.6,
-        userData: { reflective: true },
-      }),
+      waterMat,
       waterTiles.length,
     )
     waterTiles.forEach((m, i) => sea.setMatrixAt(i, m))
@@ -322,29 +333,29 @@ export function buildCity(
   for (let y = 0; y < roads.height; y++)
     for (let x = 0; x < roads.width; x++)
       if (roads.cells[y]![x] === 0) roadTiles.push(new THREE.Matrix4().makeTranslation(x + 0.5, 0.02, y + 0.5))
+  const asphaltMat = new THREE.MeshStandardMaterial({ color: LOOKS.night.asphalt, roughness: 0.92 })
   if (roadTiles.length) {
-    const asphalt = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(1.002, 0.04, 1.002),
-      new THREE.MeshStandardMaterial({ color: CITY.asphalt, roughness: 0.92 }),
-      roadTiles.length,
-    )
+    const asphalt = new THREE.InstancedMesh(new THREE.BoxGeometry(1.002, 0.04, 1.002), asphaltMat, roadTiles.length)
     roadTiles.forEach((m, i) => asphalt.setMatrixAt(i, m))
     asphalt.receiveShadow = true
     group.add(asphalt)
   }
-  const routeMat = new THREE.MeshStandardMaterial({ color: CITY.route, emissive: CITY.route, emissiveIntensity: 1.3 })
+  // One quiet route colour down the middle of every road (D-122 minimal pass).
+  const routeMat = glowMat(CITY.route)
+  neons.push({ mat: routeMat, base: new THREE.Color(CITY.route), k: 0.4 })
   for (const run of roadRuns(roads)) {
     const len = Math.hypot(run.x1 - run.x0, run.z1 - run.z0)
     const line = new THREE.Mesh(
-      new THREE.BoxGeometry(run.x1 !== run.x0 ? len : 0.07, 0.02, run.z1 !== run.z0 ? len : 0.07),
+      new THREE.BoxGeometry(run.x1 !== run.x0 ? len : 0.05, 0.02, run.z1 !== run.z0 ? len : 0.05),
       routeMat,
     )
     line.position.set((run.x0 + run.x1) / 2, 0.05, (run.z0 + run.z1) / 2)
     group.add(line)
   }
-  const nodeMat = new THREE.MeshStandardMaterial({ color: CITY.route, emissive: CITY.route, emissiveIntensity: 1.4 })
+  const nodeMat = glowMat(CITY.route)
+  neons.push({ mat: nodeMat, base: new THREE.Color(CITY.route), k: 0.5 })
   const nodes = routeNodes(roads).map((n) => {
-    const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.03, 20), nodeMat)
+    const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.03, 20), nodeMat)
     dot.position.set(n.x, 0.06, n.z)
     group.add(dot)
     return dot
@@ -407,7 +418,10 @@ export function buildCity(
   const byKey = new Map<string, THREE.Matrix4[]>()
   const add = (key: string, m: THREE.Matrix4) => byKey.set(key, [...(byKey.get(key) ?? []), m])
   const lampHeads: THREE.Matrix4[] = []
+  // Half the trees and bushes: the markets, not the scenery, are the picture (D-122 minimal pass).
+  const thin = rng(41)
   for (const p of props) {
+    if (p.kind !== "lamp" && thin() < 0.5) continue
     const x = p.x / TILE_PX
     const z = (p.y - 8) / TILE_PX
     if (p.kind === "lamp") {
@@ -431,15 +445,17 @@ export function buildCity(
       new THREE.MeshStandardMaterial({ color: CITY.lamp, emissive: CITY.lamp, emissiveIntensity: 4 }),
       lampHeads.length,
     )
+    const poolMat = new THREE.MeshBasicMaterial({
+      color: CITY.lamp,
+      transparent: true,
+      opacity: 0.12,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+    pools.push({ mat: poolMat, opacity: 0.12 })
     const pool = new THREE.InstancedMesh(
       new THREE.CircleGeometry(1.1, 24).rotateX(-Math.PI / 2).translate(0, 0.035, 0),
-      new THREE.MeshBasicMaterial({
-        color: CITY.lamp,
-        transparent: true,
-        opacity: 0.12,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      }),
+      poolMat,
       lampHeads.length,
     )
     lampHeads.forEach((m, i) => {
@@ -454,6 +470,8 @@ export function buildCity(
   // Homes on free lots, facing the road, some windows lit.
   const homes = new Map<string, THREE.Matrix4[]>()
   for (const lot of homeLots(town, walk, roads, props)) {
+    // About two homes in five: enough to read as a town, not a crowd.
+    if (thin() < 0.6) continue
     const key = HOMES[Math.floor(r() * HOMES.length)]!
     const level = Math.floor(r() * 3)
     const k = `${key}|${level}`
@@ -479,7 +497,8 @@ export function buildCity(
     for (let gx = -20; gx < w + 20; gx += 3.4) {
       const inside = gx > -3 && gx < w + 1 && gz > -3
       const edge = Math.max(-gx, gx - w, -gz) // how far past the map
-      if (inside || r() < (edge < 9 ? 0.3 : 0.6)) continue
+      // A sparse skyline at the edges, fading into the fog.
+      if (inside || r() < (edge < 9 ? 0.65 : 0.8)) continue
       putOut(gx + r(), gz + r(), edge < 9)
     }
   for (const [k, ms] of outskirts) {
@@ -555,11 +574,29 @@ export function buildCity(
     cyan.emissiveIntensity = 1.4 + Math.sin(t / 650) * 0.25
   })
 
+  const setLook = (look: SceneLook) => {
+    groundMat.map = look === LOOKS.day ? dayTex : tex
+    groundMat.needsUpdate = true
+    asphaltMat.color.setHex(look.asphalt)
+    waterMat.color.setHex(look.water)
+    // The night sky's reflection would turn day water black.
+    waterMat.metalness = look.additive ? 0.6 : 0.1
+    for (const n of neons) n.mat.color.copy(n.base).multiplyScalar(Math.max(1, look.neon * (n.k ?? 1)))
+    for (const p of pools) {
+      // Light pools add light at night; by day a faint solid tint keeps the market plots readable.
+      p.mat.blending = look.additive ? THREE.AdditiveBlending : THREE.NormalBlending
+      p.mat.opacity = look.additive ? p.opacity : p.opacity * 1.6 * (p.mat.color.getHex() === CITY.lamp ? 0 : 1)
+      p.mat.needsUpdate = true
+    }
+  }
+  setLook(LOOKS.night)
+
   return {
     group,
     core,
     hits,
     roofs,
+    setLook,
     tick(t, still) {
       for (const fn of ticks) fn(t, still)
     },

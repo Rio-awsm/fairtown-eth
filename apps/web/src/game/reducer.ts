@@ -1,6 +1,6 @@
 import { BUILDINGS, CURRENCIES, type Building, type Currency, type LotStatus, type Role } from "@fairtown/shared/keys"
 import type { LotListedEvent, SignalEvent, TownEnvelope, TownEvent, TownSnapshot } from "@fairtown/shared/protocol"
-import { formatBps, formatMoney, formatPerUnit } from "../money/format"
+import { formatBps, formatMoney, formatPerUnit, unitLabel } from "../money/format"
 import { BUBBLE_MAX, type Phase, type TownCommand } from "./commands"
 
 export type LotState = LotListedEvent & {
@@ -266,7 +266,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       }
     }
     case "transport.needed": {
-      const unit = lot ? ` ${lot.unit}` : ""
+      const unit = lot ? ` ${unitLabel(lot.unit)}` : ""
       return {
         state,
         commands: [
@@ -275,7 +275,7 @@ export function reduce(state: TownState, event: TownEvent): ReduceResult {
       }
     }
     case "storage.needed": {
-      const unit = lot ? ` ${lot.unit}` : ""
+      const unit = lot ? ` ${unitLabel(lot.unit)}` : ""
       const days = event.days === 1 ? "1 day" : `${event.days} days`
       const commands: TownCommand[] = [{ kind: "openVault", lotId: event.lotId }]
       if (state.agents[event.requester])

@@ -5,7 +5,7 @@ import type { LotState } from "../game/reducer"
 import { api } from "../net/api"
 import { ApiClientError } from "../net/apiClient"
 import { useTown } from "../state/townStore"
-import { formatBps } from "../money/format"
+import { formatBps, unitLabel } from "../money/format"
 import { TxLink } from "./links"
 import { lotMoney, lotPerUnit, nameOf } from "./model"
 import { PriceChart } from "./PriceChart"
@@ -68,7 +68,7 @@ export function LotPanel({ lotId }: { lotId: string }) {
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-bold">
-        Lot {lot.lotId} · {lot.qty} {lot.unit} {lot.commodity}
+        Lot {lot.lotId} · {lot.qty} {unitLabel(lot.unit)} {lot.commodity}
       </h2>
       <p className="text-sm">
         {lot.sellerName}

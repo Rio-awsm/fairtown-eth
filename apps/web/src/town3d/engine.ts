@@ -39,17 +39,20 @@ import { buildCity, CITY_MODELS, type City } from "./city"
 import { Clock } from "./clock"
 import { declutter, nearestStep, nextStep, zoomBy } from "./declutter"
 import { TILE_PX } from "./coords"
-import { Sky3D, arc, burst, crate, flare, floatText, type Fx } from "./fx"
+import { Sky3D, arc, burst, crate, flare, floatText, pillar, type Fx } from "./fx"
+import { disposeLine, laser, neonLine } from "./lines"
 import { Models } from "./models"
 import { Agent3D, PEOPLE, STEP_MS, polyline } from "./people"
 import { Stage } from "./stage"
 import { STALL_MODELS, Stall3D } from "./stall"
+import { LOOKS, MARKET_NEON, ROLE_COLOUR, cssHex } from "./theme"
 
 const MAP_URL = "/assets/maps/town.tmj"
 const MAX_AGENTS = 80
 const CARS = ["car/sedan", "car/suv", "car/taxi", "car/van"] as const
 /** A director close-up, relative to the whole-town view (as in the 2D town). */
 const FOCUS_ZOOM = 1.6
+const TRUCK_BEAM = new THREE.CylinderGeometry(0.06, 0.22, 5, 12, 1, true).translate(0, 3, 0)
 
 const w3 = (p: Point, y = 0) => new THREE.Vector3(p.x / TILE_PX, y, p.y / TILE_PX)
 
@@ -99,8 +102,8 @@ export class TownEngine {
 
   constructor(private readonly host: HTMLElement) {
     this.stage = new Stage(host)
-    // The /town HUD: the top bar and the ticker along the bottom.
-    this.stage.insets = { top: 150, bottom: 64 }
+    // The /town HUD: the top bar and world clock, and the lot journey and ticker along the bottom.
+    this.stage.insets = { top: 170, bottom: 150 }
     this.stage.scene.add(this.world)
     const params = new URLSearchParams(window.location.search)
     this.still =
@@ -167,6 +170,7 @@ export class TownEngine {
       layoutScenery(town, this.walkGrid, this.roadGrid),
     )
     this.world.add(this.city.group)
+    this.applyLook()
     // The night sky shows in what reflects it.
     if (this.stage.envMap)
       this.city.group.traverse((o) => {
@@ -221,6 +225,10 @@ export class TownEngine {
       townStore.subscribe((s, prev) => {
         if (prev.ui.director && !s.ui.director) this.home()
       }),
+      // The Day/Night toggle (D-122).
+      townStore.subscribe((s, prev) => {
+        if (s.ui.daylight !== prev.ui.daylight) this.applyLook()
+      }),
     )
     const fps = window.setInterval(() => EventBus.emit("scene:fps", Math.round(this.stage.fps * 10) / 10), 500)
     this.offs.push(() => window.clearInterval(fps))
@@ -232,6 +240,19 @@ export class TownEngine {
     })
     EventBus.emit("scene:ready", undefined)
     if (env.exposeTown && new URLSearchParams(window.location.search).get("stress") === "1") this.startStress()
+  }
+
+  /** Day or night, as the toggle says: sky and light, every material, the neon and the markers. */
+  private applyLook() {
+    const daylight = townStore.getState().ui.daylight
+    const look = LOOKS[daylight]
+    this.stage.setLook(look)
+    this.models.setLook(look)
+    this.city.setLook(look)
+    for (const a of this.pool) a.setLook(look)
+    for (const st of this.stalls.values()) st.setLook(look)
+    this.host.dataset.daylight = daylight
+    this.stage.shadowsChanged()
   }
 
   private fx(): Fx {
@@ -253,6 +274,7 @@ export class TownEngine {
       chip.type = "button"
       chip.className = "ft-sign"
       chip.tabIndex = -1
+      chip.style.setProperty("--neon", cssHex(MARKET_NEON[b]))
       const head = document.createElement("strong")
       head.textContent = title
       chip.append(head)
@@ -474,8 +496,11 @@ export class TownEngine {
       const cx = r.left + r.width / 2
       const cy = r.top + r.height / 2
       if (e.key === "+" || e.key === "=" || e.key === "-" || e.key === "_") {
+        // Step from where a running zoom is heading, as the wheel does: a quick second press must
+        // not land back on the step the first one is still easing to.
+        const goal = easing ? heading : this.stage.rig.zoom
         touch()
-        animateTo(nextStep(this.stage.rig.zoom, e.key === "+" || e.key === "=" ? 1 : -1), cx, cy, 160)
+        animateTo(nextStep(goal, e.key === "+" || e.key === "=" ? 1 : -1), cx, cy, 160)
       }
       if (e.key === "0") this.home()
     }
@@ -500,14 +525,16 @@ export class TownEngine {
   }
 
   /**
-   * No two labels overlap: where they would, the more important one stays (speech, then stalls,
-   * weather and plaques, then building signs, then name tags) and the other fades until you zoom
-   * in. From far away, stall cards show only their price and status.
+   * No two labels overlap: where they would, the more important one stays (stalls, then speech,
+   * trucks, weather and plaques, then building signs, then name tags) and the other fades until you
+   * zoom in. From far away, stall cards show only their price and status.
    */
   private declutterLabels() {
     const PRIORITY: [string, number][] = [
       ["ft-bubble", 6],
-      ["ft-stall", 5],
+      // The auction card outranks speech (D-122): the price is the story.
+      ["ft-stall", 7],
+      ["ft-truck", 5],
       ["ft-weather", 4],
       ["ft-plaque", 4],
       ["ft-sign", 3],
@@ -518,7 +545,7 @@ export class TownEngine {
       root.classList.toggle("ft-far", this.stage.rig.zoom < 1.8)
       // CSS2DRenderer hides an off-screen or invisible label with display: none on the label itself.
       const els = [
-        ...root.querySelectorAll<HTMLElement>(".ft-bubble, .ft-stall, .ft-weather, .ft-plaque, .ft-sign, .ft-tag"),
+        ...root.querySelectorAll<HTMLElement>(".ft-bubble, .ft-stall, .ft-truck, .ft-weather, .ft-plaque, .ft-sign, .ft-tag"),
       ].filter((el) => el.style.display !== "none")
       const labels = els.map((el) => {
         el.classList.remove("ft-hidden")
@@ -608,9 +635,36 @@ export class TownEngine {
     const path = this.roads.findPath(from, anchorFor(this.town.anchors, c.to))
     if (path === null) return console.warn(`no road from ${c.from} to ${c.to}`)
     this.trucks.get(c.lotId)?.stop()
-    const mesh = this.models.make("car/truck-flat", "keep", { w: 0.75 })
+    const mesh = this.models.make("car/truck-flat", "keep", { w: 1 })
     this.headlights(mesh, 0xfff1c9)
+    // A truck on a job: a yellow beam over it, its job on a chip, and its route lit ahead of it.
+    const look = this.stage.currentLook
+    const beam = new THREE.Mesh(
+      TRUCK_BEAM,
+      new THREE.MeshBasicMaterial({
+        color: ROLE_COLOUR.TRUCK,
+        transparent: true,
+        opacity: look.additive ? 0.3 : 0.45,
+        blending: look.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      }),
+    )
+    const chip = document.createElement("div")
+    chip.className = "ft-truck"
+    chip.textContent = `Truck · Lot ${c.lotId} → ${splitSign(BUILDING_SIGNS[c.to]).title}`
+    const label = new CSS2DObject(chip)
+    label.center.set(0.5, 1)
+    label.position.set(0, 1.6, 0)
+    mesh.add(beam, label)
     this.world.add(mesh)
+    const route = neonLine(
+      [from, ...path].map((p) => w3(p, 0.14)),
+      ROLE_COLOUR.TRUCK,
+      { width: 4, dashed: true, opacity: 0.95 },
+    )
+    if (route) this.world.add(route)
     const truck: Car = { mesh, x: from.x, y: from.y, stop: () => {} }
     mesh.position.copy(w3(from))
     const line = polyline([from, ...path])
@@ -628,6 +682,9 @@ export class TownEngine {
     )
     truck.stop = () => {
       stopTween()
+      if (route) disposeLine(route)
+      beam.material.dispose()
+      chip.remove()
       mesh.removeFromParent()
       if (this.trucks.get(c.lotId) === truck) this.trucks.delete(c.lotId)
     }
@@ -682,6 +739,7 @@ export class TownEngine {
     let agent = this.pool[admitted.slot]
     if (!agent) {
       agent = new Agent3D(this.clock, this.models, (id) => EventBus.emit("select", { kind: "agent", id }))
+      agent.setLook(this.stage.currentLook)
       this.pool[admitted.slot] = agent
       this.world.add(agent.group)
     }
@@ -752,6 +810,7 @@ export class TownEngine {
       EventBus.emit("select", { kind: "lot", id: c.lotId }),
     )
     stall.setClock(this.block)
+    stall.setLook(this.stage.currentLook)
     const tier = this.sellerTier.get(c.seller)
     if (tier) stall.setTier(tier)
     this.world.add(stall.group)
@@ -767,6 +826,20 @@ export class TownEngine {
     s.dispose()
     this.stalls.delete(lotId)
     this.stage.shadowsChanged()
+  }
+
+  /**
+   * A lot cleared: everyone who bid on it glows gold. Clearing auctions can fill several bidders
+   * and the settle event names none, so the town does not pick a winner (D-122).
+   */
+  private glowBidders(lotId: string) {
+    const bidders = new Set((townStore.getState().town.lots[lotId]?.bidLog ?? []).map((b) => b.agentId))
+    for (const id of bidders) {
+      const agent = this.agents.get(id)
+      if (!agent) continue
+      burst(this.fx(), agent.chest.setY(0.1), 0xffc857, 1400, 2.4)
+      agent.ping()
+    }
   }
 
   private showToast(text: string, tone: "info" | "money" | "warn") {
@@ -805,14 +878,22 @@ export class TownEngine {
       case "coinArc": {
         this.see("coinArc")
         const from = this.agents.get(c.agentId)
-        if (stall && from) arc(fx, from.chest, stall.top, 0xffc857)
+        if (!stall || !from) return
+        // A bid: a laser in the bidder's colour to the stall, its name up, the stall ringing.
+        laser(fx, from.chest, stall.top, from.colour)
+        arc(fx, from.chest, stall.top, 0xffc857)
+        burst(fx, stall.top, from.colour, 900, 2)
+        from.ping()
         return
       }
       case "flashClear":
         this.see("flashClear")
         // Every clearing passes through the settlement hub: a cyan spark runs from it to the stall.
-        if (stall) arc(fx, new THREE.Vector3(this.city.core.x, 2.4, this.city.core.z), stall.top, 0x3fd8ff, 1100)
-        return stall?.flash(this.speed)
+        if (!stall) return
+        arc(fx, new THREE.Vector3(this.city.core.x, 2.4, this.city.core.z), stall.top, 0x3fd8ff, 1100)
+        floatText(fx, stall.top, "SOLD", "money")
+        this.glowBidders(c.lotId)
+        return stall.flash(this.speed)
       case "fadeStall":
         this.see("fadeStall")
         return stall?.fade(c.newFloorLabel)
@@ -827,6 +908,8 @@ export class TownEngine {
         this.see("openVault")
         const at = w3(this.town.anchors.buildings.cold_vault.entry)
         flare(fx, at, 0x9be7ff)
+        pillar(fx, at, MARKET_NEON.cold_vault)
+        floatText(fx, at.clone().setY(1.2), "Cold storage booked", "info", 2600)
         return burst(fx, at, 0x9be7ff, 1200, 2)
       }
       case "refundCoins": {
@@ -874,8 +957,8 @@ export class TownEngine {
           const { key, at } = this.skyAt(c.place)
           return this.sky.festival(key, at, c.label ?? "")
         }
-        this.see(c.on ? "setLights:night" : "setLights:day")
-        return this.stage.setDaylight(!c.on)
+        // The town's light follows the Day/Night toggle, not the replay (D-122).
+        return this.see(c.on ? "setLights:night" : "setLights:day")
       }
       case "setClock":
         this.block = c.block
@@ -885,8 +968,7 @@ export class TownEngine {
         this.see(`toast:${c.tone}`)
         return this.showToast(c.text, c.tone)
       case "setPhase":
-        this.see("setPhase")
-        return this.stage.setDaylight(c.phase !== "night" && c.phase !== "evening")
+        return this.see("setPhase")
       default: {
         const unreachable: never = c
         return unreachable

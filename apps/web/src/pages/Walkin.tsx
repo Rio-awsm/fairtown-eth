@@ -13,6 +13,7 @@ import { DEFAULT_BUDGET, SLIDER_STEPS, apiMaxPerUnit, checkAmount, maxUnits, pri
 import { clearSession, loadSession, saveSession, type WalkinSession } from "../walkin/session"
 import type { PersonLook } from "../game/art/people"
 import { PixelPerson } from "../hud/PixelPerson"
+import { unitLabel } from "../money/format"
 
 const AVATARS = [
   { id: "chef", label: "Chef", look: { role: "STORAGE", skin: 1, hair: 0, style: "cap" } },
@@ -135,7 +136,7 @@ function BidForm({
   return (
     <section aria-label={`Bid on Lot ${lot.lotId}`} className="rpg-window space-y-3 p-4">
       <h2 className="text-lg font-bold">
-        Lot {lot.lotId} · {lot.qty} {lot.unit} {lot.commodity} from {lot.sellerName}
+        Lot {lot.lotId} · {lot.qty} {unitLabel(lot.unit)} {lot.commodity} from {lot.sellerName}
       </h2>
       <label className="block">
         <span className="block">Your highest price</span>
@@ -164,7 +165,7 @@ function BidForm({
       {amountText !== "" && !amount.ok && <p className="text-sm text-gold-ink">{amount.error}</p>}
       {amount.ok && (
         <p className="text-sm text-ink-soft">
-          About {maxUnits(amount.value, perUnit).toString()} {lot.unit} at most
+          About {maxUnits(amount.value, perUnit).toString()} {unitLabel(lot.unit)} at most
         </p>
       )}
       {bid.isError && (
@@ -196,7 +197,7 @@ function Settled({ lot, agentId }: { lot: LotState; agentId: string }) {
   if (!mine) return <p>Not won. Nothing was charged.</p>
   return (
     <p className="text-lg font-bold">
-      You won about {(BigInt(mine.tokenAmount) / 10n ** 18n).toString()} {lot.unit}.
+      You won about {(BigInt(mine.tokenAmount) / 10n ** 18n).toString()} {unitLabel(lot.unit)}.
     </p>
   )
 }

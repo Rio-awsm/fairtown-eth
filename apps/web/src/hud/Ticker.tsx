@@ -5,7 +5,7 @@ export function Ticker() {
   const lines = useTown((s) => s.ticker)
   return (
     <ul className="rpg-window flex gap-6 overflow-hidden px-4 py-2 text-sm whitespace-nowrap" aria-label="Ticker">
-      {lines.slice(0, 6).map((l, i) => (
+      {lines.slice(0, 3).map((l, i) => (
         <li key={l.id} className={i === 0 ? "font-bold" : "text-ink-soft"}>
           <span
             aria-hidden="true"

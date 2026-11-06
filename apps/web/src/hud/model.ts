@@ -2,7 +2,7 @@ import { CURRENCIES, type Building, type Currency } from "@fairtown/shared/keys"
 import type { TownEvent } from "@fairtown/shared/protocol"
 import type { LotState, TownState } from "../game/reducer"
 import { countdown } from "../game/market/slots"
-import { formatBps, formatMoney, formatPerUnit } from "../money/format"
+import { commodityLabel, formatBps, formatMoney, formatPerUnit, unitLabel } from "../money/format"
 
 /** Pure view models for the HUD (S3 1.4). Every figure comes from relay state or the API. */
 
@@ -109,7 +109,7 @@ export function tickerLine(state: TownState, event: TownEvent): string | null {
     case "lot.listed": {
       const c = asCurrency(event.currency)
       const floor = c ? ` at ${formatPerUnit(BigInt(event.floorPerUnit), c, event.unit)}` : ""
-      return `${event.sellerName} listed ${event.qty} ${event.unit} ${event.commodity}${floor} (Lot ${event.lotId})`
+      return `${event.sellerName} listed ${event.qty} ${unitLabel(event.unit)} ${commodityLabel(event.commodity)}${floor} (Lot ${event.lotId})`
     }
     case "lot.settled": {
       const avg = lotPerUnit(lot, event.avgPerUnit)
