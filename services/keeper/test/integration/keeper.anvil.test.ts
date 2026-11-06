@@ -7,7 +7,9 @@
  * a 4-bid auction with keeper checkpoints, settle, exits (both kinds) and claims; a zero-bid lot; a chained truck lot
  * and carrier assignment; a no-show finalize; a release after the report window; S1 3.1 market extensions (a relist
  * chain at decaying floors, a relisted truck lot assigned as carrier, a GPU lot and a storage lot with no carrier);
- * and a second keeper rebuilt from scratch that must send nothing. Needs Foundry (anvil, forge).
+ * S1 4.1 rulings (a quality dispute held back from release, a ruling delivered by the CRE forwarder, an unanswered
+ * dispute expired by the keeper after the ruling timeout, D-65); and a second keeper rebuilt from scratch that must
+ * send nothing. Needs Foundry (anvil, forge).
  */
 import { execFile, spawn, type ChildProcess } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs"
@@ -20,6 +22,7 @@ import {
   createPublicClient,
   createTestClient,
   createWalletClient,
+  encodeAbiParameters,
   http,
   maxUint160,
   maxUint256,
@@ -36,6 +39,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import {
   agentRegistryAbi,
   continuousClearingAuctionAbi,
+  disputeResolverAbi,
   iAllowanceTransferAbi,
   lotFactoryAbi,
   lotTokenAbi,
@@ -64,7 +68,7 @@ const bin = (name: string) => {
   const local = join(homedir(), ".foundry", "bin", name)
   return existsSync(local) ? local : name
 }
-const WINDOWS = { contest: 20n, report: 60n, pickup: 100n }
+const WINDOWS = { contest: 20n, report: 60n, pickup: 100n, ruling: 30n }
 const CHECKPOINT_EVERY = 10n
 const dep_PERMIT2 = "0x000000000022D473030F116dDEE9F6B43aC78BA3" as const
 
@@ -109,6 +113,7 @@ describe("keeper on a local anvil (S1 2.1)", () => {
   const trucker = k()
   const gpu = k() // compute provider, lists as a SELLER (D-62)
   const store = k() // cold store, STORAGE role
+  const forwarder = k() // stands in for the CRE forwarder (the receivers accept only this address)
   const buyers = { A: k(), B: k(), C: k(), D: k() }
   const cap = captureLogger(SECRETS)
   let keeper: Keeper
@@ -235,6 +240,7 @@ describe("keeper on a local anvil (S1 2.1)", () => {
       trucker,
       gpu,
       store,
+      forwarder,
       ...Object.values(buyers),
     ]) {
       await test().setBalance({ address: a.address, value: 10n ** 19n })
@@ -258,6 +264,8 @@ describe("keeper on a local anvil (S1 2.1)", () => {
           TREASURY_ADDRESS: treasury.address,
           CONTEST_WINDOW_BLOCKS: WINDOWS.contest.toString(),
           REPORT_WINDOW_BLOCKS: WINDOWS.report.toString(),
+          RULING_TIMEOUT_BLOCKS: WINDOWS.ruling.toString(),
+          CRE_FORWARDER_BASE_SEPOLIA: forwarder.address,
         },
       })
     } catch (e) {
@@ -571,6 +579,87 @@ describe("keeper on a local anvil (S1 2.1)", () => {
     for (const l of [G, G2, T2, GPU, ST]) expect((await sale(l.lotId)).heldRemaining).toBe(0n)
   }, 300_000)
 
+  it("4.1: holds a quality dispute back, settles a forwarder ruling, expires an unanswered dispute", async () => {
+    const R = C().DisputeResolver as Address
+    const tokenBal = (token: Address, who: Address) =>
+      pub.readContract({ address: token, abi: lotTokenAbi, functionName: "balanceOf", args: [who] })
+    const eur = (who: Address) =>
+      pub.readContract({ address: C().TestEUR as Address, abi: mockStableAbi, functionName: "balanceOf", args: [who] })
+    const dispute = (id: bigint) =>
+      pub.readContract({ address: R, abi: disputeResolverAbi, functionName: "disputeOf", args: [id] })
+
+    const Q = await list(seller, { durationBlocks: 30n })
+    await bid(buyers.A, Q.auction, 15_000_000n, 500_000_000n)
+    await bid(buyers.B, Q.auction, 15_000_000n, 500_000_000n)
+    await mineTo(Q.endBlock)
+    await keeper.runUntilIdle() // settle, exits, claims
+    const tA = await tokenBal(Q.token, buyers.A.address)
+    const tB = await tokenBal(Q.token, buyers.B.address)
+    expect(tA > 0n && tB > 0n).toBe(true)
+
+    const open = async (b: PrivateKeyAccount, amount: bigint) => {
+      const r = await send(
+        wallet(b).writeContract({
+          address: R,
+          abi: disputeResolverAbi,
+          functionName: "openDispute",
+          args: [Q.lotId, amount, `0x${"ab".repeat(32)}`, "test://photos"],
+        }),
+      )
+      const [ev] = parseEventLogs({ abi: disputeResolverAbi, logs: r.logs, eventName: "DisputeOpened" })
+      return ev!.args.disputeId
+    }
+    const idA = await open(buyers.A, tA)
+    const idB = await open(buyers.B, tB)
+    expect(await tokenBal(Q.token, R)).toBe(tA + tB)
+
+    // W3 delivers a 40% ruling for B through the forwarder; nobody else may.
+    const ruling = encodeAbiParameters(
+      [{ type: "uint256" }, { type: "uint16" }, { type: "bytes32" }],
+      [idB, 4000, `0x${"cd".repeat(32)}`],
+    )
+    await expect(
+      wallet(buyers.B).writeContract({
+        address: R,
+        abi: disputeResolverAbi,
+        functionName: "onReport",
+        args: ["0x", ruling],
+      }),
+    ).rejects.toThrow(/NotForwarder/)
+    const b0 = await eur(buyers.B.address)
+    await send(
+      wallet(forwarder).writeContract({
+        address: R,
+        abi: disputeResolverAbi,
+        functionName: "onReport",
+        args: ["0x", ruling],
+      }),
+    )
+    expect(await eur(buyers.B.address)).toBeGreaterThan(b0)
+    expect((await dispute(idB)).open).toBe(false)
+
+    // A restarted keeper finds A's open dispute from resolver views; the running keeper expires it on time.
+    const q4 = new TxQueue(viemSender(pub, wallet(restartedAcc)), cap.log, SECRETS, { pollMs: 50 })
+    const k4 = new Keeper({ pub, queue: q4, dep, log: cap.log, checkpointEvery: CHECKPOINT_EVERY, secrets: SECRETS })
+    await k4.bootstrap(await pub.getBlockNumber({ cacheTime: 0 }))
+    expect([...k4.state.disputes.keys()]).toEqual([idA])
+
+    const openedA = BigInt((await dispute(idA)).openedBlock)
+    await mineTo(openedA + WINDOWS.ruling - 2n)
+    await keeper.runUntilIdle()
+    expect(cap.text()).not.toContain(`expireDispute ${idA}`)
+    const s0 = await eur(seller.address)
+    await mineTo(openedA + WINDOWS.ruling + 1n)
+    await keeper.runUntilIdle()
+    expect(cap.text()).toContain(`expireDispute ${idA} lot ${Q.lotId}`)
+    expect((await dispute(idA)).open).toBe(false)
+    expect(await eur(seller.address)).toBeGreaterThan(s0) // no ruling: the seller is paid, never a default refund
+    expect(await tokenBal(Q.token, R)).toBe(0n)
+    const q = await sale(Q.lotId)
+    expect(q.heldRemaining).toBe(0n)
+    expect(q.complete).toBe(true)
+  }, 300_000)
+
   it("running twice causes no reverts: a fresh keeper rebuilt from the chain sends nothing", async () => {
     expect(queue.stats.reverted).toBe(0)
     expect(queue.stats.failed).toBe(0)
@@ -579,7 +668,8 @@ describe("keeper on a local anvil (S1 2.1)", () => {
     const k2 = new Keeper({ pub, queue: q2, dep, log: cap.log, checkpointEvery: CHECKPOINT_EVERY, secrets: SECRETS })
     expect(await k2.runUntilIdle()).toBe(0)
     expect(q2.stats).toMatchObject({ sent: 0, reverted: 0, failed: 0 })
-    expect(k2.state.lots.size).toBe(9) // A, Z, T + G, G2, T1, T2, GPU, ST
+    expect(k2.state.lots.size).toBe(10) // A, Z, T + G, G2, T1, T2, GPU, ST + Q
+    expect(k2.state.disputes.size).toBe(0)
     for (const s of SECRETS) if (s) expect(cap.text()).not.toContain(s)
   }, 300_000)
 })

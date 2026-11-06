@@ -1,4 +1,4 @@
-import { marketSettlementAbi } from "@fairtown/shared/abi"
+import { disputeResolverAbi, marketSettlementAbi } from "@fairtown/shared/abi"
 import { ZERO, type Action, type PlanCtx } from "./chain"
 import type { KeeperState } from "./state"
 
@@ -104,6 +104,31 @@ export function planReleases(state: KeeperState, ctx: PlanCtx): Action[] {
       stillNeeded: async () => {
         const v = await ctx.reads.sale(lotId)
         return v.settled && v.soldTokens > 0n && !v.released && !v.complete
+      },
+    })
+  }
+  return out
+}
+
+/**
+ * A dispute with no ruling after `rulingTimeoutBlocks` settles with no refund (D-65): anyone may call
+ * `expireDispute` once `block.number > openedBlock + rulingTimeoutBlocks`. Nothing is planned on a v1 deployment.
+ */
+export function planDisputeExpiries(state: KeeperState, ctx: PlanCtx): Action[] {
+  const timeout = ctx.rulingTimeoutBlocks
+  const resolver = ctx.resolver
+  if (timeout === undefined || resolver === undefined) return []
+  const out: Action[] = []
+  for (const d of state.disputes.values()) {
+    if (ctx.head <= d.openedBlock + timeout) continue
+    out.push({
+      key: `expire:${d.disputeId}`,
+      label: `expireDispute ${d.disputeId} lot ${d.lotId}`,
+      once: true,
+      call: { address: resolver, abi: disputeResolverAbi, functionName: "expireDispute", args: [d.disputeId] },
+      stillNeeded: async () => {
+        const v = await ctx.reads.dispute(d.disputeId)
+        return v.open && ctx.head > v.openedBlock + timeout
       },
     })
   }

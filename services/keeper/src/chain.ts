@@ -1,5 +1,5 @@
 import type { Abi, Address, Hex, PublicClient } from "viem"
-import { continuousClearingAuctionAbi, marketSettlementAbi } from "@fairtown/shared/abi"
+import { continuousClearingAuctionAbi, disputeResolverAbi, marketSettlementAbi } from "@fairtown/shared/abi"
 import { fromKey } from "@fairtown/shared/keys"
 import type { CheckpointView } from "./lib"
 
@@ -24,6 +24,7 @@ export type SaleView = {
   pickupDeadline: bigint
 }
 export type ReportView = { open: boolean; contested: boolean; contestEnds: bigint; tokens: bigint }
+export type DisputeView = { open: boolean; lotId: bigint; openedBlock: bigint }
 export type BidView = {
   owner: Address
   maxPrice: bigint
@@ -36,6 +37,7 @@ export type BidView = {
 export interface Reads {
   sale(lotId: bigint): Promise<SaleView>
   report(lotId: bigint, buyer: Address): Promise<ReportView>
+  dispute(disputeId: bigint): Promise<DisputeView>
   bid(auction: Address, id: bigint): Promise<BidView>
   lastCheckpointed(auction: Address): Promise<bigint>
   clearingPrice(auction: Address): Promise<bigint>
@@ -44,8 +46,9 @@ export interface Reads {
 
 export const ZERO = "0x0000000000000000000000000000000000000000" as Address
 
-export function viemReads(pub: PublicClient, settlement: Address): Reads {
+export function viemReads(pub: PublicClient, settlement: Address, resolver: Address = ZERO): Reads {
   const ms = { address: settlement, abi: marketSettlementAbi } as const
+  const dr = { address: resolver, abi: disputeResolverAbi } as const
   const cca = (address: Address) => ({ address, abi: continuousClearingAuctionAbi }) as const
   return {
     async sale(lotId) {
@@ -68,6 +71,10 @@ export function viemReads(pub: PublicClient, settlement: Address): Reads {
         args: [lotId, buyer],
       })
       return { open, contested, contestEnds: BigInt(contestEnds), tokens }
+    },
+    async dispute(disputeId) {
+      const d = await pub.readContract({ ...dr, functionName: "disputeOf", args: [disputeId] })
+      return { open: d.open, lotId: d.lotId, openedBlock: BigInt(d.openedBlock) }
     },
     async bid(auction, id) {
       const b = await pub.readContract({ ...cca(auction), functionName: "bids", args: [id] })
@@ -99,4 +106,7 @@ export type PlanCtx = {
   settlement: Address
   checkpointEvery: bigint
   reportWindowBlocks: bigint
+  /** DisputeResolver and its ruling timeout (S1 4.1, D-65). Undefined on a v1 deployment: no dispute actions. */
+  resolver?: Address
+  rulingTimeoutBlocks?: bigint
 }

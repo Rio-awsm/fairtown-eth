@@ -1,6 +1,14 @@
 import { Writable } from "node:stream"
 import type { Address } from "viem"
-import { ZERO, type BidView, type PlanCtx, type Reads, type ReportView, type SaleView } from "../src/chain"
+import {
+  ZERO,
+  type BidView,
+  type DisputeView,
+  type PlanCtx,
+  type Reads,
+  type ReportView,
+  type SaleView,
+} from "../src/chain"
 import type { CheckpointView } from "../src/lib"
 import { createLogger } from "../src/log"
 import { KeeperState, type LotInfo } from "../src/state"
@@ -24,6 +32,7 @@ export const sale = (o: Partial<SaleView> = {}): SaleView => ({
 export class FakeReads implements Reads {
   sales = new Map<bigint, SaleView>()
   reports = new Map<string, ReportView>()
+  disputes = new Map<bigint, DisputeView>()
   bids = new Map<string, BidView>()
   lastCp = new Map<Address, bigint>()
   clearing = new Map<Address, bigint>()
@@ -36,6 +45,10 @@ export class FakeReads implements Reads {
   async report(lotId: bigint, buyer: Address) {
     this.calls++
     return this.reports.get(`${lotId}:${buyer}`) ?? { open: false, contested: false, contestEnds: 0n, tokens: 0n }
+  }
+  async dispute(disputeId: bigint) {
+    this.calls++
+    return this.disputes.get(disputeId) ?? { open: false, lotId: 0n, openedBlock: 0n }
   }
   async bid(auction: Address, id: bigint) {
     this.calls++

@@ -6,20 +6,12 @@ import {IContinuousClearingAuction} from "continuous-clearing-auction/interfaces
 import {LotFixture, IERC20Like} from "./LotFixture.sol";
 import {LotFactory} from "../../src/LotFactory.sol";
 import {ChainTrigger} from "../../src/ChainTrigger.sol";
-import {MarketSettlement, IDisputeResolver} from "../../src/MarketSettlement.sol";
+import {MarketSettlement} from "../../src/MarketSettlement.sol";
+import {DisputeResolver, ISettlementRulings} from "../../src/oracles/DisputeResolver.sol";
 import {Keys} from "../../src/libraries/Keys.sol";
 
-/// Stand-in for DisputeResolver (S1 4.1): records no-show rulings it is asked to open.
-contract MockResolver is IDisputeResolver {
-    uint256 public opened;
-
-    function openNoShowRuling(uint256, address, uint256, bytes32, string calldata) external returns (uint256) {
-        return ++opened;
-    }
-}
-
-/// Full S1 wiring: LotFactory -> ChainTrigger -> MarketSettlement, with settlement's address predicted before
-/// LotFactory is deployed, the same way the S1 1.4 deploy script will do it (D-41).
+/// Full S1 wiring: LotFactory -> ChainTrigger -> MarketSettlement -> DisputeResolver, with settlement's and the
+/// resolver's addresses predicted before LotFactory is deployed, the same way the deploy script does it (D-41).
 abstract contract SettlementFixture is LotFixture {
     // D-09 tiers, D-12 windows, D-26 proven threshold (.env.example values).
     uint16 internal constant FEE_BPS = 100;
@@ -29,10 +21,12 @@ abstract contract SettlementFixture is LotFixture {
     uint32 internal constant PROVEN_AFTER = 3;
     uint64 internal constant CONTEST = 60;
     uint64 internal constant REPORT = 300;
+    uint64 internal constant RULING_TIMEOUT = 300;
 
     ChainTrigger internal trigger;
     MarketSettlement internal ms;
-    MockResolver internal resolver;
+    DisputeResolver internal resolver;
+    address internal creForwarder = makeAddr("cre.forwarder");
     address internal treasury = makeAddr("treasury");
     address internal lars; // truck seller (carrier)
     uint256 internal larsKey;
@@ -46,19 +40,24 @@ abstract contract SettlementFixture is LotFixture {
     bool internal withResolver = true;
 
     function _settlementAddress() internal view override returns (address) {
-        // Next deployments from this contract: LotFactory (+0), ChainTrigger (+1), MarketSettlement (+2).
+        // Next deployments from this contract: LotFactory (+0), ChainTrigger (+1), MarketSettlement (+2),
+        // DisputeResolver (+3).
         return vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 2);
     }
 
+    function _resolverAddress() internal view override returns (address) {
+        if (!withResolver) return address(0);
+        return vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 3);
+    }
+
     function _deploy(uint256 shareBps) internal override {
-        resolver = new MockResolver();
         super._deploy(shareBps);
         trigger = new ChainTrigger(settlement, factory);
         ms = new MarketSettlement(
             op,
             factory,
             trigger,
-            withResolver ? address(resolver) : address(0),
+            predictedResolver,
             treasury,
             MarketSettlement.Params({
                 feeBps: FEE_BPS,
@@ -71,6 +70,10 @@ abstract contract SettlementFixture is LotFixture {
             })
         );
         assertEq(address(ms), settlement, "predicted settlement address");
+        if (withResolver) {
+            resolver = new DisputeResolver(op, creForwarder, ISettlementRulings(settlement), factory, RULING_TIMEOUT);
+            assertEq(address(resolver), predictedResolver, "predicted resolver address");
+        }
         (, ingridKey) = makeAddrAndKey("ingrid.seller");
         (lars, larsKey) = makeAddrAndKey("lars.truck");
         (maya, mayaKey) = makeAddrAndKey("maya.truck");

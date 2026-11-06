@@ -94,7 +94,7 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
         uint256 soldTokens;
         uint256 heldRemaining; // currency still held for this lot
         uint256 outstanding; // sold tokens not yet handed over or refunded (includes reported ones)
-        uint256 reportedTokens; // escrowed under an open no-show report
+        uint256 reportedTokens; // escrowed under an open no-show report or quality dispute; held back from release
         uint256 unsold;
     }
 
@@ -139,6 +139,8 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
     mapping(bytes32 digest => bool) public ticketUsed;
     /// @dev First floor of a relist chain, set on every relisted lot. Zero for a lot that was never relisted into.
     mapping(uint256 lotId => uint256) internal _rootFloor;
+    /// @dev Tokens a buyer escrowed in the DisputeResolver under an open quality dispute (S1 4.1).
+    mapping(uint256 lotId => mapping(address buyer => uint256)) internal _disputedTokens;
 
     event LotSettled(
         uint256 indexed lotId,
@@ -202,7 +204,10 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
     error FloorNotLower(uint256 newFloor, uint256 oldFloor);
     error FloorBelowMinimum(uint256 newFloor, uint256 minFloor);
     error NoTransport(uint256 lotId);
-    error NotImplemented();
+    error DisputeOpen(uint256 lotId, address buyer);
+    error NoOpenDispute(uint256 lotId, address buyer);
+    error AmountMismatch(uint256 given, uint256 expected);
+    error BadRefundBps(uint16 refundBps);
 
     /// @param factory_ LotFactory. @param trigger_ ChainTrigger. Both are deployed against this contract's
     ///        predicted address (D-41), so all three hold each other immutably.
@@ -466,6 +471,7 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
         if (block.number > reportEnds) revert WindowClosed(reportEnds);
         Report storage r = _reports[lotId][msg.sender];
         if (r.open) revert AlreadyReported(lotId, msg.sender);
+        if (_disputedTokens[lotId][msg.sender] != 0) revert DisputeOpen(lotId, msg.sender);
         if (tokenAmount == 0) revert ZeroAmount();
         uint256 free = s.outstanding - s.reportedTokens;
         if (tokenAmount > free) revert AmountTooHigh(tokenAmount, free);
@@ -558,10 +564,70 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
 
     // ================================================================== rulings
 
-    /// @notice CRE W3 ruling, via DisputeResolver. Implemented in S1 4.1.
-    function resolveRuling(uint256, address, uint256, uint16) external view {
+    /// @notice DisputeResolver, when a buyer opens a quality dispute (contract 7.8 `openDispute`). Before handover and
+    ///         within pickup deadline + report window. The disputed tokens' share of held money is held back from
+    ///         handover and `releaseExpired` until the ruling (or its timeout) settles it. The resolver escrows the
+    ///         tokens right after this returns.
+    function onDisputeOpened(uint256 lotId, address buyer, uint256 tokenAmount) external nonReentrant {
         if (msg.sender != resolver || resolver == address(0)) revert NotResolver(msg.sender);
-        revert NotImplemented();
+        Sale storage s = _sales[lotId];
+        if (!s.settled || s.soldTokens == 0) revert NotSold(lotId);
+        if (s.released || s.complete) revert HeldAlreadyReleased(lotId);
+        uint64 reportEnds = s.pickupDeadline + reportWindowBlocks;
+        if (block.number > reportEnds) revert WindowClosed(reportEnds);
+        if (_reports[lotId][buyer].open) revert NoShowOpen(lotId, buyer);
+        if (_disputedTokens[lotId][buyer] != 0) revert DisputeOpen(lotId, buyer);
+        if (tokenAmount == 0) revert ZeroAmount();
+        uint256 free = s.outstanding - s.reportedTokens;
+        if (tokenAmount > free) revert AmountTooHigh(tokenAmount, free);
+        _disputedTokens[lotId][buyer] = tokenAmount;
+        s.reportedTokens += tokenAmount;
+        s.status = DISPUTED;
+    }
+
+    /// @notice W3 ruling via DisputeResolver, for a contested no-show or a quality dispute. The buyer gets
+    ///         `share * refundBps / 1e4` of the disputed tokens' held share, the seller the rest; the tokens are burned.
+    ///         A no-show counts as upheld when any refund is given (D-66): the seller is marked like a finalized no-show.
+    ///         Works after the report window too: disputed money was held back from `releaseExpired`.
+    function resolveRuling(uint256 lotId, address buyer, uint256 tokenAmount, uint16 refundBps) external nonReentrant {
+        if (msg.sender != resolver || resolver == address(0)) revert NotResolver(msg.sender);
+        if (refundBps > BPS) revert BadRefundBps(refundBps);
+        Sale storage s = _sales[lotId];
+        Report storage r = _reports[lotId][buyer];
+        bool noShow = r.open && r.contested;
+        uint256 tokens = noShow ? r.tokens : _disputedTokens[lotId][buyer];
+        if (tokens == 0) revert NoOpenDispute(lotId, buyer);
+        if (tokenAmount != tokens) revert AmountMismatch(tokenAmount, tokens);
+
+        uint256 share = _share(s, tokens);
+        uint256 refund = Math.mulDiv(share, refundBps, BPS);
+        uint256 toSeller = share - refund;
+        s.heldRemaining -= share;
+        s.outstanding -= tokens;
+        s.reportedTokens -= tokens;
+        if (refund > 0) s.anyRefund = true;
+        if (noShow) {
+            r.open = false;
+            Record storage rec = _records[s.seller];
+            rec.openNoShows--;
+            if (refundBps > 0) {
+                rec.noShows++;
+                rec.cleanLots = 0;
+                rec.marked = false;
+            }
+            emit SellerRecordUpdated(s.seller, rec.cleanLots, rec.noShows, _isProven(rec));
+            s.status = s.anyRefund ? REFUNDED : PICKED_UP;
+        } else {
+            delete _disputedTokens[lotId][buyer];
+            s.status = s.anyRefund ? REFUNDED : DELIVERED;
+        }
+        emit RulingSettled(lotId, buyer, refund, toSeller);
+        toSeller += _maybeComplete(lotId);
+
+        // Interactions: no-show tokens sit in settlement's escrow, quality-dispute tokens in the resolver's.
+        LotToken(s.token).burnFrom(noShow ? address(this) : resolver, tokens);
+        if (refund > 0) IERC20(s.currency).safeTransfer(buyer, refund);
+        if (toSeller > 0) IERC20(s.currency).safeTransfer(s.seller, toSeller);
     }
 
     // ================================================================== completion
@@ -655,6 +721,11 @@ contract MarketSettlement is AccessControl, ReentrancyGuard, EIP712 {
     {
         Report storage r = _reports[lotId][buyer];
         return (r.open, r.contested, r.contestEnds, r.tokens, r.disputeId);
+    }
+
+    /// @notice Tokens `buyer` holds under an open quality dispute for `lotId` (0 if none).
+    function disputedTokensOf(uint256 lotId, address buyer) external view returns (uint256) {
+        return _disputedTokens[lotId][buyer];
     }
 
     function saleOf(uint256 lotId) external view returns (Sale memory) {

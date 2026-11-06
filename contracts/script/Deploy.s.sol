@@ -10,12 +10,14 @@ import {AgentRegistryHook} from "../src/registry/AgentRegistryHook.sol";
 import {LotFactory} from "../src/LotFactory.sol";
 import {ChainTrigger} from "../src/ChainTrigger.sol";
 import {MarketSettlement} from "../src/MarketSettlement.sol";
-import {StubSignalOracle, StubDisputeResolver} from "../src/oracles/StubOracles.sol";
+import {SignalOracle} from "../src/oracles/SignalOracle.sol";
+import {DisputeResolver, ISettlementRulings} from "../src/oracles/DisputeResolver.sol";
 
-/// @title Deploy (v1)
-/// @notice Deploys the S1 stack and writes deployments/<network>.json (contract section 8).
+/// @title Deploy (v2, S1 4.1)
+/// @notice Deploys the S1 stack with the CRE receivers and writes deployments/<network>.json (contract section 8).
 ///         Env: DEPLOY_NETWORK (anvil | base-sepolia), DEPLOY_COMMIT, DEPLOYER_PRIVATE_KEY, OPERATOR_PRIVATE_KEY,
-///         TREASURY_ADDRESS, protocol params (.env.example), optional DEPLOY_OUT (tests).
+///         TREASURY_ADDRESS, protocol params (.env.example), CRE_FORWARDER_BASE_SEPOLIA, RULING_TIMEOUT_BLOCKS,
+///         optional DEPLOY_OUT (tests).
 ///         Keys are read with vm.envUint and never logged.
 contract Deploy is Script {
     address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
@@ -57,6 +59,8 @@ contract Deploy is Script {
         address treasury = vm.envAddress("TREASURY_ADDRESS");
         MarketSettlement.Params memory p = _params();
         uint256 shareBps = vm.envOr("LAST_BLOCK_SHARE_BPS", uint256(7500));
+        address forwarder = _forwarder();
+        uint64 rulingTimeout = uint64(vm.envOr("RULING_TIMEOUT_BLOCKS", uint256(3000)));
         uint256 startBlock = block.number;
 
         vm.startBroadcast(deployerKey);
@@ -65,11 +69,12 @@ contract Deploy is Script {
         o.registry = address(new AgentRegistry(deployer));
         o.hook = address(new AgentRegistryHook(IAgentRegistry(o.registry)));
         o.ccaFactory = address(new ContinuousClearingAuctionFactory(address(0))); // D-04: zero fee controller
-        o.signalOracle = address(new StubSignalOracle());
-        o.disputeResolver = address(new StubDisputeResolver());
+        o.signalOracle = address(new SignalOracle(deployer, forwarder));
 
-        // D-41: LotFactory (+0), ChainTrigger (+1), MarketSettlement (+2) from the deployer's next nonces.
+        // D-41: LotFactory (+0), ChainTrigger (+1), MarketSettlement (+2), DisputeResolver (+3) from the deployer's
+        // next nonces, so all four hold each other immutably.
         address predicted = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 2);
+        address predictedResolver = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 3);
         o.factory = address(
             new LotFactory(
                 deployer,
@@ -77,20 +82,33 @@ contract Deploy is Script {
                 IAgentRegistry(o.registry),
                 o.hook,
                 predicted,
-                address(0),
+                predictedResolver,
                 shareBps
             )
         );
         o.trigger = address(new ChainTrigger(predicted, LotFactory(o.factory)));
         o.settlement = address(
-            new MarketSettlement(deployer, LotFactory(o.factory), ChainTrigger(o.trigger), address(0), treasury, p)
+            new MarketSettlement(
+                deployer, LotFactory(o.factory), ChainTrigger(o.trigger), predictedResolver, treasury, p
+            )
         );
         if (o.settlement != predicted) revert PredictionMismatch(predicted, o.settlement);
+        o.disputeResolver = address(
+            new DisputeResolver(
+                deployer, forwarder, ISettlementRulings(o.settlement), LotFactory(o.factory), rulingTimeout
+            )
+        );
+        if (o.disputeResolver != predictedResolver) revert PredictionMismatch(predictedResolver, o.disputeResolver);
 
         _wire(o, operator);
         vm.stopBroadcast();
 
         _write(network, startBlock, o, p);
+    }
+
+    /// CRE forwarder the receivers accept (simulation MockKeystoneForwarder by default). The admin can change it.
+    function _forwarder() internal view returns (address) {
+        return vm.envOr("CRE_FORWARDER_BASE_SEPOLIA", CRE_FORWARDER_DEFAULT);
     }
 
     function _params() internal view returns (MarketSettlement.Params memory p) {
@@ -135,7 +153,7 @@ contract Deploy is Script {
 
         string memory e = "external";
         vm.serializeAddress(e, "Permit2", PERMIT2);
-        vm.serializeAddress(e, "CreForwarder", vm.envOr("CRE_FORWARDER_BASE_SEPOLIA", CRE_FORWARDER_DEFAULT));
+        vm.serializeAddress(e, "CreForwarder", _forwarder());
         vm.serializeAddress(e, "CircleTestUSDC", CIRCLE_TEST_USDC);
         string memory externalJson = vm.serializeAddress(e, "CircleTestEURC", CIRCLE_TEST_EURC);
 
