@@ -137,11 +137,13 @@ async function day() {
   const pickup = flag("--pickup") ?? "1500"
   const keep = rest.includes("--keep")
   const run = new Run("demo-day", "base-sepolia")
-  let phase: "boot" | "day" | "done" = "boot"
+  let phase: "boot" | "day" | "finishing" | "done" = "boot"
   let finish: (reason: string) => Promise<void> = async () => {}
   process.removeAllListeners("SIGINT")
+  // A terminal Ctrl-C arrives twice (directly and relayed by the tsx wrapper): the second must not skip the report.
   process.on("SIGINT", () => {
     if (phase === "day") return void finish("stopped with Ctrl-C")
+    if (phase === "finishing") return console.log("  writing the report, one moment...")
     run.stop()
     process.exit(phase === "done" ? 0 : 1)
   })
@@ -166,7 +168,7 @@ async function day() {
   let lots: DayLot[] = []
   finish = async (reason: string) => {
     if (phase !== "day") return
-    phase = "done"
+    phase = "finishing"
     await sleep(6_000) // the ticker's last poll catches the final events
     stopped = true
     const endBlock = await pub.getBlockNumber().catch(() => startBlock)
@@ -180,6 +182,7 @@ async function day() {
     console.log(`\nDAY ENDED (${reason}): ${txs} Base Sepolia transactions, ${lots.length} lots`)
     for (const l of [...lots].sort((a, b) => Number(BigInt(a.lotId) - BigInt(b.lotId)))) console.log(`  lot ${l.lotId.padStart(3)}  ${l.commodity.padEnd(16)} ${l.status}`)
     console.log(`\nEvery transaction with its Basescan link: ${base}.md`)
+    phase = "done"
     if (keep) return console.log(`Stack still running (--keep). Town: http://localhost:${WEB_PORT}/town. Ctrl-C stops.`)
     run.stop()
     process.exit(0)
