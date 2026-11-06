@@ -48,7 +48,7 @@ export function describe(e: Decoded, ctx: Ctx): { tag: Tag; text: string } | und
     case "LotPaidInFull":
       return { tag: "FAIRTOWN", text: `lot ${a.lotId} paid in full` }
     case "LotDelivered":
-      return { tag: "FAIRTOWN", text: `lot ${a.lotId} delivered by truck lot ${a.truckLotId}` }
+      return { tag: "FAIRTOWN", text: b(a.truckLotId) === 0n ? `lot ${a.lotId} collected by the buyer` : `lot ${a.lotId} delivered by truck lot ${a.truckLotId}` }
     case "CarrierAssigned":
       return { tag: "FAIRTOWN", text: `lot ${a.lotId}: truck ${ctx.name(a.carrier as Address)} assigned (truck lot ${a.truckLotId})` }
     case "LotRelisted":
@@ -76,3 +76,49 @@ export function describe(e: Decoded, ctx: Ctx): { tag: Tag; text: string } | und
   }
 }
 
+
+/** One recorded onchain event for the day report. */
+export type TxLine = { tag: Tag; block: bigint; text: string; tx: string; event: string; lotId?: bigint }
+export type DayLot = { lotId: string; commodity: string; status: string }
+export type DirectorRun = { name: string; next: string | null }
+
+/** End states of a lot in the relay snapshot (as in the anvil e2e:day). */
+export const DAY_DONE = new Set(["paid_in_full", "refunded", "unsold", "relisted"])
+
+/** The day is over when full_day has started every scene and every lot it produced reached an end state. */
+export function dayOver(running: DirectorRun[], lots: DayLot[]): boolean {
+  const run = running.find((r) => r.name === "full_day")
+  const scenesDone = !run || run.next === null
+  return scenesDone && lots.length > 0 && lots.every((l) => DAY_DONE.has(l.status))
+}
+
+const LOT_STEPS: Record<string, string> = { LotListed: "listed", LotSettled: "settled", HandoverConfirmed: "handover", LotDelivered: "delivered", NoShowRefunded: "no-show refund", LotRelisted: "relisted", LotPaidInFull: "paid in full" }
+
+/** Markdown report: lots with their key transactions, then every transaction by sponsor. */
+export function renderDayReport(o: { lines: TxLine[]; lots: DayLot[]; explorer: string; startBlock: bigint; endBlock: bigint; minutes: number; reason: string }): string {
+  const link = (tx: string) => `${o.explorer}/tx/${tx}`
+  const out = [
+    "# Fairtown day on Base Sepolia (TEST MONEY)",
+    "",
+    `Blocks ${o.startBlock} to ${o.endBlock}, ${o.minutes.toFixed(1)} minutes. Ended: ${o.reason}.`,
+    `${new Set(o.lines.map((l) => l.tx)).size} transactions, ${o.lines.length} events: ${(["UNISWAP CCA", "CHAINLINK CRE", "FAIRTOWN"] as const).map((t) => `${o.lines.filter((l) => l.tag === t).length} ${t}`).join(", ")}.`,
+    "",
+    "## Lots",
+    "",
+    "| Lot | What | Outcome | Key transactions |",
+    "| --- | --- | --- | --- |",
+  ]
+  for (const lot of [...o.lots].sort((a, b) => Number(BigInt(a.lotId) - BigInt(b.lotId)))) {
+    const mine = o.lines.filter((l) => l.lotId === BigInt(lot.lotId))
+    const bids = mine.filter((l) => l.event === "BidSubmitted").length
+    const steps = mine.filter((l) => LOT_STEPS[l.event]).map((l) => `[${LOT_STEPS[l.event]}](${link(l.tx)})`)
+    out.push(`| ${lot.lotId} | ${lot.commodity} | ${lot.status}${bids ? `, ${bids} bid(s)` : ""} | ${steps.join(" ") || "none seen"} |`)
+  }
+  for (const tag of ["CHAINLINK CRE", "UNISWAP CCA", "FAIRTOWN"] as const) {
+    const rows = o.lines.filter((l) => l.tag === tag)
+    out.push("", `## ${tag} (${rows.length})`, "")
+    for (const l of rows) out.push(`- #${l.block} ${l.text} [tx](${link(l.tx)})`)
+    if (!rows.length) out.push("- none in this run")
+  }
+  return `${out.join("\n")}\n`
+}
