@@ -30,7 +30,8 @@
     "e2e:first-lot": "pnpm -s -F scripts run e2e:first-lot",
     "e2e:trust": "pnpm -s -F scripts run e2e:trust",
     "e2e:chainlink": "pnpm -s -F scripts run e2e:chainlink",
-    "e2e:arkiv": "pnpm -s -F scripts run e2e:arkiv"
+    "e2e:arkiv": "pnpm -s -F scripts run e2e:arkiv",
+    "demo": "pnpm -s -F scripts run demo"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

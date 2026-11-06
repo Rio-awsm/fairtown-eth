@@ -16,7 +16,8 @@
     "e2e:trust": "tsx e2e/trust.ts",
     "e2e:chainlink": "tsx e2e/chainlink.ts",
     "e2e:arkiv": "tsx e2e/arkiv.ts",
-    "e2e:day": "tsx e2e/day.ts"
+    "e2e:day": "tsx e2e/day.ts",
+    "demo": "tsx demo.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "1.0.1",
