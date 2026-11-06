@@ -22,6 +22,10 @@ import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
 import { SectorEngine } from "./sectors/engine"
 import { MarketState, moveOnSignal } from "./market/state"
 import { SessionStore } from "./handover/sessions"
+import { EnsAgents } from "./addons/ens/agents"
+import { EnsClient } from "./addons/ens/client"
+import { existsSync, readFileSync } from "node:fs"
+import { privateKeyToAccount } from "viem/accounts"
 import { ChainFeed, withFeed } from "./chain/feed"
 import { healthExtras } from "./health"
 import { ARKIV_SCHEMAS } from "@fairtown/shared/arkiv"
@@ -103,6 +107,23 @@ const marketFor = (lot: { commodity: string; place: string; sector: (typeof SECT
 }
 
 // MOCK_AI=1: rules decide (FakeAi has no bidder). Otherwise the LLM advises and rules are the fallback.
+// ADDON_ENS: agent names on ENSv2 Sepolia (S2 8.2). Off by default; addresses work without it.
+let ensAgents: EnsAgents | undefined
+if (config.ADDON_ENS) {
+  const stateFile = new URL("./addons/ens/sepolia.json", import.meta.url)
+  if (!config.ENS_PRIVATE_KEY || !config.ENS_SEPOLIA_RPC_URL || !existsSync(stateFile)) log("ADDON_ENS=1 but ENS is not set up (run pnpm -F agents ens:setup); continuing without names")
+  else {
+    const ens = new EnsClient(config.ENS_SEPOLIA_RPC_URL, privateKeyToAccount(config.ENS_PRIVATE_KEY as `0x${string}`))
+    ensAgents = new EnsAgents({
+      ens,
+      state: JSON.parse(readFileSync(stateFile, "utf8")),
+      personas: PERSONAS,
+      publish: (ev) => publisher.publish(ev),
+      onError: (what, e) => log("ens failed", { what, err: e instanceof Error ? e.message.replace(/https?:\/\/\S+/g, "<rpc>").slice(0, 200) : String(e) }),
+    })
+  }
+}
+
 const strategy = aiConfig.MOCK_AI
   ? ruleStrategy
   : createLlmStrategy({
@@ -117,6 +138,7 @@ const runtime = new AgentRuntime({
   publisher,
   strategy,
   marketFor,
+  ...(ensAgents ? { sellerCheck: (s: Address) => ensAgents!.sellerCheck(s), ensNameOf: (a: Address) => ensAgents!.nameOf(a) } : {}),
   ledger,
   gradeFor: (_id, uri) => drafts.get(uri.split("/").pop() ?? "")?.grade.grade,
   nameOf: (a: Address) => sellers.byAddr(a)?.name,
@@ -132,6 +154,10 @@ if (fake) {
 }
 await runtime.bootstrap(undefined, PERSONAS.filter((p) => p.seeded?.proven).map((p) => p.id))
 const stopMarket = market.start()
+if (ensAgents) {
+  chain.watch((e) => ensAgents!.onEvent(e))
+  for (const a of runtime.agents.values()) void ensAgents.register(a) // background: about two Sepolia txs per agent
+}
 const stopRuntime = runtime.start()
 
 // Fake mode mines a block every 2 s (not 200 ms), so it uses the D-12 durations and windows (D-50 divided by 10).
@@ -177,7 +203,7 @@ const app = buildApp({
   disputes,
   market: { market, arkiv, chain, references: listing.references, sellers, params: protocolParams(config) },
   handover: { chain, wallets, runtime, sellers, sessions, photos: listing.photos, drafts, config, ticketValidBlocks: fake ? 150n : 1500n },
-  humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config },
+  humans: { runtime, publisher, sessions, ai, blockNumber: () => chain.blockNumber(), config, ...(ensAgents ? { onJoined: (a) => void ensAgents!.register(a) } : {}) },
   director,
   health: healthExtras({ relayUrl: `http://localhost:${config.RELAY_PORT}`, ledger, ...(feed ? { feed } : {}), engine: sectors, runtime, ai, llmOn: !aiConfig.MOCK_AI, ...(aiConfig.VISION_MODEL ? { visionModel: aiConfig.VISION_MODEL } : {}) }),
 })

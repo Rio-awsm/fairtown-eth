@@ -50,6 +50,7 @@ export type LotObservation = {
   endBlock: bigint
   blocksLeft: bigint
   reference?: bigint
+  sellerEns?: { name: string; verified: boolean } // ADDON_ENS: resolved through ENS before bidding
 }
 
 export type MarketSignal = { kind: string; place: string; severity: number; label: string }

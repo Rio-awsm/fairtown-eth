@@ -98,7 +98,7 @@ export function observationText(o: Observation, ctx: MarketContext, blockMs = 20
   return [
     `Me: budget left ${c}${money(o.budgetLeft)}, already committed on this lot ${c}${money(o.exposureOnLot)}, my best bid ${o.myBestOnLot > 0n ? `${c}${money(o.myBestOnLot)}` : "none"}.`,
     `Mandate: ${m.commodities.join(", ")}; max ${c}${money(BigInt(m.maxPerUnit))}/${unit}; want ${m.qty ?? lot.qty.toString()} ${unit}${m.minGrade ? `; min grade ${m.minGrade}` : ""}.`,
-    `Lot ${lot.lotId}: ${lot.qty} ${unit} ${lot.commodity}, grade ${lot.grade}, ${lot.place}, seller ${lot.sellerName ?? "unknown"} (${tier}: ${rec.cleanLots} clean lots, ${rec.noShows} no-shows).`,
+    `Lot ${lot.lotId}: ${lot.qty} ${unit} ${lot.commodity}, grade ${lot.grade}, ${lot.place}, seller ${lot.sellerName ?? "unknown"}${lot.sellerEns ? ` [${lot.sellerEns.name}, ${lot.sellerEns.verified ? "verified" : "verified role revoked"}]` : ""} (${tier}: ${rec.cleanLots} clean lots, ${rec.noShows} no-shows).`,
     `Prices in ${lot.currency} (${c}) per ${unit}: ${prices.join(", ")}.`,
     `Signals: ${signals}.`,
     `Time left: ${lot.blocksLeft} blocks (about ${secs} s).`,

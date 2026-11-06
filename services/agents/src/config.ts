@@ -48,6 +48,10 @@ export const AgentsConfig = z.object({
   WALKIN_CAP: z.coerce.number().int().positive().default(50),
   CRE_BRIDGE_PORT: port.default(8789),
   CRE_BRIDGE_TOKEN: z.string().optional(),
+  ADDON_ENS: z.enum(["0", "1"]).default("0").transform((v) => v === "1"),
+  ENS_PRIVATE_KEY: z.string().optional(),
+  ENS_SEPOLIA_RPC_URL: z.string().url().optional(),
+  ENS_PARENT_NAME: z.string().default("fairtown.eth"),
   CHAIN_BACKFILL_BLOCKS: blocks.default(9000n), // restart lookback: longest auction + pickup + report + contest windows
   TREASURY_ADDRESS: z
     .string()

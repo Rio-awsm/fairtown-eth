@@ -18,6 +18,7 @@ export type HumanDeps = {
   blockNumber: () => Promise<bigint>
   config: { WALKIN_BUDGET: string; WALKIN_CAP: number }
   now?: () => number
+  onJoined?: (agent: import("../runtime/types").RuntimeAgent) => void // e.g. ADDON_ENS: a 2-hour name
 }
 
 const WalkinBidResponse = z.object({ bidId: z.string(), tx: z.string() })
@@ -55,6 +56,7 @@ export function registerHumanRoutes(app: FastifyInstance, d: HumanDeps) {
       manual: true,
     })
     await d.runtime.bootstrap([agent])
+    d.onJoined?.(agent)
     await d.publisher.publish([{ type: "human.joined", agentId: agent.agentId, name }], Number(await d.blockNumber()))
     const s = d.sessions.create("walkin", agent.agentId, SESSION_MS)
     return WalkinResponse.parse({ agentId: agent.agentId, address: agent.agentId, token: s.token })

@@ -17,6 +17,7 @@ export const ruleStrategy: Strategy = {
     const m = agent.mandate
     if (!m) return { action: "pass", reason: "No mandate set" }
     if (!m.commodities.includes(lot.commodity as (typeof m.commodities)[number])) return { action: "pass", reason: `${lot.commodity} isn't on my list` }
+    if (lot.sellerEns && !lot.sellerEns.verified && m.avoidNoShowSellers !== false) return { action: "pass", reason: `${lot.sellerEns.name} lost its verified mark`.slice(0, 80) }
     if (lot.sellerRecord.noShows > 0 && m.avoidNoShowSellers !== false)
       return { action: "pass", reason: `${lot.sellerName ?? "Seller"} has a recent no-show`.slice(0, 80) }
     const max = BigInt(m.maxPerUnit)

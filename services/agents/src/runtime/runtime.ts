@@ -28,6 +28,8 @@ export type RuntimeOptions = {
   now?: () => number
   gasTopUpWei?: bigint // Base Sepolia gas is cheap; keep top-ups small so the operator wallet lasts
   marketFor?: (lot: LotObservation, block: bigint) => MarketView & { reference?: bigint }
+  sellerCheck?: (seller: Address) => Promise<{ name: string; verified: boolean } | undefined>
+  ensNameOf?: (agentId: Address) => string | undefined
 }
 
 export class AgentRuntime {
@@ -103,7 +105,10 @@ export class AgentRuntime {
       )
     }
     await this.o.publisher.publish(
-      agents.map((a) => ({ type: "agent.spawned" as const, agentId: a.agentId, name: a.name, role: a.role, building: a.building, sprite: a.sprite })),
+      agents.map((a) => {
+        const ensName = this.o.ensNameOf?.(a.agentId)
+        return { type: "agent.spawned" as const, agentId: a.agentId, name: a.name, role: a.role, building: a.building, sprite: a.sprite, ...(ensName ? { ensName } : {}) }
+      }),
       Number(await chain.blockNumber()),
     )
   }
@@ -283,6 +288,8 @@ export class AgentRuntime {
       endBlock: lot.endBlock,
       blocksLeft: lot.endBlock - block,
     }
+    const ens = await this.o.sellerCheck?.(t.seller)
+    if (ens) obsLot.sellerEns = { name: ens.name, verified: ens.verified }
     const mv = this.o.marketFor?.(obsLot, block)
     if (mv?.reference !== undefined) obsLot.reference = mv.reference
     const market: MarketView | undefined = mv && { signals: mv.signals, urgencyBps: mv.urgencyBps }

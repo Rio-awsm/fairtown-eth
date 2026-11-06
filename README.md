@@ -66,6 +66,24 @@ The badge is honest in every state (`services/agents/src/ai/verification.ts`):
 
 **What we see today (2026-11-06):** the Router serves and logs every grade, but returns no `tee_verified` field, even with `verify_tee: true` and trust mode `private`, so our badge says "logged", not "verified". Request IDs from our probe (`pnpm -F agents probe:0g`): `a5071925-881d-41ce-aafa-0d5bc710cda9`, `22bd63fb-0945-44b0-b42a-5425c65a0709`, `88272dba-aa24-4d4b-91c8-385d5fc145bb`, all from provider `0xf4FB8d2bD856e672b5f9848b0eD235A20079B250`, about 2 to 4 s and 28 to 54 micro-USD per grade (thinking off). Dispute rulings on 0G run in CRE W3 (S1).
 
+## ENS: agents as names (ENSv2, Sepolia)
+
+Every agent is a name under `fairtown.eth` on ENSv2 Sepolia, owned by its own wallet: `ingrid.fairtown.eth`, `hanse-kitchen.fairtown.eth`, `lars.fairtown.eth` and so on. Records: `description`, `fairtown.role`, `fairtown.building`, `fairtown.mandate`, `fairtown.reputation` (the Arkiv query for its seller record), `fairtown.verified`, and the agent's address. Behind `ADDON_ENS=1`; with it off, addresses work as before.
+
+- **Buyer agents resolve the seller's name through ENS before bidding** (Universal Resolver, then `.eth`, then our registry, then our resolver). If `fairtown.verified` says revoked, guardrails refuse the bid.
+- **A no-show revokes the seller's verified role**: the name-level `ROLE_SET_RESOLVER` is revoked on chain and `fairtown.verified` becomes `revoked: N no-show(s), tx ...`.
+- **Walk-ins and trucks get expiring names**: 2 hours for a walk-in (registered when they join), 3 days for a truck.
+- The town shows `ensName` from `agent.spawned`.
+
+| What | Address or tx |
+|---|---|
+| Parent `fairtown.eth` registration | [0x7744...2f04](https://sepolia.etherscan.io/tx/0x774438c6e9c9809dfe714923643a9b57ccc84e1f91114b4de0f856c4e5a82f04) |
+| Our UserRegistry proxy (VerifiableFactory) | `0x0E66e1552AbA4017Fe2c8B5C75181d1627f06069` |
+| Our PermissionedResolver proxy | `0x09974bd90778f069929286F492B5D730b3008AaE` |
+| Service wallet (registrar, owns the parent) | `0x60D8Fb530450c3A001EE1924dc008dA33b294ac5` |
+
+Reproduce: `pnpm -F agents ens:setup` (idempotent), `pnpm -F agents ens:agents` (27 names), `pnpm -F agents test:live` (register, resolve, revoke, unauthorised-registrar failure). The registry pattern follows ENS's contract-developer tutorial, which is marked educational and unaudited; here the service wallet itself holds `ROLE_REGISTRAR` instead of a registrar contract.
+
 ## Licence
 
 MIT. See `LICENSE`.

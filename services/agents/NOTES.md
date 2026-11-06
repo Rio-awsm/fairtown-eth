@@ -103,3 +103,15 @@
 - Billing is reported in `usd` micro units (`total_cost_usd_micro`), not neuron as the docs example says.
 - The model thinks by default: 6 to 17 s per grade (one timed out at 15 s and fell back). With `chat_template_kwargs.enable_thinking: false`: 1.8 to 4 s and about 40 micro-USD.
 - Forced failure (bad model, HTTP 404) fell back to `gemini-3.5-flash-lite` in 4.4 s with the `fallback` badge.
+
+## 2026-11-06, S2 8.2 ENS agent names (ENSv2 Sepolia)
+
+**Built:** `src/addons/ens/` (verified ABIs from Sourcify, `contracts.ts`, `client.ts`, `agents.ts`), `pnpm -F agents ens:setup` (resolver and registry proxies, `fairtown.eth` registration, parent records), `pnpm -F agents ens:agents` (27 persona names), runtime `sellerCheck` and `ensNameOf`, guardrail and rule strategy on a revoked seller, walk-in names on join, `test/ens.test.ts`, `test/live/ens.live.test.ts`. State (public addresses, tx hashes): `src/addons/ens/sepolia.json`.
+
+**Found while building:**
+- The user's `fairtown.eth` did not exist anywhere (mainnet v1, Sepolia v1 or ENSv2 Sepolia); registered fresh on ENSv2 Sepolia for 8 MockUSDC (MockUSDC `mint` is open).
+- The first funding went to Base Sepolia instead of Ethereum Sepolia; same address, different chain.
+- Docs vs source (trusted the source): the app-developer tutorial calls `setText(bytes32 node, ...)`, but the deployed PermissionedResolver takes the DNS-encoded name, `setText(bytes name, ...)`. ABIs fetched from Sourcify for every contract we call.
+- Role bitmaps are per nybble (each role is a 4-bit holder count, admin roles 128 bits up); "all roles" is `0x1111...`, not all bits set (`EACInvalidRoleBitmap` otherwise).
+- `register` on the ETHRegistrar takes the subregistry and resolver, so `fairtown.eth` was registered already pointing at our UserRegistry (no separate `setSubregistry`).
+- No Solidity toolchain (Foundry not installed), so no custom registrar contract; the service wallet is the registrar.

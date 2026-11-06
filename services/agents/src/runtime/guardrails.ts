@@ -30,6 +30,7 @@ export function checkBid(d: Decision, o: Observation, recentBidTimes: number[], 
   if (m.minGrade && FAMILY[m.minGrade] && FAMILY[m.minGrade] === FAMILY[lot.grade] && rank(lot.grade) > rank(m.minGrade))
     return { ok: false, reason: `grade ${lot.grade} below ${m.minGrade}` }
   if (lot.sellerRecord.noShows > 0 && m.avoidNoShowSellers !== false) return { ok: false, reason: "seller has a recent no-show" }
+  if (lot.sellerEns && !lot.sellerEns.verified && m.avoidNoShowSellers !== false) return { ok: false, reason: `${lot.sellerEns.name}: verified role revoked` }
   if (lot.blocksLeft <= 0n) return { ok: false, reason: "auction ended" }
   if (!d.maxPerUnit || !d.amount) return { ok: false, reason: "bid without price or amount" }
 
