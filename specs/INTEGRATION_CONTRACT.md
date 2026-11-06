@@ -184,6 +184,13 @@ WEB_PORT=8080
 ADDONS_PORT=8790
 RELAY_INTERNAL_TOKEN=change-me
 CRE_BRIDGE_TOKEN=change-me
+CRE_BRIDGE_W1_MINUTES=30              # CRE bridge timers (0 = off): W1 FX + reference prices (S1 4.5, ICR-006)
+CRE_BRIDGE_WEATHER_MINUTES=60         # W2 weather
+CRE_BRIDGE_CALENDAR_MINUTES=360       # W2 calendar
+CRE_BRIDGE_BROADCAST=1                # 0 = dry runs only
+CRE_BRIDGE_W3=1                       # 0 = don't watch DisputeOpened
+CRE_BRIDGE_TIMEOUT_MS=480000          # per run
+CRE_BIN=                              # cre CLI path; default ~/.cre/bin/cre, else cre on PATH
 STORAGE_DIR=./.data
 PUBLIC_BASE_URL=http://localhost:8787
 PUBLIC_WEB_URL=https://<tunnel>.trycloudflare.com
@@ -523,6 +530,17 @@ JSON validated by `@fairtown/shared/api`. Errors: `{ error: { code, message } }`
 
 ---
 
+### 11.1 CRE bridge (S1 4.5, ICR-006)
+
+`pnpm -F keeper cre:bridge`, port 8789, `127.0.0.1` by default. SIMULATION: runs `cre workflow simulate --broadcast` (test transactions through the mock forwarder).
+
+| Route | Body | Response |
+|---|---|---|
+| `POST /run` with `Authorization: Bearer $CRE_BRIDGE_TOKEN` | `{ workflow: "w1-fx-reference" \| "w2-signals" \| "w3-rulings", trigger?, forceSignals?, txHash?, eventIndex? }` | `202 { runId, workflow, trigger, state }`, or 400 / 401 / 413 / 429 |
+| `GET /health` | | `{ ok, simulation: true, workflows: { [name]: { built, running, queued, last } } }` |
+
+`forceSignals` (w2-signals only, max 10): `[{ kind, place, severity 1-5, label, expiresAtBlock (decimal string) }]`. Runs W2 trigger 1 with only those signals; labels always end in " (forced)". `w3-rulings` needs `txHash` and `eventIndex` (the log's index within its transaction). Runs answer at once and happen in the background; with broadcast on, one run at a time across all workflows (one signing key).
+
 ## 12. Relay protocol
 
 ### 12.1 Envelope
@@ -649,3 +667,4 @@ The agents service publishes `agent.*`, `human.joined` and `clock` phase events 
 | ICR-003 | S1 (maxspxtr) | Minor: block windows x10 in section 4 and `.env.example` (contest 600, report 3000, pickup fish 3000, flowers 3000, produce 4500, truck 3000, storage 1500, compute 600). Auction durations x10 too (D-50): fish 450, flowers 600, produce 900, truck/storage/compute 300. Values only | Base Sepolia and Base mainnet measured at ~5 blocks/s (200 ms), not ~2 s; the old values ran 10x faster than SoT 14 intends (contest 12 s, pickup 60 s) | S1, S2 (agents, director timers), S3 (countdowns) | maxspxtr (S1) | Approved 2026-11-06 |
 | ICR-004 | S1 (maxspxtr) | Minor: add `KEEPER_CHECKPOINT_BLOCKS=25` to section 4 and `.env.example` (keeper only, optional, default 25). No interface change | D-15 "every 2 blocks" is 0.4 s at Base's ~200 ms blocks (D-50), faster than one broadcast round trip; 25 blocks is ~5 s (D-54) | S1 | maxspxtr (S1) | Approved 2026-11-06 |
 | ICR-005 | S1 (maxspxtr) | Minor, v2 (S1 4.1): `uint64 asOf` appended to SignalOracle kind 1 and 3 bodies (stale guard, D-64); `RULING_TIMEOUT_BLOCKS=3000` in section 4 and `.env.example`, `DisputeResolver.expireDispute`, `DisputeExpired`, `disputeOf`, `disputeCount`, `rulingTimeoutBlocks` (D-65); `MarketSettlement.onDisputeOpened`, `disputedTokensOf`, `minRelistFloorOf` (3.1); receiver admin `setForwarder`, `setExpectedWorkflowOwner`; new errors from 3.1 and 4.1; regenerated `abi/generated.ts` (`signalOracleAbi`, `disputeResolverAbi` replace the stub ABIs). No section 7 event or existing signature changed | SoT 10: receivers drop stale reports, but kinds 1 and 3 had no time field; every lot state needs a timeout, and a ruling that never arrives would hold money forever | S1 (W1 encodes asOf), S2 (decodes new errors, may call `openDispute`/read `disputeOf`), S3 (dispute status) | maxspxtr (S1) | Approved 2026-11-06 |
+| ICR-006 | S1 (maxspxtr) | Minor: CRE bridge API (section 11.1, the body S2's director already sends) and bridge env vars in section 4 and `.env.example` (`CRE_BRIDGE_W1_MINUTES`, `CRE_BRIDGE_WEATHER_MINUTES`, `CRE_BRIDGE_CALENDAR_MINUTES`, `CRE_BRIDGE_BROADCAST`, `CRE_BRIDGE_W3`, `CRE_BRIDGE_TIMEOUT_MS`, `CRE_BIN`). W2 forced signals may carry `expiresAtBlock` instead of `hours` | S1 4.5 bridge; S2's director already posts `{ workflow: "w2-signals", forceSignals }` | S1, S2 (director, nothing to change) | maxspxtr (S1) | Approved 2026-11-06 |

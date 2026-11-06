@@ -1,0 +1,22 @@
+# w1-fx-reference trigger 0 (timer W1 FX), SIMULATION
+# cre workflow simulate ./w1-fx-reference --target local-simulation --non-interactive --trigger-index 0 --broadcast
+# exit 1
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: 5b27dd8963591023191c8f94994ff8fb7d22a0fb35399ba2c9450b5b501e81e8
+  Config hash: 050426b17d7fa94f14e6d40af7473be250a8b8cd6064174d9c59e96a29d7eac7
+2026-11-06T14:09:47Z [SIMULATION] Simulator Initialized
+2026-11-06T14:09:47Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T14:09:47Z [USER LOG] W1 fx: source https://api.frankfurter.dev/v2/rates?base=USD&quotes=EUR,NOK,INR,KES,NGN dates [EUR=2026-11-06,NOK=2026-11-06,INR=2026-11-06,KES=2026-11-06,NGN=2026-11-06] asOf 1793954387
+2026-11-06T14:09:49Z [USER LOG] W1 fx EUR = 0.88913000 per USD (perUsdE8 88913000): written 0x001120f69ee920745eb0251641a56bb92ff0869117d8e0ec65a38e6c9a58c892
+2026-11-06T14:09:53Z [USER LOG] W1 fx NOK = 9.27740000 per USD (perUsdE8 927740000): written 0xb2d543e29e1ac7ca0762727c5d629b50ca422731f9ab1f642a938ec7c9ec4228
+2026-11-06T14:09:55Z [USER LOG] W1 fx INR = 94.44000000 per USD (perUsdE8 9444000000): written 0xaab6314948bd077c0f6d7aa50d074aaf279ed8c604d013f3c0eae69dbbc97f69
+2026-11-06T14:09:57Z [USER LOG] W1 fx KES = 129.81000000 per USD (perUsdE8 12981000000): written 0xc6a23f47557f2f9ee93a3678f2daa78732ec217c6bf0ba38c17968284b770260
+2026-11-06T14:09:58Z [SIMULATION] Received interrupt signal, stopping execution
+2026-11-06T14:09:58Z [SIMULATION] Skipping WorkflowEngineV2
+✗ workflow execution failed: [2]Unknown: nonce too low: next nonce 36, tx nonce 35

@@ -1,0 +1,25 @@
+# w2-signals trigger 1 (forced signals (POST /run)), SIMULATION
+# cre workflow simulate ./w2-signals --target local-simulation --non-interactive --trigger-index 1 --broadcast --config ./.forced-7bcef177.json
+# exit 0
+Initializing...
+Loading settings...
+Checking RPC connectivity...
+Compiling workflow...
+✓ Workflow compiled
+✓ Simulation limits enabled
+  HTTP: req=120kb resp=250kb timeout=10s | ConfHTTP: req=125kb resp=500kb timeout=1m30s | Consensus obs=25kb | ChainWrite evm_report=50kb evm_gas=10000000 solana_report=265b solana_cu=300000 | WASM binary=100mb compressed=20mb
+  Binary hash: 781246fba5d0d76165a4f49557678234f9d21e42b24cdc04441fefc0a82cfc77
+  Config hash: 2da7f32458957cb9b079d5f6a48bcb49c1f79cb22639fe5cc83a7c72dc14dfd5
+2026-11-06T14:13:40Z [SIMULATION] Simulator Initialized
+2026-11-06T14:13:40Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-11-06T14:13:40Z [USER LOG] W2 calendar: 0 within 7 days of 2026-11-06, 1 forced
+2026-11-06T14:13:46Z [USER LOG] W2 signal weather bergen sev 4 "Storm forecast, Bergen (forced)" expires block 55166450 (exact block) FORCED, source forceSignals (demo): written 0xf17df713fd151f9d8e4f26b0e735aeb5730090f6249e97e6d780689a637ddee7
+✓ Workflow Simulation Result:
+"W2 calendar: 1 written, 0 unconfirmed, 0 failed, 0 not sent"
+2026-11-06T14:13:46Z [SIMULATION] Execution finished signal received
+2026-11-06T14:13:46Z [SIMULATION] Skipping WorkflowEngineV2
+╭──────────────────────────────────────────────────────╮
+│ Simulation complete! Ready to deploy your workflow?  │
+│                                                      │
+│ Run cre account access to request deployment access. │
+╰──────────────────────────────────────────────────────╯

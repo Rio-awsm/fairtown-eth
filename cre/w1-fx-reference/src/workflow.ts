@@ -42,22 +42,37 @@ const RECEIVER_REVERTED = 1
 
 // ------------------------------------------------------------------ node mode (runs on every node)
 
+/**
+ * One GET. A connection failure makes `.result()` throw in CRE (found in the S1 4.5 bridge run: "connection refused"
+ * aborted the whole execution), so it is caught here and reported as status 0: that source is skipped, not the run.
+ */
+export function getText(node: NodeRuntime<Config>, url: string): { status: number; body: string; error: string } {
+  try {
+    const resp = new HTTPClient().sendRequest(node, { url, method: "GET", timeout: HTTP_TIMEOUT }).result()
+    return {
+      status: resp.statusCode,
+      body: resp.statusCode === 200 ? new TextDecoder().decode(resp.body) : "",
+      error: "",
+    }
+  } catch (e) {
+    return { status: 0, body: "", error: (e instanceof Error ? e.message : String(e)).slice(0, 160) }
+  }
+}
+const httpProblem = (r: { status: number; error: string }) =>
+  r.status === 0 ? `unreachable: ${r.error}` : `HTTP ${r.status}`
+
 /** One field per quote (perUsdE8, 0n = missing on this node) plus the dates and skip reasons, for consensus. */
 type FxObservation = Record<string, bigint | string>
 
 export function observeFx(node: NodeRuntime<Config>): FxObservation {
   const c = node.config
-  const resp = new HTTPClient()
-    .sendRequest(node, { url: fxUrl(c.fxBaseUrl, c.fxQuotes), method: "GET", timeout: HTTP_TIMEOUT })
-    .result()
-  const body = resp.statusCode === 200 ? new TextDecoder().decode(resp.body) : ""
-  const { rates, skipped } = parseFrankfurterV2(body, c.fxQuotes)
+  const resp = getText(node, fxUrl(c.fxBaseUrl, c.fxQuotes))
+  const { rates, skipped } = parseFrankfurterV2(resp.body, c.fxQuotes)
   const obs: FxObservation = {}
   for (const q of c.fxQuotes) obs[q] = 0n
   for (const r of rates) obs[r.quote] = r.perUsdE8
   obs.__dates = rates.map((r) => `${r.quote}=${r.date}`).join(",")
-  obs.__skipped =
-    resp.statusCode === 200 ? skipped.map((s) => `${s.key}: ${s.reason}`).join("; ") : `HTTP ${resp.statusCode}`
+  obs.__skipped = resp.status === 200 ? skipped.map((s) => `${s.key}: ${s.reason}`).join("; ") : httpProblem(resp)
   return obs
 }
 type RefObservation = {
@@ -71,11 +86,9 @@ type RefObservation = {
 
 export function observeReference(node: NodeRuntime<Config>, pair: Pair): RefObservation {
   const empty = { perUnit: 0n, currency: "", date: "", source: "", sourceUrl: "" }
-  const resp = new HTTPClient()
-    .sendRequest(node, { url: referenceUrl(node.config.referenceUrl, pair), method: "GET", timeout: HTTP_TIMEOUT })
-    .result()
-  if (resp.statusCode !== 200) return { ...empty, reason: `HTTP ${resp.statusCode}` }
-  const r = parseReference(new TextDecoder().decode(resp.body), pair)
+  const resp = getText(node, referenceUrl(node.config.referenceUrl, pair))
+  if (resp.status !== 200) return { ...empty, reason: httpProblem(resp) }
+  const r = parseReference(resp.body, pair)
   if (!r.ok) return { ...empty, reason: r.reason }
   const { perUnit, currency, date, source, sourceUrl } = r.ref
   return { perUnit, currency, date, source, sourceUrl, reason: "" }

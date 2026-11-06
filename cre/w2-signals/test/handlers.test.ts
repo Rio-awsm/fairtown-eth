@@ -27,10 +27,11 @@ function weatherBody(stormy: Partial<Record<string, { rain: number; gust: number
   )
 }
 
-function harness(body: string, status = 200) {
+function harness(body: string, status = 200, unreachable = false) {
   const urls: string[] = []
   HttpActionsMock.testInstance().sendRequest = (req) => {
     urls.push(req.url)
+    if (unreachable) throw new Error("dial tcp: connection refused")
     return { statusCode: status, body: Buffer.from(body).toString("base64") }
   }
   const writes: Written[] = []
@@ -94,6 +95,13 @@ describe("onWeatherTrigger", () => {
     expect(logs).toContain("Open-Meteo 2026-11-07: gusts 82.4 km/h, rain 5 mm")
   })
 
+  test("an unreachable API skips the run's signals instead of aborting (S1 4.5 finding)", () => {
+    const { runtime, writes } = harness("", 200, true)
+    expect(onWeatherTrigger(runtime)).toBe("W2 weather: 0 signals")
+    expect(writes).toHaveLength(0)
+    expect(runtime.getLogs().join("\n")).toContain("status unreachable: ")
+  })
+
   test("an API error writes nothing", () => {
     const { runtime, writes } = harness('{"error":true}', 429)
     expect(onWeatherTrigger(runtime)).toBe("W2 weather: 0 signals")
@@ -115,7 +123,7 @@ describe("onCalendarTrigger", () => {
     expect(writes[0]!.expiresAtBlock).toBe(HEAD + BigInt((endOfDay("2026-11-08") - HEAD_TIME) * 5))
     expect(writes[2]!.expiresAtBlock).toBe(HEAD + BigInt((NOW + 6 * 3600 - HEAD_TIME) * 5))
     const logs = runtime.getLogs().join("\n")
-    expect(logs).toMatch(/nairobi sev 4 "Valentine's cargo cutoff \(forced\)" .* FORCED, source config forceSignals/)
+    expect(logs).toMatch(/nairobi sev 4 "Valentine's cargo cutoff \(forced\)" .* FORCED, source forceSignals/)
     expect(logs).toContain("2 within 7 days of 2026-11-06, 1 forced")
   })
 

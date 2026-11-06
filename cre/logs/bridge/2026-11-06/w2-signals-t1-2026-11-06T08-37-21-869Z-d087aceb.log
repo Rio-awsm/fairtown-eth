@@ -1,0 +1,6 @@
+# w2-signals trigger 1 (forced signals (POST /run)), SIMULATION
+# cre workflow simulate ./w2-signals --target local-simulation --non-interactive --trigger-index 1 --broadcast --config /var/folders/1f/_jx1h8b5755grybb3mvgxl1h0000gn/T/fairtown-w2-forced-d087aceb-485a-42e1-bb44-52ddc522807d.json
+# exit 1
+Initializing...
+✗ Credential validation failed
+✗ authentication required: credential validation failed: authentication failed: unable to retrieve organization info. Your account may not be fully set up yet — please try again in a few minutes: Post "https://api.cre.chain.link/graphql": net/http: TLS handshake timeout

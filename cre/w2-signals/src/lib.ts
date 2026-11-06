@@ -40,20 +40,36 @@ export const CalendarEventSchema = z.object({
   market: z.string().regex(KEY),
   source: z.string().regex(HTTP_URL),
 })
-export const ForcedSchema = z.object({
-  kind: z.enum(SIGNAL_KINDS),
-  place: z.string().regex(KEY),
-  severity: z.number().int().min(1).max(5),
-  label: z
-    .string()
-    .min(1)
-    .max(MAX_LABEL - FORCED_SUFFIX.length),
-  hours: z
-    .number()
-    .int()
-    .min(1)
-    .max(24 * 14),
-})
+/**
+ * A forced (demo) signal: from config, or from the agents director through the CRE bridge (S1 4.5). Expiry is either
+ * `hours` from the run, or an exact `expiresAtBlock` (the director's shape). Exactly one of the two.
+ */
+export const ForcedSchema = z
+  .object({
+    kind: z.enum(SIGNAL_KINDS),
+    place: z.string().regex(KEY),
+    severity: z.number().int().min(1).max(5),
+    label: z.string().min(1).max(MAX_LABEL),
+    hours: z
+      .number()
+      .int()
+      .min(1)
+      .max(24 * 14)
+      .optional(),
+    expiresAtBlock: z
+      .string()
+      .regex(/^[1-9]\d{0,19}$/)
+      .optional(),
+  })
+  .refine((f) => (f.hours === undefined) !== (f.expiresAtBlock === undefined), {
+    message: "give exactly one of hours or expiresAtBlock",
+  })
+  .refine(
+    (f) => (f.label.endsWith(FORCED_SUFFIX) ? f.label.length : f.label.length + FORCED_SUFFIX.length) <= MAX_LABEL,
+    {
+      message: "label too long once (forced) is added",
+    },
+  )
 
 export const ConfigSchema = z
   .object({
@@ -86,6 +102,8 @@ export type Signal = {
   severity: number
   label: string
   expiresAt: number
+  /** Exact expiry block (forced signals from the director); when set it wins over expiresAt. */
+  expiresBlock?: bigint
   forced: boolean
   source: string
 }
@@ -230,15 +248,16 @@ export function calendarSignals(events: CalendarEvent[], nowSec: number, windowD
 /** Golden rule: a forced signal always says so. The suffix is added if the config left it out. */
 export function forcedSignal(f: Forced, nowSec: number): Signal {
   const label = f.label.endsWith(FORCED_SUFFIX) ? f.label : `${f.label}${FORCED_SUFFIX}`
-  return {
+  const base = {
     kind: f.kind,
     place: f.place,
     severity: f.severity,
     label,
-    expiresAt: nowSec + f.hours * 3600,
     forced: true,
-    source: "config forceSignals (demo)",
+    source: "forceSignals (demo)",
   }
+  if (f.expiresAtBlock !== undefined) return { ...base, expiresAt: 0, expiresBlock: BigInt(f.expiresAtBlock) }
+  return { ...base, expiresAt: nowSec + (f.hours ?? 0) * 3600 }
 }
 
 // ------------------------------------------------------------------ chain
@@ -247,7 +266,13 @@ export function forcedSignal(f: Forced, nowSec: number): Signal {
  * Block by which the signal expires, from the chain's own head: head + (seconds left x blocks per second), rounded
  * up. Base runs ~5 blocks/s (D-50). null when already expired by chain time (never written: SignalOracle would revert).
  */
-export function expiresAtBlock(s: Pick<Signal, "expiresAt">, head: bigint, headTime: number, blocksPerSecond: number) {
+export function expiresAtBlock(
+  s: Pick<Signal, "expiresAt" | "expiresBlock">,
+  head: bigint,
+  headTime: number,
+  blocksPerSecond: number,
+) {
+  if (s.expiresBlock !== undefined) return s.expiresBlock > head ? s.expiresBlock : null
   const left = s.expiresAt - headTime
   if (left <= 0) return null
   return head + BigInt(Math.ceil(left * blocksPerSecond))

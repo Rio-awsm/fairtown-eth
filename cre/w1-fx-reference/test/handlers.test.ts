@@ -137,6 +137,15 @@ describe("onFxTrigger", () => {
     expect(logs).toContain("W1 fx NOK: no consensus value, not written")
   })
 
+  test("an unreachable FX API writes nothing and says why", () => {
+    const { runtime, writes } = harness(() => {
+      throw new Error("dial tcp: connection refused")
+    })
+    expect(onFxTrigger(runtime)).toBe("W1 fx: 0 written, 0 unconfirmed, 0 failed, 5 skipped")
+    expect(writes).toHaveLength(0)
+    expect(runtime.getLogs().join("\n")).toContain("unreachable: ")
+  })
+
   test("an HTTP error writes nothing", () => {
     const { runtime, writes } = harness(() => ({ statusCode: 429, body: "rate limited" }))
     expect(onFxTrigger(runtime)).toBe("W1 fx: 0 written, 0 unconfirmed, 0 failed, 5 skipped")
@@ -197,6 +206,15 @@ describe("onReferenceTrigger", () => {
       "truck_capacity@dallas=120000 USD",
     ])
     expect(runtime.getLogs().join("\n")).toContain('dated 2026-11-05, source "illustrative"')
+  })
+
+  test("an unreachable service skips every pair instead of aborting the run (S1 4.5 finding)", () => {
+    const { runtime, writes } = harness(() => {
+      throw new Error('Get "http://localhost:8787/api/reference": connection refused')
+    })
+    expect(onReferenceTrigger(runtime)).toBe("W1 ref: 0 written, 0 unconfirmed, 0 failed, 5 skipped")
+    expect(writes).toHaveLength(0)
+    expect(runtime.getLogs().join("\n")).toContain("skipped (unreachable: ")
   })
 
   test("skips a pair the service doesn't know or answers badly, writes the rest", () => {

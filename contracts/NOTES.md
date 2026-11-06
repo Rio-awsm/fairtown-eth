@@ -229,6 +229,20 @@ The default moved to 7500 (D-40, ICR-002). This is one scenario; the spread depe
 
 **S2 alignment.** Labels follow the agents director (`calendarLabel`, `forced()`), and the director already posts `{ workflow: "w2-signals", forceSignals: [...] }` to the CRE bridge: S1 4.5 must accept that shape and route it to this workflow's forced path.
 
+## 2026-11-06, S1 4.5
+
+**4.4 set aside.** maxspxtr moved on to 4.5 before any W3 code was written. The bridge's W3 path (watch `DisputeOpened` on the DisputeResolver, run `w3-rulings` with `--evm-tx-hash` and the event index within the tx) is built and tested with a fake `cre`; its health shows `w3-rulings` as not built, and a W3 request fails with "not built yet" without calling the CLI.
+
+**Live bridge runs found four things the unit tests could not.**
+- **Shared signing key.** Parallel W1 and W2 runs sign with the same `CRE_ETH_PRIVATE_KEY`: "nonce too low: next nonce 36, tx nonce 35"; W1 had already written 4 of 5 values. Broadcasting runs now take turns across all workflows (D-73).
+- **`--config` path.** The CLI rejects paths over 97 characters ("ConfigPath must be a maximum of 97 characters") and resolves relative paths from the workflow folder (checked: `./config.json` works, `w2-signals/config.json` doesn't). macOS temp paths are longer; the forced config now sits next to W2's config as `./.forced-<id>.json` (gitignored, deleted after the run).
+- **Online login check per run.** Every `cre workflow simulate` validates the login at `api.cre.chain.link`; once it failed with "TLS handshake timeout". The bridge retries once, only when the failure came before the workflow ran. **Demo risk:** the simulator needs internet and a valid `cre login`.
+- **Unreachable source aborts a run.** With the agents service down, `connection refused` made `.result()` throw and the whole W1 reference run failed. Fixed in W1 and W2 (D-74): now "0 written, 5 skipped".
+
+**Redaction caught a real leak.** The CLI printed the RPC URL in an error ("failed RPC health check: Post \"…\""); the bridge log has `<RPC_URL>` there. Placeholders like `change-me` are no longer treated as secrets (they garbled the "still change-me" message).
+
+**Real runs (Base Sepolia, final bridge build).** Timers at start: W1 FX 5 written, W1 reference 0 written 5 skipped (service off), W2 weather 0 (calm), W2 calendar 3; then the director's body by `POST /run`: "Storm forecast, Bergen (forced)" written with its exact `expiresAtBlock`. All five strictly one after another. Verified on chain from the bridge logs: FX 5 of 5, signals 4 of 4 (`signalCount` 13). Wrong token: 401. Bridge stopped afterwards so its timers don't keep spending test ETH.
+
 ## Open questions
 
 - Should `contracts/.env` be a symlink to `../.env`, so `forge test` works from inside `contracts/`? Not done. Run from the repo root.

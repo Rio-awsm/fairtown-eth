@@ -47,6 +47,25 @@ const DAY = 86_400
 // ------------------------------------------------------------------ node mode
 
 /**
+ * One GET. A connection failure makes `.result()` throw in CRE (found in the S1 4.5 bridge run: "connection refused"
+ * aborted the whole execution), so it is caught here and reported as status 0: that source is skipped, not the run.
+ */
+export function getText(node: NodeRuntime<Config>, url: string): { status: number; body: string; error: string } {
+  try {
+    const resp = new HTTPClient().sendRequest(node, { url, method: "GET", timeout: HTTP_TIMEOUT }).result()
+    return {
+      status: resp.statusCode,
+      body: resp.statusCode === 200 ? new TextDecoder().decode(resp.body) : "",
+      error: "",
+    }
+  } catch (e) {
+    return { status: 0, body: "", error: (e instanceof Error ? e.message : String(e)).slice(0, 160) }
+  }
+}
+const httpProblem = (r: { status: number; error: string }) =>
+  r.status === 0 ? `unreachable: ${r.error}` : `HTTP ${r.status}`
+
+/**
  * Per place: severity (median), cause and worst day (identical), and that day's gusts and rain in tenths (median).
  * Severity 0 = calm or missing on this node.
  */
@@ -54,12 +73,9 @@ type WeatherObservation = Record<string, number | string>
 
 export function observeWeather(node: NodeRuntime<Config>): WeatherObservation {
   const c = node.config
-  const resp = new HTTPClient().sendRequest(node, { url: weatherUrl(c), method: "GET", timeout: HTTP_TIMEOUT }).result()
-  const forecast =
-    resp.statusCode === 200
-      ? parseOpenMeteo(new TextDecoder().decode(resp.body), c.places)
-      : new Map<string, DayWeather[]>()
-  const obs: WeatherObservation = { __status: resp.statusCode === 200 ? "ok" : `HTTP ${resp.statusCode}` }
+  const resp = getText(node, weatherUrl(c))
+  const forecast = resp.status === 200 ? parseOpenMeteo(resp.body, c.places) : new Map<string, DayWeather[]>()
+  const obs: WeatherObservation = { __status: resp.status === 200 ? "ok" : httpProblem(resp) }
   for (const p of c.places) {
     const days = forecast.get(p.place)
     const s = days ? weatherSignal(p, days, c, "") : null
@@ -146,7 +162,7 @@ function publish(runtime: Runtime<Config>, kind: string, signals: Signal[]): str
     }
     const res = write(runtime, `${s.kind}:${s.place}`, encodeSignalReport(s, block))
     runtime.log(
-      `W2 signal ${s.kind} ${s.place} sev ${s.severity} "${s.label}" expires block ${block} (${new Date(s.expiresAt * 1000).toISOString()})${s.forced ? " FORCED" : ""}, source ${s.source}: ${res.detail} ${res.txHash}`,
+      `W2 signal ${s.kind} ${s.place} sev ${s.severity} "${s.label}" expires block ${block} (${s.expiresBlock !== undefined ? "exact block" : new Date(s.expiresAt * 1000).toISOString()})${s.forced ? " FORCED" : ""}, source ${s.source}: ${res.detail} ${res.txHash}`,
     )
     results.push(res)
   }
