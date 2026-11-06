@@ -5,7 +5,7 @@ import type { LedgerWriter } from "../arkiv/ledgerWriter"
 import { Executor, type ExecResult, type Exposure } from "./executor"
 import { DEFAULT_GUARDRAILS, type GuardrailConfig } from "./guardrails"
 import type { Publisher } from "./publisher"
-import type { LotObservation, MandateT, RuntimeAgent, Strategy } from "./types"
+import type { LotObservation, MandateT, MarketView, RuntimeAgent, Strategy } from "./types"
 import type { Wallets } from "./wallets"
 
 const BIDDERS = new Set(["BUYER", "SOCIETY", "HUMAN"])
@@ -27,6 +27,7 @@ export type RuntimeOptions = {
   guardrails?: GuardrailConfig
   now?: () => number
   gasTopUpWei?: bigint // Base Sepolia gas is cheap; keep top-ups small so the operator wallet lasts
+  marketFor?: (lot: LotObservation, block: bigint) => MarketView & { reference?: bigint }
 }
 
 export class AgentRuntime {
@@ -226,13 +227,16 @@ export class AgentRuntime {
           endBlock: lot.endBlock,
           blocksLeft: lot.endBlock - block,
         }
+        const mv = this.o.marketFor?.(obsLot, block)
+        if (mv?.reference !== undefined) obsLot.reference = mv.reference
+        const market = mv && { signals: mv.signals, urgencyBps: mv.urgencyBps }
         const key = t.lotId.toString()
         const duty = this.duties.get(key)
         const observe = (base: RuntimeAgent) => {
           const m = duty?.get(base.agentId)
           const a = m ? { ...base, mandate: m } : base
           const ex = this.ex(a.agentId)
-          return { ex, o: { agent: a, budgetLeft: this.budgetLeft(a), exposureOnLot: ex.onLot.get(key) ?? 0n, myBestOnLot: ex.best.get(key) ?? 0n, lot: { ...obsLot } } }
+          return { ex, o: { agent: a, budgetLeft: this.budgetLeft(a), exposureOnLot: ex.onLot.get(key) ?? 0n, myBestOnLot: ex.best.get(key) ?? 0n, lot: { ...obsLot }, ...(market ? { market } : {}) } }
         }
         const eligible = [...this.agents.values()].filter((a) => {
           const m = duty?.get(a.agentId) ?? a.mandate

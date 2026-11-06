@@ -51,12 +51,17 @@ export type LotObservation = {
   reference?: bigint
 }
 
+export type MarketSignal = { kind: string; place: string; severity: number; label: string }
+// Live inputs from SignalOracle (S2 5.3): urgency 10000 = normal, above means step up harder, below means hold back.
+export type MarketView = { signals: MarketSignal[]; urgencyBps: number }
+
 export type Observation = {
   agent: RuntimeAgent
   budgetLeft: bigint
   exposureOnLot: bigint
   myBestOnLot: bigint
   lot: LotObservation
+  market?: MarketView
 }
 
 // parallel: all agents on a lot decide at once (LLM latency), then bids execute in order. Rules stay sequential,

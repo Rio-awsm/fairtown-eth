@@ -180,7 +180,8 @@ export function createLlmStrategy(opts: LlmStrategyOptions): Strategy & { stats:
         stats.hardRule++
         return rule
       }
-      const ctx = (await opts.context?.(o.lot)) ?? { recentClears: [], signals: [] }
+      const base = (await opts.context?.(o.lot)) ?? { recentClears: [], signals: [] }
+      const ctx = o.market ? { ...base, signals: o.market.signals } : base
       const block = o.lot.endBlock - o.lot.blocksLeft
       const key = cacheKey(o, ctx)
       const hit = cache.get(key)

@@ -5,11 +5,12 @@ import type { ArkivStore } from "./arkiv/ArkivStore"
 import type { ChainAdapter } from "./chain/types"
 import type { AgentsConfig } from "./config"
 import { registerDisputeRoutes, type DisputeDeps } from "./handover/disputes"
+import { registerMarketRoutes, type MarketDeps } from "./market/routes"
 import { registerListingRoutes, type ListingDeps } from "./listing/routes"
 import { registerAgentRoutes } from "./runtime/routes"
 import type { AgentRuntime } from "./runtime/runtime"
 
-export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; logger?: boolean }
+export type AppDeps = { config: AgentsConfig; chain: ChainAdapter; arkiv: ArkivStore; ai: Pick<AiGateway, "health">; listing?: Omit<ListingDeps, "config" | "chain">; runtime?: AgentRuntime; disputes?: DisputeDeps; market?: MarketDeps; logger?: boolean }
 
 export const REDACT = ["req.headers.authorization", "*.privateKey", "*.mnemonic", "*.accessKey", "*.apiKey"]
 
@@ -50,6 +51,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   if (deps.runtime) registerAgentRoutes(app, deps.runtime)
   if (deps.runtime && deps.disputes) registerDisputeRoutes(app, { ...deps.disputes, runtime: deps.runtime })
+  if (deps.market) registerMarketRoutes(app, deps.market)
   if (deps.listing) registerListingRoutes(app, { ...deps.listing, config: deps.config, chain: deps.chain })
 
   return app

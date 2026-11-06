@@ -49,3 +49,12 @@
 - Relist counting relies on the child lot's `parentLotId` pointing at the relisted lot (FakeChain does this). Check the real `MarketSettlement.relist` once S1 3.1 lands.
 - On Base Sepolia v1, `openDispute` is `NotImplemented` (D-48 stubs); the route returns 409 `NotImplemented` until S1 4.1.
 - No anvil (Foundry not installed). The guide's anvil chain test is covered by FakeChain scenarios now; a Base Sepolia run of cod, truck, pickup, drop-off needs S1 3.1 contracts.
+
+## 2026-11-06, S2 5.3 signals, references, seller advice
+
+**Built:** `src/market/state.ts` (live `DemandSignal`, `ReferencePriceUpdated`, `FxUpdated`; expiry by block; urgency; signal-driven `move` intents), `src/market/advice.ts` and `src/market/routes.ts` (`GET /api/sellers/:id/advice`, `GET /api/fx`), `src/data/fx.json`. Runtime observations now carry the live reference, signals and urgency (`marketFor`); the rule strategy scales its step by urgency, the LLM prompt lists live signals.
+
+**Notes:**
+- S1 4.2 and 4.3 are not deployed. Tests drive FakeChain's `pushSignal`, `pushReference`, `pushFx` stand-ins; the ABI on Base Sepolia v1 has no `DemandSignal` or `ReferencePriceUpdated`, so on the live chain the town runs on the snapshot until S1 v2.
+- `ReferencePriceUpdated` round-trips: CRE W1 reads `/api/reference`, posts it, and the event upserts the same row. Idempotent, but the `source` becomes "CRE W1: <tag>".
+- Severity scale is assumed 1 to 5; values above 5 are clamped. Confirm with S1 4.3.

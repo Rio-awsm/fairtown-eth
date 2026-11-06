@@ -7,7 +7,7 @@ import { createAdapters, FAKE_BLOCK_MS } from "./adapters"
 import { parseAiConfig } from "./ai/config"
 import { createGateway } from "./ai/gateway"
 import { LedgerWriter } from "./arkiv/ledgerWriter"
-import { parseConfig, pickupWindowFor } from "./config"
+import { parseConfig, pickupWindowFor, protocolParams } from "./config"
 import { PERSONAS } from "./fixtures/personas"
 import { DraftStore } from "./listing/drafts"
 import { PhotoStore } from "./listing/photos"
@@ -19,6 +19,8 @@ import { SellerDirectory } from "./sellers"
 import { buildApp } from "./server"
 import { fileDispute, fixtureDisputePhotos } from "./handover/disputes"
 import { SectorEngine } from "./sectors/engine"
+import { MarketState, moveOnSignal } from "./market/state"
+import { findReference } from "./listing/references"
 import { AUCTION_BLOCKS, AUCTION_BLOCKS_FAKE } from "./sectors/rules"
 import { SECTORS } from "@fairtown/shared"
 import { createLlmStrategy, marketContext } from "./strategies/llm"
@@ -50,6 +52,21 @@ const ledger = new LedgerWriter({
   onError: (e, event) => log("arkiv write failed", { event, err: e instanceof Error ? e.message : String(e) }),
 })
 const publisher = new RelayPublisher(`http://localhost:${config.RELAY_PORT}`, config.RELAY_INTERNAL_TOKEN)
+// Live signals, reference and FX (S2 5.3). Shares the reference rows with listing, sectors and the LLM context.
+const market = new MarketState({
+  chain,
+  references: listing.references,
+  onSignal: (s, sectors) => void moveOnSignal(s, sectors, runtime.agents.values(), (ev) => publisher.publish(ev)).catch((e) => log("signal move failed", { err: String(e) })),
+})
+const marketFor = (lot: { commodity: string; place: string; sector: (typeof SECTORS)[number]; currency: string }, block: bigint) => {
+  const r = findReference(listing.references, lot.commodity, lot.place)
+  return {
+    ...(r && r.currency === lot.currency ? { reference: BigInt(r.perUnit) } : {}),
+    signals: market.signalsFor(lot.place, lot.sector, block),
+    urgencyBps: market.urgencyBps(lot.place, lot.sector, block),
+  }
+}
+
 // MOCK_AI=1: rules decide (FakeAi has no bidder). Otherwise the LLM advises and rules are the fallback.
 const strategy = aiConfig.MOCK_AI
   ? ruleStrategy
@@ -64,6 +81,7 @@ const runtime = new AgentRuntime({
   wallets,
   publisher,
   strategy,
+  marketFor,
   ledger,
   gradeFor: (_id, uri) => drafts.get(uri.split("/").pop() ?? "")?.grade.grade,
   nameOf: (a: Address) => sellers.byAddr(a)?.name,
@@ -78,6 +96,7 @@ if (fake) {
   chain.watch((e) => bridge.forward(e))
 }
 await runtime.bootstrap(undefined, PERSONAS.filter((p) => p.seeded?.proven).map((p) => p.id))
+const stopMarket = market.start()
 const stopRuntime = runtime.start()
 
 // Fake mode mines a block every 2 s (not 200 ms), so it uses the D-12 durations and windows (D-50 divided by 10).
@@ -100,7 +119,7 @@ const sectors = new SectorEngine({
 const stopSectors = sectors.start()
 const stopMining = fake ? fake.autoMine(FAKE_BLOCK_MS) : () => {}
 
-const app = buildApp({ config, chain, arkiv, ai, listing, runtime, disputes })
+const app = buildApp({ config, chain, arkiv, ai, listing, runtime, disputes, market: { market, arkiv, chain, references: listing.references, sellers, params: protocolParams(config) } })
 log = (msg, extra) => app.log.warn(extra ?? {}, msg)
 await app.listen({ port: config.AGENTS_PORT, host: "0.0.0.0" })
 
@@ -109,6 +128,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     stopMining()
     stopRuntime()
     stopSectors()
+    stopMarket()
     stopLedger()
     await app.close()
     process.exit(0)
