@@ -18,6 +18,15 @@ describe("SiteNav", () => {
     expect(screen.getByRole("link", { name: "OPEN THE TOWN" })).toHaveAttribute("href", "/town")
   })
 
+  it("links home through the Fairtown wordmark, named for screen readers", () => {
+    const { container } = at("/board", <SiteNav variant="solid" />)
+    const home = screen.getByRole("link", { name: "Fairtown" })
+    expect(home).toHaveAttribute("href", "/")
+    // The SVG is decorative: the link carries the name, so it is not read twice.
+    expect(home.querySelector("svg")).toHaveAttribute("aria-hidden", "true")
+    expect(container.querySelector("header")!.textContent).not.toContain("FAIRTOWN")
+  })
+
   it("marks the page you are on", () => {
     at("/board", <SiteNav variant="solid" />)
     expect(screen.getByRole("link", { name: "PUBLIC BOARD" })).toHaveAttribute("aria-current", "page")

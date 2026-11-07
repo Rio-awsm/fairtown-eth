@@ -3,6 +3,8 @@
  * Night #0f1626, ink #f4f6fa (72% and 46% for secondary text), pill grey #2a3245, lime #c6ff2e,
  * cyan #3fd8ff for the loader mark, hairlines in white at 22%.
  */
+/* html too, so overscroll and anything past the page show night, not the town's grass. */
+html:has(.landing),
 body:has(.landing) {
   background: #0f1626;
 }
@@ -88,6 +90,22 @@ body:has(.landing) {
 .landing-links a:hover {
   color: var(--ink);
 }
+/* Landing, past the hero: the fixed nav gains a night backing so page content can pass under it. */
+.landing .landing-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgb(15 22 38 / 0.86);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.landing[data-past="true"] .landing-nav::before {
+  opacity: 1;
+}
 /* On pages that scroll under it: a sticky night bar with a hairline. */
 .landing-nav-solid {
   position: sticky;
@@ -97,10 +115,16 @@ body:has(.landing) {
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgb(255 255 255 / 0.08);
 }
+/* The logo (Logo.tsx): mark and word, sized by height, 44px tall to tap. */
 .landing-wordmark {
-  font-size: calc(19 * var(--u));
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.landing-wordmark svg {
+  display: block;
+  height: calc(38 * var(--u));
+  width: auto;
 }
 .landing-nav-right {
   display: flex;
@@ -116,6 +140,7 @@ body:has(.landing) {
   font-size: calc(11.5 * var(--u));
   font-weight: 600;
   letter-spacing: 0.05em;
+  white-space: nowrap;
   transition: transform 0.2s;
 }
 .landing-pill:hover {
@@ -164,13 +189,15 @@ body:has(.landing) {
   pointer-events: none;
   background:
     linear-gradient(180deg, rgb(15 22 38 / 0.55), rgb(15 22 38 / 0) 34%),
-    linear-gradient(0deg, rgb(15 22 38 / 0.5), rgb(15 22 38 / 0) 30%);
+    linear-gradient(0deg, rgb(15 22 38 / 0.5), rgb(15 22 38 / 0) 30%),
+    /* The clip's bottom edge melts into the night ground the page continues on. */
+    linear-gradient(0deg, var(--night), rgb(15 22 38 / 0) 14%);
 }
 
-/* Hero copy: fixed, centred, 92u from the top, in a perspective stage. */
+/* Hero copy: fixed, centred, 140u from the top, in a perspective stage. */
 .landing-stage {
   position: fixed;
-  top: calc(92 * var(--u));
+  top: calc(140 * var(--u));
   left: 0;
   right: 0;
   z-index: 10;
@@ -188,16 +215,55 @@ body:has(.landing) {
   margin: 0;
   /* The app's global heading face is the town's pixel font; the hero sets its own. */
   font-family: inherit;
-  font-size: calc(84 * var(--u));
+  font-size: calc(64 * var(--u));
   font-weight: 600;
-  line-height: 0.96;
+  line-height: 0.98;
   letter-spacing: -0.045em;
 }
-.landing-sub {
-  margin: calc(26 * var(--u)) 0 0;
-  font-size: calc(18 * var(--u));
-  line-height: 1.5;
+/* Featuring: the three partners' logos under the headline, each linking to its own site. */
+.landing-featuring {
+  margin-top: calc(34 * var(--u));
+  /* The stage ignores the pointer so the clip stays scrollable; the logos must take clicks. */
+  pointer-events: auto;
+}
+.landing-featuring-label {
+  margin: 0;
+  font-size: calc(13 * var(--u));
+  font-weight: 500;
   color: var(--ink-72);
+}
+.landing-logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin: calc(14 * var(--u)) 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* Hairlines between the logos, so the row reads as three separate names. */
+.landing-logos li + li {
+  border-left: 1px solid var(--hair);
+}
+.landing-logo {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 calc(28 * var(--u));
+  border-radius: 12px;
+  opacity: 0.82;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+.landing-logo:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.landing-logo img {
+  display: block;
+  height: calc(var(--h) * var(--u));
+  width: auto;
 }
 
 /* Scroll cue: centred 36u from the bottom, with a 1px underline that drains. */
@@ -225,9 +291,9 @@ body:has(.landing) {
   transform-origin: left center;
 }
 
-/* Process list: fixed, bottom left, 430u wide. */
+/* Process list: bottom left of the sticky scene, 430u wide, so it leaves with the clip. */
 .landing-steps {
-  position: fixed;
+  position: absolute;
   left: calc(36 * var(--u));
   bottom: calc(28 * var(--u));
   z-index: 10;
@@ -300,44 +366,108 @@ body:has(.landing) {
   margin: calc(6 * var(--u)) 0 calc(4 * var(--u));
 }
 
-/* Loader: a night panel, two dotted ellipses round the spinning mark. */
+/*
+ * Loader: the brand on a night panel lit by a faint dawn. The lime arrows turn (a full turn with a
+ * pause, like a market cycle), the word sits under them, and a thin bar sweeps while the clip
+ * loads. When the page is ready the brand opens towards the viewer and the panel fades.
+ */
 .landing-loader {
   position: fixed;
   inset: 0;
   z-index: 50;
   display: grid;
   place-items: center;
-  background: var(--night);
+  background:
+    radial-gradient(60% 45% at 50% 52%, rgb(183 255 42 / 0.08), rgb(183 255 42 / 0) 70%),
+    radial-gradient(90% 70% at 50% 100%, rgb(63 216 255 / 0.1), rgb(63 216 255 / 0) 70%), var(--night);
   transition:
-    opacity 0.6s ease,
-    visibility 0s linear 0.6s;
+    opacity 0.7s ease,
+    visibility 0s linear 0.7s;
 }
 .landing[data-loaded="true"] .landing-loader {
   opacity: 0;
   visibility: hidden;
 }
-.landing-loader > * {
-  grid-area: 1 / 1;
+.landing-loader-brand {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  transition:
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.7s ease;
 }
-.landing-loader-ring {
-  border: 1.5px dotted rgb(63 216 255 / 0.5);
+.landing[data-loaded="true"] .landing-loader-brand {
+  transform: scale(1.08);
+  filter: blur(6px);
+}
+/* A slow breathing glow behind the mark. */
+.landing-loader-glow {
+  position: absolute;
+  top: 46px;
+  left: 50%;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
-}
-.landing-loader-wide {
-  width: 240px;
-  height: 96px;
-}
-.landing-loader-round {
-  width: 128px;
-  height: 128px;
+  background: radial-gradient(closest-side, rgb(183 255 42 / 0.28), rgb(183 255 42 / 0));
+  filter: blur(8px);
+  transform: translate(-50%, -50%);
+  animation: landing-breathe 2.4s ease-in-out infinite;
 }
 .landing-loader-mark {
-  display: grid;
-  animation: landing-spin 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  position: relative;
+  width: 92px;
+  height: 92px;
+  filter: drop-shadow(0 0 18px rgb(183 255 42 / 0.45));
+  animation: landing-turn 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
-@keyframes landing-spin {
-  to {
+.landing-loader-word {
+  position: relative;
+  height: 26px;
+  width: auto;
+  opacity: 0.92;
+}
+/* An indeterminate bar: a lime streak that sweeps a dim track. */
+.landing-loader-bar {
+  position: relative;
+  width: 132px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgb(250 248 236 / 0.12);
+  overflow: hidden;
+}
+.landing-loader-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, #b7ff2a, transparent);
+  transform: translateX(-100%);
+  animation: landing-sweep 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes landing-turn {
+  0% {
+    transform: rotate(0deg);
+  }
+  70%,
+  100% {
     transform: rotate(360deg);
+  }
+}
+@keyframes landing-breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+@keyframes landing-sweep {
+  to {
+    transform: translateX(100%);
   }
 }
 
@@ -348,7 +478,11 @@ body:has(.landing) {
   }
   .landing-nav {
     grid-template-columns: auto 1fr;
+    column-gap: 12px;
     padding: 0 16px;
+  }
+  .landing-wordmark svg {
+    height: 30px;
   }
   .landing-links {
     display: none;
@@ -358,6 +492,11 @@ body:has(.landing) {
     position: fixed;
     top: 60px;
     left: 16px;
+  }
+  /* The backing reaches down past the badge row, which keeps showing LIVE or REPLAY and TEST MONEY. */
+  .landing .landing-nav::before {
+    bottom: auto;
+    height: 96px;
   }
   .landing-nav-solid {
     height: auto;
@@ -374,19 +513,25 @@ body:has(.landing) {
     padding: 0 14px;
   }
   .landing-stage {
-    top: 96px;
+    top: 124px;
     padding: 0 18px;
   }
-  .landing-title {
-    font-size: clamp(38px, 11vw, 48px);
+  /* As specific as the base rule above, or the phone size never applies. */
+  .landing .landing-title {
+    font-size: clamp(32px, 9vw, 40px);
   }
-  .landing-sub {
-    max-width: 34ch;
-    margin-inline: auto;
-    font-size: 15px;
+  .landing-featuring {
+    margin-top: 26px;
   }
-  .landing-sub br {
-    display: none;
+  /* All three logos on one row, down to a 360px phone. */
+  .landing-logos {
+    flex-wrap: nowrap;
+  }
+  .landing-logo {
+    padding: 0 11px;
+  }
+  .landing-logo img {
+    height: calc(var(--h) * 0.72px);
   }
   .landing-steps {
     left: 18px;
@@ -396,12 +541,30 @@ body:has(.landing) {
   }
 }
 
+/* Narrow phones: the wordmark and both pills still fit on one row. */
+@media (max-width: 380px) {
+  .landing-wordmark svg {
+    height: 24px;
+  }
+  .landing-pill {
+    padding: 0 12px;
+  }
+}
+
 /* Reduced motion: no spin and no transitions; the UI still follows scroll. */
 @media (prefers-reduced-motion: reduce) {
-  .landing-loader-mark {
+  .landing-loader-mark,
+  .landing-loader-glow,
+  .landing-loader-bar::after {
     animation: none;
   }
+  .landing-loader-bar::after {
+    transform: none;
+  }
   .landing-loader,
+  .landing-loader-brand,
+  .landing .landing-nav::before,
+  .landing-logo,
   .landing-pill,
   .landing-links a,
   .landing-step-num,

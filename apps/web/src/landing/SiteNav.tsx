@@ -1,6 +1,7 @@
 import "@fontsource-variable/inter-tight"
 import { Link, NavLink } from "react-router"
 import { useTown } from "../state/townStore"
+import { Logo } from "./Logo"
 import "./landing.css"
 
 type Props = {
@@ -24,8 +25,8 @@ export function SiteNav({ variant = "overlay", howHref = "/#how" }: Props) {
           <NavLink to="/board">PUBLIC BOARD</NavLink>
         </nav>
       </div>
-      <Link to="/" className="landing-wordmark">
-        FAIRTOWN
+      <Link to="/" className="landing-wordmark" aria-label="Fairtown">
+        <Logo />
       </Link>
       <div className="landing-nav-right">
         <Link to="/sell" className="landing-pill landing-pill-grey">

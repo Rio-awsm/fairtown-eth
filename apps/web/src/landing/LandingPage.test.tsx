@@ -17,15 +17,14 @@ afterEach(() => {
 })
 
 describe("LandingPage", () => {
-  it("tells Fairtown's story: nav, headline, subline and scroll cue", () => {
+  it("tells Fairtown's story: nav, headline and scroll cue, with no subline", () => {
     render(
       <MemoryRouter>
         <LandingPage />
       </MemoryRouter>,
     )
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("One Fair Pricefor Every Harvest")
-    expect(screen.getByText(/AI agents bid\. One clearing price\./)).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "FAIRTOWN" })).toHaveAttribute("href", "/")
+    expect(screen.getByRole("link", { name: "Fairtown" })).toHaveAttribute("href", "/")
     expect(screen.getByRole("link", { name: "HOW A DEAL WORKS" })).toHaveAttribute("href", "#how")
     expect(screen.getByRole("link", { name: "PUBLIC BOARD" })).toHaveAttribute("href", "/board")
     expect(screen.getByRole("link", { name: "SELL A LOT" })).toHaveAttribute("href", "/sell")
@@ -84,6 +83,30 @@ describe("LandingPage", () => {
     expect(video.hasAttribute("playsinline")).toBe(true)
   })
 
+  it("the loader shows the Fairtown mark, word and a loading bar, and stays a labelled status", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    )
+    const loader = screen.getByRole("status", { name: "Loading" })
+    expect(loader.querySelector("svg.landing-loader-mark")).toHaveAttribute("aria-hidden", "true")
+    expect(loader.querySelector("svg.landing-loader-word")).toHaveAttribute("aria-hidden", "true")
+    expect(loader.querySelector(".landing-loader-bar")).not.toBeNull()
+    // The old cyan-squares mark is gone.
+    expect(container.querySelector(".landing-loader-ring")).toBeNull()
+  })
+
+  it("once loaded the loader leaves the accessibility tree", () => {
+    render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    )
+    act(() => vi.advanceTimersByTime(3500))
+    expect(screen.queryByRole("status", { name: "Loading" })).toBeNull()
+  })
+
   it("the loader fades 350 ms after the clip's first frame", () => {
     const { container } = render(
       <MemoryRouter>
@@ -131,6 +154,48 @@ describe("LandingPage", () => {
     expect(pause).toHaveBeenCalled()
     unmount()
     expect(window.__recTime).toBeUndefined()
+  })
+
+  it("features the three partners' logos under the headline, each linking to its own site in a new tab", () => {
+    render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    )
+    expect(document.body.textContent).not.toMatch(/AI agents bid\. One clearing price\./)
+    const row = document.querySelector<HTMLElement>(".landing-hero .landing-logos")!
+    const links = within(row).getAllByRole("link")
+    expect(links.map((a) => a.getAttribute("href"))).toEqual([
+      "https://www.uniswapfoundation.org/",
+      "https://chain.link/",
+      "https://hedera.com/",
+    ])
+    for (const [i, name] of ["Uniswap Foundation", "Chainlink", "Hedera"].entries()) {
+      const link = links[i]!
+      expect(link).toHaveAccessibleName(`${name} (opens in a new tab)`)
+      expect(link).toHaveAttribute("target", "_blank")
+      expect(link).toHaveAttribute("rel", "noreferrer")
+      // Each logo is a real image with its name as alt text, sized up front so nothing shifts.
+      const img = within(link).getByRole("img", { name })
+      expect(img.getAttribute("src")).toMatch(/^\/partners\//)
+      expect(img).toHaveAttribute("width")
+      expect(img).toHaveAttribute("height")
+    }
+    expect(within(row.parentElement!).getByText("Featuring")).toBeInTheDocument()
+  })
+
+  it("continues past the hero into the featured partners", () => {
+    render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    )
+    const featuring = screen.getByRole("region", { name: "Featuring" })
+    for (const name of ["Uniswap Foundation", "Chainlink", "Hedera"]) {
+      expect(within(featuring).getByText(name)).toBeInTheDocument()
+    }
+    // The deal steps live inside the sticky scene, so they leave with the clip.
+    expect(document.querySelector(".landing-scene .landing-steps")).not.toBeNull()
   })
 
   it("without ?rec=1 there is no recorder hook", () => {

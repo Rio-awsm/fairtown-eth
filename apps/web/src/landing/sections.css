@@ -1,0 +1,882 @@
+/*
+ * The landing below the hero: night to dawn. The clip ends on the hub's cyan glow; the page picks
+ * that light up, deepens to indigo through the ways in, and ends on a lime-and-cyan dawn over a
+ * horizon, where the market day starts. One face (Inter Tight), the hero's tokens (landing.css).
+ *
+ * No section has a hard edge: one long gradient runs under the whole page, and each glow is a
+ * soft radial that reaches past its section into the next.
+ */
+.lp {
+  --gutter: clamp(16px, 4.5vw, 64px);
+  --wide: 1240px;
+  --deep: #0b1120;
+  --indigo: #131b3a;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    var(--night) 0%,
+    #101a33 22%,
+    var(--indigo) 46%,
+    #0e1530 66%,
+    var(--deep) 84%,
+    #070b15 100%
+  );
+}
+/* The hub's light spills out of the clip and over the top of the page. */
+.lp::before {
+  content: "";
+  position: absolute;
+  top: -260px;
+  left: 50%;
+  width: min(1400px, 140vw);
+  height: 900px;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 50% at 50% 40%, rgb(63 216 255 / 0.16), rgb(63 216 255 / 0) 70%);
+  pointer-events: none;
+}
+
+/* The app's global headings use the town's pixel face; these sections use Inter Tight. */
+:where(.lp) :is(h2, h3) {
+  margin: 0;
+  font-family: inherit;
+  font-size-adjust: none;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+:where(.lp) p {
+  margin: 0;
+}
+
+.lp section {
+  position: relative;
+  z-index: 1;
+  max-width: var(--wide);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Scroll reveals: a short rise out of a soft blur. Only applies once JS opts the page in. */
+.lp [data-reveal] {
+  transition:
+    opacity 0.9s var(--ease-out) var(--d, 0ms),
+    transform 0.9s var(--ease-out) var(--d, 0ms),
+    filter 0.9s var(--ease-out) var(--d, 0ms);
+}
+.lp[data-anim="on"] [data-reveal]:not([data-shown]) {
+  opacity: 0;
+  transform: translateY(28px);
+  filter: blur(8px);
+}
+
+/* ── Featuring ─────────────────────────────────────────────────────────── */
+.lp-partners {
+  padding-block: clamp(80px, 10vw, 140px) clamp(64px, 7vw, 104px);
+}
+.lp-partners-head {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  text-align: center;
+}
+.lp .lp-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 14px 0 12px;
+  border: 1px solid rgb(63 216 255 / 0.28);
+  border-radius: 999px;
+  background: rgb(63 216 255 / 0.07);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+/* A live dot: the label belongs to the glowing wire below it. */
+.lp .lp-label::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 0 rgb(63 216 255 / 0.6);
+  animation: lp-ping 2.4s ease-out infinite;
+}
+@keyframes lp-ping {
+  0% {
+    box-shadow: 0 0 0 0 rgb(63 216 255 / 0.55);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px rgb(63 216 255 / 0);
+  }
+}
+.lp-lede {
+  max-width: 22ch;
+  font-size: clamp(30px, 3.6vw, 52px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+  background: linear-gradient(180deg, var(--ink) 20%, rgb(244 246 250 / 0.78));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* One glass strip holds all three, the way one wire joins them. */
+.lp-strip {
+  position: relative;
+  margin-top: clamp(44px, 5vw, 72px);
+  border: 1px solid transparent;
+  border-radius: 28px;
+  /* An opaque-enough fill, so the gradient border stays a border and doesn't tint the panel. */
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.01)) padding-box,
+    linear-gradient(180deg, rgb(19 28 54 / 0.94), rgb(16 24 46 / 0.94)) padding-box,
+    linear-gradient(
+        140deg,
+        rgb(63 216 255 / 0.55),
+        rgb(255 255 255 / 0.07) 35%,
+        rgb(255 255 255 / 0.04) 65%,
+        rgb(198 255 46 / 0.35)
+      )
+      border-box;
+  box-shadow:
+    0 40px 120px -50px rgb(63 216 255 / 0.45),
+    inset 0 1px 0 rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+.lp-wire {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* The wire: a dim line, a bright line that draws itself, and pulses that keep running along it. */
+.lp-wire-track {
+  --wire-top: 46px;
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--wire-top) - 4px);
+  left: 40px;
+  right: 40px;
+  height: 9px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.lp-wire-track::before,
+.lp-wire-track::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4px;
+  height: 1px;
+}
+.lp-wire-track::before {
+  background: rgb(63 216 255 / 0.18);
+}
+.lp-wire-track::after {
+  background: linear-gradient(90deg, var(--cyan), rgb(63 216 255 / 0.85) 60%, var(--lime));
+  box-shadow: 0 0 10px rgb(63 216 255 / 0.8);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.2s;
+}
+.lp-partners[data-drawn="true"] .lp-wire-track::after {
+  transform: scaleX(1);
+}
+.lp-pulse {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(60px 4px at 50% 50%, rgb(255 255 255 / 0.95), rgb(63 216 255 / 0.6) 40%, transparent);
+}
+.lp-partners[data-drawn="true"] .lp-pulse {
+  animation: lp-run 3.6s cubic-bezier(0.45, 0, 0.55, 1) 1.8s infinite;
+}
+.lp-partners[data-drawn="true"] .lp-pulse-late {
+  animation-delay: 3.6s;
+}
+@keyframes lp-run {
+  0% {
+    opacity: 0;
+    transform: translateX(-55%);
+  }
+  12%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(55%);
+  }
+}
+
+.lp-partner {
+  position: relative;
+  padding: calc(46px + 46px) 40px 44px;
+}
+.lp-partner + .lp-partner {
+  border-left: 1px solid rgb(255 255 255 / 0.07);
+}
+/* A spotlight that follows the pointer across the partner under it. */
+.lp-partner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    380px circle at var(--mx, 50%) var(--my, 0%),
+    rgb(63 216 255 / 0.13),
+    rgb(63 216 255 / 0) 65%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.lp-partner:hover::before {
+  opacity: 1;
+}
+/* A node like the squares in the Fairtown mark: dark until the wire reaches it. */
+.lp-node {
+  position: absolute;
+  z-index: 2;
+  top: calc(46px - 7px);
+  left: 40px;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgb(63 216 255 / 0.5);
+  border-radius: 3px;
+  background: var(--indigo);
+  transform: rotate(45deg);
+  transition:
+    background-color 0.45s ease,
+    border-color 0.45s ease,
+    box-shadow 0.45s ease;
+  transition-delay: calc(0.35s + var(--i) * 0.5s);
+}
+.lp-partners[data-drawn="true"] .lp-node {
+  border-color: var(--cyan);
+  background: var(--cyan);
+  box-shadow:
+    0 0 0 5px rgb(63 216 255 / 0.12),
+    0 0 18px rgb(63 216 255 / 0.9);
+}
+.lp-partner-name {
+  position: relative;
+  font-size: clamp(28px, 2.7vw, 40px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.lp-partner-role {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  margin-top: 18px;
+  padding: 0 12px;
+  border: 1px solid rgb(198 255 46 / 0.3);
+  border-radius: 999px;
+  background: rgb(198 255 46 / 0.08);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lime);
+}
+.lp-partner-body {
+  position: relative;
+  margin-top: 16px;
+  max-width: 36ch;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-72);
+}
+
+/* ── Three ways in ─────────────────────────────────────────────────────── */
+.lp-ways {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  column-gap: clamp(24px, 5vw, 88px);
+  padding-block: clamp(40px, 5vw, 80px) clamp(40px, 5vw, 72px);
+}
+/* A violet-indigo glow behind the rows, so this stretch reads as deeper night. */
+.lp-ways::before {
+  content: "";
+  position: absolute;
+  inset: -120px -10% -160px 30%;
+  z-index: -1;
+  background: radial-gradient(50% 50% at 60% 50%, rgb(110 120 255 / 0.12), rgb(110 120 255 / 0) 70%);
+  pointer-events: none;
+}
+.lp-ways-head {
+  position: sticky;
+  top: 112px;
+  align-self: start;
+}
+.lp .lp-h2 {
+  font-size: clamp(34px, 4vw, 56px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.lp-ways-sub {
+  margin-top: 18px;
+  max-width: 30ch;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink-72);
+}
+.lp-ways-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-way {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  column-gap: 22px;
+  align-items: center;
+  padding: 26px 26px 26px 24px;
+  border: 1px solid rgb(255 255 255 / 0.07);
+  border-radius: 22px;
+  background: linear-gradient(120deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.01));
+  overflow: hidden;
+}
+/* Beats .lp [data-reveal], so the row keeps its hover transition as well as its reveal. */
+.lp .lp-way {
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    opacity 0.9s var(--ease-out) var(--d, 0ms),
+    transform 0.9s var(--ease-out) var(--d, 0ms),
+    filter 0.9s var(--ease-out) var(--d, 0ms);
+}
+/* Hover: a band of light sweeps across the row once. */
+.lp-way::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgb(63 216 255 / 0.1) 50%, transparent 70%);
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+.lp-way:hover {
+  border-color: rgb(63 216 255 / 0.32);
+}
+.lp-way:hover::after {
+  transform: translateX(100%);
+  transition: transform 0.9s var(--ease-out);
+}
+.lp-way-icon {
+  width: 52px;
+  height: 52px;
+  padding: 13px;
+  border: 1px solid rgb(63 216 255 / 0.25);
+  border-radius: 15px;
+  background: radial-gradient(circle at 30% 20%, rgb(63 216 255 / 0.22), rgb(63 216 255 / 0.04) 70%);
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: box-shadow 0.3s ease;
+}
+.lp-way:hover .lp-way-icon {
+  box-shadow: 0 0 24px rgb(63 216 255 / 0.35);
+}
+/* The icon draws itself in as its row arrives. */
+.lp-way-icon > * {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.3s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--d, 0ms) + 0.35s);
+}
+.lp[data-anim="on"] .lp-way:not([data-shown]) .lp-way-icon > * {
+  stroke-dashoffset: 1;
+}
+.lp .lp-way-title {
+  font-size: 21px;
+  line-height: 1.25;
+}
+.lp-way-body {
+  margin-top: 6px;
+  max-width: 50ch;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ink-72);
+}
+.lp .lp-way-link {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.05);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background-color 0.25s,
+    color 0.25s,
+    border-color 0.25s;
+}
+.lp .lp-way-link:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--night);
+}
+
+/* ── Dawn: the closing call is the sky ─────────────────────────────────── */
+.lp-dawn {
+  position: relative;
+}
+/* The aurora sits low in the sky and spills down onto the horizon below it. */
+.lp-aurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.lp-aurora > span {
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+}
+.lp-aurora-a {
+  bottom: -150px;
+  width: min(1100px, 120vw);
+  height: 520px;
+  background: radial-gradient(closest-side, rgb(198 255 46 / 0.2), rgb(198 255 46 / 0));
+  filter: blur(30px);
+  transform: translateX(-62%);
+  animation: lp-drift-a 18s ease-in-out infinite alternate;
+}
+.lp-aurora-b {
+  bottom: -90px;
+  width: min(1000px, 110vw);
+  height: 560px;
+  background: radial-gradient(closest-side, rgb(63 216 255 / 0.22), rgb(63 216 255 / 0));
+  filter: blur(30px);
+  transform: translateX(-30%);
+  animation: lp-drift-b 22s ease-in-out infinite alternate;
+}
+@keyframes lp-drift-a {
+  to {
+    transform: translateX(-46%) translateY(-6%) scale(1.12);
+  }
+}
+@keyframes lp-drift-b {
+  to {
+    transform: translateX(-52%) translateY(4%) scale(0.92);
+  }
+}
+
+.lp-close {
+  padding-block: clamp(96px, 11vw, 160px) clamp(120px, 13vw, 190px);
+  text-align: center;
+}
+.lp-close-inner {
+  position: relative;
+  z-index: 1;
+}
+.lp .lp-close-title {
+  font-size: clamp(42px, 6.4vw, 92px);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+  background: linear-gradient(180deg, #ffffff 20%, rgb(214 236 255 / 0.86));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.lp-close-body {
+  max-width: 46ch;
+  margin: 24px auto 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink-72);
+}
+.lp-close-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 38px;
+}
+.lp-close .landing-pill {
+  height: 54px;
+  padding: 0 28px;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.lp-close .landing-pill-lime {
+  background: var(--lime);
+  color: var(--night);
+  box-shadow:
+    0 0 0 1px rgb(198 255 46 / 0.4),
+    0 14px 40px -10px rgb(198 255 46 / 0.55);
+}
+.lp-close .lp-pill-glass {
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(255 255 255 / 0.06);
+  color: var(--ink);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* ── Footer: the ground under the horizon ──────────────────────────────── */
+/* Full width, so the horizon spans the window. */
+.lp-foot {
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(104px, 10vw, 150px);
+}
+/*
+ * Holds the huge horizon circle. It starts 360px above the footer, leaving room for the glow,
+ * and clips everything below the footer so the circle never makes the page longer.
+ */
+.lp-horizon-wrap {
+  position: absolute;
+  inset: -360px 0 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* The horizon: the top of a very large circle, lit from behind, with dark ground below it. */
+.lp-horizon {
+  position: absolute;
+  top: 360px;
+  left: 50%;
+  width: max(2800px, 260vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(40% 6% at 50% 0%, rgb(198 255 46 / 0.07), rgb(198 255 46 / 0)),
+    linear-gradient(180deg, #0a1020, #060912 10%);
+  box-shadow:
+    0 -1px 0 rgb(214 255 120 / 0.7),
+    0 -8px 40px rgb(198 255 46 / 0.28),
+    0 -40px 140px rgb(63 216 255 / 0.22);
+  pointer-events: none;
+}
+.lp-foot-inner {
+  position: relative;
+  z-index: 1;
+  max-width: var(--wide);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.lp-foot-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr));
+  gap: 40px clamp(24px, 3vw, 48px);
+}
+.lp-foot-mark {
+  display: block;
+  height: 44px;
+  width: auto;
+}
+.lp-foot-note {
+  max-width: 36ch;
+  margin-top: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-72);
+}
+/* Always say it is test money: a lime status pill with a live dot. */
+.lp-foot-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 30px;
+  margin-top: 22px;
+  padding: 0 13px 0 11px;
+  border: 1px solid rgb(198 255 46 / 0.3);
+  border-radius: 999px;
+  background: rgb(198 255 46 / 0.07);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lime);
+}
+.lp-foot-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lime);
+  animation: lp-ping-lime 2.4s ease-out infinite;
+}
+@keyframes lp-ping-lime {
+  0% {
+    box-shadow: 0 0 0 0 rgb(198 255 46 / 0.55);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px rgb(198 255 46 / 0);
+  }
+}
+.lp-foot-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.lp-foot-group ul {
+  display: grid;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-foot-group a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  font-size: 15px;
+  color: var(--ink-72);
+  transition: color 0.2s;
+}
+.lp-foot-group a:hover {
+  color: var(--ink);
+}
+.lp-foot-ext {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+.lp-foot-group a:hover .lp-foot-ext {
+  transform: translate(2px, -2px);
+}
+.lp-foot-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: clamp(48px, 6vw, 72px);
+  padding-top: 20px;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  font-size: 14px;
+  color: var(--ink-72);
+}
+.lp .lp-foot-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+.lp .lp-foot-top:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--night);
+}
+.lp-foot-top svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s ease;
+}
+.lp-foot-top:hover svg {
+  transform: translateY(-2px);
+}
+/*
+ * The giant wordmark: lit lime from the horizon above, fading into the ground, its foot cut off
+ * by the bottom of the page. It rises out of the ground once the footer's links have come in;
+ * only the SVG moves, inside a clipped box, so the page never grows while it is hidden.
+ */
+.lp-foot-giant {
+  margin-top: clamp(36px, 5vw, 64px);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 15%, transparent 92%);
+  mask-image: linear-gradient(180deg, #000 15%, transparent 92%);
+}
+.lp-foot-giant svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: -7%;
+  transition:
+    opacity 1.4s var(--ease-out) 0.3s,
+    transform 1.4s var(--ease-out) 0.3s;
+}
+.lp-foot-giant path {
+  fill: rgb(198 255 46 / 0.22);
+}
+.lp[data-anim="on"] .lp-foot-main:not([data-shown]) ~ .lp-foot-giant svg {
+  opacity: 0;
+  transform: translateY(45%);
+}
+
+/* ── Tablet ────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .lp-partner {
+    padding-inline: 28px;
+  }
+  .lp-node {
+    left: 28px;
+  }
+  .lp-wire-track {
+    left: 28px;
+    right: 28px;
+  }
+}
+@media (max-width: 960px) {
+  .lp-foot-main {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .lp-foot-brand {
+    grid-column: 1 / -1;
+  }
+  .lp-ways {
+    grid-template-columns: 1fr;
+    row-gap: 40px;
+  }
+  .lp-ways-head {
+    position: static;
+  }
+}
+
+/* ── Phone: the wire runs down the left edge, one partner under another ── */
+@media (max-width: 760px) {
+  .lp-wire {
+    grid-template-columns: 1fr;
+  }
+  .lp-partner {
+    padding: 34px 24px 34px 60px;
+  }
+  .lp-partner + .lp-partner {
+    border-left: 0;
+    border-top: 1px solid rgb(255 255 255 / 0.07);
+  }
+  .lp-node {
+    top: 44px;
+    left: 23px;
+  }
+  .lp-wire-track {
+    top: 51px;
+    bottom: 51px;
+    left: 26px;
+    right: auto;
+    width: 9px;
+    height: auto;
+  }
+  .lp-wire-track::before,
+  .lp-wire-track::after {
+    top: 0;
+    bottom: 0;
+    left: 4px;
+    right: auto;
+    width: 1px;
+    height: auto;
+  }
+  .lp-wire-track::after {
+    background: linear-gradient(180deg, var(--cyan), rgb(63 216 255 / 0.85) 60%, var(--lime));
+    transform: scaleY(0);
+    transform-origin: center top;
+  }
+  .lp-partners[data-drawn="true"] .lp-wire-track::after {
+    transform: scaleY(1);
+  }
+  .lp-pulse {
+    background: radial-gradient(4px 60px at 50% 50%, rgb(255 255 255 / 0.95), rgb(63 216 255 / 0.6) 40%, transparent);
+  }
+  .lp-partners[data-drawn="true"] .lp-pulse {
+    animation-name: lp-run-down;
+  }
+  .lp-way {
+    grid-template-columns: 1fr;
+    row-gap: 16px;
+    padding: 22px;
+  }
+  .lp .lp-way-link {
+    justify-self: start;
+  }
+  .lp-close {
+    padding-bottom: 96px;
+  }
+  .lp-foot {
+    padding-top: 72px;
+  }
+  .lp-foot-main {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 36px;
+  }
+  .lp-foot-brand {
+    grid-column: 1 / -1;
+  }
+  .lp-foot-bar {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+}
+@keyframes lp-run-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-55%);
+  }
+  12%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(55%);
+  }
+}
+
+/* Reduced motion: everything in its final state, nothing loops. */
+@media (prefers-reduced-motion: reduce) {
+  .lp [data-reveal],
+  .lp-way,
+  .lp-way::after,
+  .lp-way-icon,
+  .lp-way-icon > *,
+  .lp-wire-track::after,
+  .lp-node,
+  .lp-partner::before,
+  .lp .lp-way-link,
+  .lp-foot-group a,
+  .lp-foot-ext,
+  .lp .lp-foot-top,
+  .lp-foot-top svg,
+  .lp-foot-giant svg {
+    transition: none;
+  }
+  .lp .lp-label::before,
+  .lp-foot-status::before,
+  .lp-aurora > span,
+  .lp-partners[data-drawn="true"] .lp-pulse {
+    animation: none;
+  }
+}

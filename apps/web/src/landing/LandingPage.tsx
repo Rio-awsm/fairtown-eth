@@ -1,5 +1,7 @@
 import "@fontsource-variable/inter-tight"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
+import { LandingSections, PARTNERS } from "./LandingSections"
+import { LogoMark, Wordmark } from "./Logo"
 import { SiteNav } from "./SiteNav"
 import { REC, clipTime, heroAt, progressOf, recProgress, smooth } from "./progress"
 import "./landing.css"
@@ -32,6 +34,8 @@ export const STEPS = [
 /** The loader fades 350 ms after the clip's first frame, or after 3.5 s whatever happens. */
 const LOADER_AFTER_FRAME_MS = 350
 const LOADER_MAX_MS = 3500
+/** Once the hero's bottom edge rises above this many px, the nav needs a backing (nav + phone badge row). */
+const NAV_BACKING_AT = 120
 
 declare global {
   interface Window {
@@ -42,39 +46,6 @@ declare global {
 
 const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
 
-/** Six cyan squares in a ring and a lime chevron. */
-function Mark() {
-  return (
-    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
-      {Array.from({ length: 6 }, (_, i) => {
-        const a = (i / 6) * Math.PI * 2 - Math.PI / 2
-        const x = 32 + Math.cos(a) * 20
-        const y = 32 + Math.sin(a) * 20
-        return (
-          <rect
-            key={i}
-            x={x - 4}
-            y={y - 4}
-            width="8"
-            height="8"
-            rx="1.5"
-            fill="#3fd8ff"
-            transform={`rotate(${(i * 60).toString()} ${x} ${y})`}
-          />
-        )
-      })}
-      <path
-        d="M25 26 L34 32 L25 38"
-        fill="none"
-        stroke="#c6ff2e"
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
 /**
  * Fairtown's landing: a scroll-driven hero over a night-city glide clip (the NORVA hero brief).
  * Scrolling scrubs the clip forward over the city to the hub while the headline lies back into
@@ -82,6 +53,7 @@ function Mark() {
  */
 export function LandingPage() {
   const rec = new URLSearchParams(window.location.search).get("rec") === "1"
+  const root = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const headline = useRef<HTMLDivElement>(null)
@@ -178,6 +150,9 @@ export function LandingPage() {
         scrollToP(p)
       } else p = progressOf(window.scrollY, trackBox(), window.innerHeight)
       paint(p)
+      // Past the hero the nav floats over page content, so it gets a backing (CSS keys off this).
+      const past = String(t.getBoundingClientRect().bottom < NAV_BACKING_AT)
+      if (root.current && root.current.dataset.past !== past) root.current.dataset.past = past
       const target = clipTime(p, v.duration)
       cur = reduced || recP !== null ? target : smooth(cur, target)
       seek()
@@ -194,7 +169,7 @@ export function LandingPage() {
   }, [rec])
 
   return (
-    <div className="landing" data-loaded={loaded}>
+    <div ref={root} className="landing" data-loaded={loaded} data-past="false">
       <SiteNav howHref="#how" />
 
       <div ref={track} className="landing-track" id="top">
@@ -213,8 +188,24 @@ export function LandingPage() {
             tabIndex={-1}
           />
           <div className="landing-shade" />
+          {/* Inside the sticky scene, so the steps scroll away with the clip when the hero ends. */}
+          <ol ref={list} className="landing-steps" aria-label="How a deal works">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="landing-step" aria-current={i === step ? "step" : undefined}>
+                <span className="landing-step-num">{String(i + 1).padStart(2, "0")}</span>
+                <div>
+                  <p className="landing-step-title">{s.title}</p>
+                  <div className="landing-step-body">
+                    <p>{s.body}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
+
+      <LandingSections />
 
       <div className="landing-stage">
         <div ref={headline} className="landing-hero">
@@ -223,11 +214,25 @@ export function LandingPage() {
             <br />
             for Every Harvest
           </h1>
-          <p className="landing-sub">
-            AI agents bid. One clearing price.
-            <br /> Sellers list in plain words, buyers&apos; agents bid within their caps,
-            <br /> and the money is released when the goods change hands.
-          </p>
+          <div className="landing-featuring">
+            <p className="landing-featuring-label">Featuring</p>
+            <ul className="landing-logos">
+              {PARTNERS.map((p) => (
+                <li key={p.name}>
+                  <a href={p.site} target="_blank" rel="noreferrer" className="landing-logo">
+                    <img
+                      src={p.logo.src}
+                      alt={p.name}
+                      width={p.logo.width}
+                      height={p.logo.height}
+                      style={{ "--h": p.logo.h } as CSSProperties}
+                    />
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -236,27 +241,16 @@ export function LandingPage() {
         <span ref={cueLine} className="landing-cue-line" />
       </div>
 
-      <ol ref={list} className="landing-steps" aria-label="How a deal works">
-        {STEPS.map((s, i) => (
-          <li key={s.title} className="landing-step" aria-current={i === step ? "step" : undefined}>
-            <span className="landing-step-num">{String(i + 1).padStart(2, "0")}</span>
-            <div>
-              <p className="landing-step-title">{s.title}</p>
-              <div className="landing-step-body">
-                <p>{s.body}</p>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ol>
-
       {!rec && (
         <div className="landing-loader" role="status" aria-label="Loading" aria-hidden={loaded ? true : undefined}>
-          <span className="landing-loader-ring landing-loader-wide" />
-          <span className="landing-loader-ring landing-loader-round" />
-          <span className="landing-loader-mark">
-            <Mark />
-          </span>
+          {/* The arrows turn over a soft dawn glow while the clip loads, then the whole mark
+              opens towards the viewer as the loader fades. */}
+          <div className="landing-loader-brand">
+            <span className="landing-loader-glow" />
+            <LogoMark className="landing-loader-mark" />
+            <Wordmark className="landing-loader-word" />
+            <span className="landing-loader-bar" />
+          </div>
         </div>
       )}
     </div>
